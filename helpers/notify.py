@@ -51,12 +51,16 @@ def generate_report(data, global_prefs, send_pushover: bool = False):
     try:
         if len(data["failures"]) > 0:
             context["failures"] = data["failures"]
+        else:
+            raise KeyError
     except KeyError:
         logger("Key 'failures' not found, skipping...", 1)
 
     try:
         if len(data["updated_applications"]) > 0:
             context["updated_applications"] = data["updated_applications"]
+        else:
+            raise KeyError
     except KeyError:
         logger("Key 'dected_versions' not found, skipping...", 1)
 
