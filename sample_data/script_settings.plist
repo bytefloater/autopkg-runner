@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AutoPkgPath</key>
+	<string>/usr/local/bin/autopkg</string>
+	<key>CheckDirs</key>
+	<array>
+		<string>catalogs</string>
+		<string>client_resources</string>
+		<string>icons</string>
+		<string>manifests</string>
+		<string>pkgs</string>
+		<string>pkgsinfo</string>
+		<string>reports</string>
+	</array>
+	<key>LocalMountPoint</key>
+	<string>/tmp/Munki</string>
+	<key>PushoverSettings</key>
+	<dict>
+		<key>ApplicationKey</key>
+		<string></string>
+		<key>UserKey</key>
+		<string></string>
+	</dict>
+	<key>SambaSettings</key>
+	<dict>
+		<key>ConnectionAddress</key>
+		<string></string>
+		<key>CredentialsUser</key>
+		<string></string>
+		<key>CredentialsPass</key>
+		<string></string>
+		<key>ServerShare</key>
+		<string></string>
+	</dict>
+	<key>ScriptSettings</key>
+	<dict>
+		<key>RecipeListPath</key>
+		<string>~/Library/Application Support/AutoPkgr/recipe_list.txt</string>
+		<key>ReportPlistDir</key>
+		<string>~/Documents</string>
+		<key>ReportBaseURL</key>
+		<string>https://example.com/reports</string>
+	</dict>
+</dict>
+</plist>

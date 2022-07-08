@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>failures</key>
+	<array/>
+	<key>summary_results</key>
+	<dict>
+		<key>munki_importer_summary_result</key>
+		<dict>
+			<key>data_rows</key>
+			<array>
+				<dict>
+					<key>catalogs</key>
+					<string>testing</string>
+					<key>icon_repo_path</key>
+					<string></string>
+					<key>name</key>
+					<string>MSEdge</string>
+					<key>pkg_repo_path</key>
+					<string>apps/Microsoft/Edge/MSEdge-103.1264.22062137-103.0.1264.37.pkg</string>
+					<key>pkginfo_path</key>
+					<string>apps/Microsoft/Edge/MSEdge-103.0.1264.37.plist</string>
+					<key>version</key>
+					<string>103.0.1264.37</string>
+				</dict>
+				<dict>
+					<key>catalogs</key>
+					<string>testing</string>
+					<key>icon_repo_path</key>
+					<string></string>
+					<key>name</key>
+					<string>Demo Application</string>
+					<key>pkg_repo_path</key>
+					<string>apps/MyDemoApp</string>
+					<key>pkginfo_path</key>
+					<string>apps/MyDemoAppsInfo</string>
+					<key>version</key>
+					<string>1.0</string>
+				</dict>
+			</array>
+			<key>header</key>
+			<array>
+				<string>name</string>
+				<string>version</string>
+				<string>catalogs</string>
+				<string>pkginfo_path</string>
+				<string>pkg_repo_path</string>
+				<string>icon_repo_path</string>
+			</array>
+			<key>summary_text</key>
+			<string>The following new items were imported into Munki:</string>
+		</dict>
+		<key>pkg_copier_summary_result</key>
+		<dict>
+			<key>data_rows</key>
+			<array>
+				<dict>
+					<key>pkg_path</key>
+					<string>/Users/localadmin/Library/AutoPkg/Cache/local.munki.TeamViewer/TeamViewer-15.30.3.pkg</string>
+				</dict>
+			</array>
+			<key>header</key>
+			<array>
+				<string>pkg_path</string>
+			</array>
+			<key>summary_text</key>
+			<string>The following packages were copied:</string>
+		</dict>
+		<key>url_downloader_summary_result</key>
+		<dict>
+			<key>data_rows</key>
+			<array>
+				<dict>
+					<key>download_path</key>
+					<string>/Users/localadmin/Library/AutoPkg/Cache/local.munki.MSEdge/downloads/MSEdge-103.1264.22062137.pkg</string>
+				</dict>
+			</array>
+			<key>header</key>
+			<array>
+				<string>download_path</string>
+			</array>
+			<key>summary_text</key>
+			<string>The following new items were downloaded:</string>
+		</dict>
+	</dict>
+</dict>
+</plist>
