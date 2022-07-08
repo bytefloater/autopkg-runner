@@ -23,8 +23,9 @@ from helpers import notify
 from helpers.logger import logger
 
 # Flags
-AUTOPKG_DEBUG = True
+AUTOPKG_DEBUG = False
 REPORT_DEBUG = False
+SEND_PUSHOVER = True
 
 
 class AutoPkgRunner:
@@ -32,7 +33,7 @@ class AutoPkgRunner:
     def __init__(self):
         self.did_create_dir = False
         self.remote_did_mount = False
-        self.send_pushover = False
+        self.send_pushover = SEND_PUSHOVER
         self.recipe_list = []
 
         # Import the script preferences file
