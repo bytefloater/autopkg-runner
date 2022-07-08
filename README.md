@@ -37,6 +37,7 @@ This script is configured by the file `script_settings.plist`.
 |                            ScriptSettings | Dictionary | <span style="color: grey;">(2 items)</span>            |
 |    &nbsp;&nbsp;&nbsp;&nbsp;RecipeListPath | String     | Path to RecipeList                                     |
 |    &nbsp;&nbsp;&nbsp;&nbsp;ReportPlistDir | String     | Directory of the AutoPkg report save location          |
+|     &nbsp;&nbsp;&nbsp;&nbsp;ReportBaseURL | String     | Report BaseURL (e.g. https://example.com/reports)      |
 
 
 ## Execution failed?

@@ -93,7 +93,7 @@ def generate_report(data, global_prefs, send_pushover: bool = False):
         logger(f"Report saved: {report_filename}", 1)
 
     report_base_url = global_prefs["ScriptSettings"]["ReportBaseURL"]
-    report_link = f"{report_base_url}/{report_filename}"
+    report_link = f"{report_base_url}/reports/{report_filename}"
     if OPEN_IN_BROWSER:
         webbrowser.open(report_link, new=0)
 
