@@ -13,6 +13,7 @@ See README.md for more information
 
 import atexit
 import gc
+import glob
 import os
 import plistlib
 import socket
@@ -172,6 +173,18 @@ class AutoPkgRunner:
             ])
         else:
             logger("Temporary mount point was not created programatically.", 1)
+
+        logger("Removing remaining temporary files...", 1)
+        tmp_file_list = glob.glob('/tmp/munki-*', recursive=True)
+        for file_path in tmp_file_list:
+            try:
+                logger(f"Removing '{str(file_path)}'", 2)
+                if os.path.isdir(file_path):
+                    os.rmdir(file_path)
+                else:
+                    os.remove(file_path)
+            except OSError as err:
+                print(str(err))
 
     def initiate_run(self):
         """Execute the AutoPkg run"""
