@@ -12,6 +12,7 @@ See README.md for more information
 """
 
 import atexit
+import ipaddress
 import gc
 import glob
 import os
@@ -77,18 +78,23 @@ class AutoPkgRunner:
         Check the availability of a given server
 
         Parameters:
-            connection_addr (str): mDNS Address
+            connection_addr (str): Address
 
         Returns:
             1 - Server Available
             0 - Server Unavailable
         """
         logger("Checking serer availability...")
-        split = connection_addr.split('.')
-        test_addr = '.'.join([split[0], split[-1]])
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex((test_addr, 445))
+        
+        try:
+            ipv4 = ipaddress.ip_address(connection_addr)
+            test_addr = connection_addr
+        except ValueError:
+            split = connection_addr.split('.')
+            test_addr = '.'.join([split[0], split[-1]])
+        finally:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex((test_addr, 445))
 
         return bool(result == 0)
 
