@@ -14,7 +14,7 @@ class TrustVerification(Stage):
         self.autopkg_fpath: Path    = config.autopkg.bin_path
         self.recipe_fpath: Path     = config.autopkg.recipe_list
 
-    def run(self):
+    def run(self) -> list:
         recipes = []
 
         with open(self.recipe_fpath, 'r', encoding='utf-8') as recipe_file:
@@ -45,3 +45,5 @@ class TrustVerification(Stage):
                     ], self.logger)
                 except subprocess.CalledProcessError as err:
                     raise RuntimeError("Failed to update trust information") from err
+
+        return needs_update
