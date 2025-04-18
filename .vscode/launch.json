@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Main: Launch AutoPkg Runner",
+            "preLaunchTask": "Clear terminal",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "redirectOutput": false,
+            "internalConsoleOptions": "openOnFirstSessionStart"
+        }
+    ]
+}
