@@ -4,7 +4,7 @@ from libs.stage import Stage
 from libs.config import PipelineConfig
 from stages import (
     EnvironmentCheck, TrustVerification, MountRepository, RunAutoPkg,
-    GenerateReport, GarbageCollector
+    GenerateReport, GarbageCollector, NotifyOnCompletion
 )
 
 class Orchestrator:
@@ -21,7 +21,8 @@ class Orchestrator:
             MountRepository(config, self.ctx, self.logger),
             RunAutoPkg(config, self.ctx, self.logger),
             GenerateReport(config, self.ctx, self.logger),
-            GarbageCollector(config, self.ctx, self.logger)
+            GarbageCollector(config, self.ctx, self.logger),
+            NotifyOnCompletion(config, self.ctx, self.logger)
         ]
 
     def execute(self):
