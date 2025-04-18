@@ -5,7 +5,7 @@ import http.client
 import urllib
 
 
-def send(token: str, user: str, message: str, title: str=None):
+def send(configuration: dict, message: str, title: str=None):
     """Send a pushover notification
 
     Parameters:
@@ -15,8 +15,8 @@ def send(token: str, user: str, message: str, title: str=None):
         title (str): Notification title [OPTIONAL]"""
     conn = http.client.HTTPSConnection("api.pushover.net:443")
     parameters = {
-        "token": token,
-        "user": user,
+        "token": configuration["app_token"],
+        "user": configuration["user_token"],
         "title": title,
         "message": message,
         "html": 1,
@@ -44,8 +44,12 @@ if __name__ == "__main__":
 
     settings: dict = raw["module_settings"]["notify.pushover"]
 
+    configuration = {
+        "app_token": settings.get("app_token"),
+        "user_token": settings.get("user_token")
+    }
+
     send(
-        token=settings.get("app_token"),
-        user=settings.get("user_token"),
+        configuration=configuration,
         message='Test notification'
     )
