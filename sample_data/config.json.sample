@@ -1,0 +1,49 @@
+{
+    "autopkg": {
+        "bin_path": "/usr/local/bin/autopkg",
+        "cache_path": "~/Library/AutoPkg/Cache",
+        "recipe_list": "~/Library/Application Support/AutoPkgr/recipe_list.txt",
+        "report_plist": "~/Documents/autopkg_report.plist"
+    },
+    "repository": {
+        "mount_path": "",
+        "server_address": "",
+        "public_url": "https://",
+        "server_share": "",
+        "username": "",
+        "password": "",
+        "check_dirs": [
+            "catalogs",
+            "client_resources",
+            "icons",
+            "manifests",
+            "pkgs",
+            "pkgsinfo",
+            "reports"
+        ],
+        "report_dir": "reports"
+    },
+    "module_settings": {
+        "core.garbage_collector": {
+            "retention_period": "1w",
+            "clear_autopkg_cache": true,
+            "clear_temp_files": true,
+            "clear_old_reports": true
+        },
+        "core.generate_report": {
+            "template": "bootstrap_template.html"
+        },
+        "core.notify": {
+            "providers": [
+                "pushover"
+            ],
+            "notifiers.pushover": {
+                "app_token": "",
+                "user_token": "",
+                "supports_html": true
+            }
+        }
+    },
+    "log_level": "debug",
+    "flags": []
+}
