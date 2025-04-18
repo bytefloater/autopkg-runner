@@ -42,7 +42,7 @@ if __name__ == "__main__":
     with open(CONFIG_FILE, mode="r", encoding="utf-8") as config_file:
         raw = json.load(config_file)
 
-    settings: dict = raw["module_settings"]["notify.pushover"]
+    settings: dict = raw["module_settings"]["core.notify"]["notifiers.pushover"]
 
     configuration = {
         "app_token": settings.get("app_token"),
