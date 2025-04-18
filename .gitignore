@@ -179,4 +179,5 @@ Temporary Items
 .apdisk
 
 # Prevent accidental publishing of private settings
-/script_settings.plist
+script_settings.plist
+config.json
