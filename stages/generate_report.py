@@ -20,7 +20,9 @@ class GenerateReport(Stage):
         gen_settings: dict          = config.module_settings.generate_report
         self.report_fpath: Path     = config.autopkg.report_plist
         self.local_mnt: Path        = config.repository.mount_path
-        self.repo_report_dir        = config.repository.report_dir
+        self.repo_report_dir: str   = config.repository.report_dir
+        self.public_url: str        = config.repository.public_url
+        self.ctx: dict              = ctx
 
         # Setup Django interpretor
         TEMPLATES = [{
@@ -29,7 +31,7 @@ class GenerateReport(Stage):
         }]
         django.conf.settings.configure(TEMPLATES=TEMPLATES)
         django.setup()
-        
+
         self.template = django.template.loader.get_template(f"{os.getcwd()}/{TEMPLATE_DIR}/{gen_settings.get('template')}")
 
 
@@ -40,18 +42,27 @@ class GenerateReport(Stage):
                 return False
         return True
 
-    def run(self):
+    def run(self) -> str:
         self.logger.info("Generating report")
-        context = StandardisedContext(self.plist_data).context
+
+        updated_recipes: list  = self.ctx.get("stage_outputs", {}).get("TrustVerification")
+        context = StandardisedContext(
+            self.plist_data,
+            updated_recipes
+        ).context
 
         file_path = f"{self.local_mnt}/{self.repo_report_dir}/{context['unix_time']}.html"
         with open(file_path, mode="w", encoding="utf-8") as html_report:
             self.logger.info(f"Writing report file to: {file_path}")
             html_report.write(self.template.render(context))
 
+        report_url = f"{self.public_url}/{self.repo_report_dir}/{context['unix_time']}.html"
+        self.logger.info(f"Report available at: {report_url}")
+        return report_url
+
 
 class StandardisedContext:
-    def __init__(self, plist_data):
+    def __init__(self, plist_data, trust_updated_recipes):
         tz_now = datetime.datetime.now()
         ux_now = datetime.datetime.now(datetime.timezone.utc)
 
@@ -64,11 +75,14 @@ class StandardisedContext:
             "deprecations": self._get_deprecations(),
             "munki_imports": self._get_munki_imports(),
             "packages_copied": self._get_packages_copied(),
-            # "updated_trust_info": self._get_updated_trust_info(trust_updated_recipes), 
+            "updated_trust_info": self._get_updated_trust_info(trust_updated_recipes), 
             "urls_downloaded": self._get_urls_downloaded()
         }
 
     def _get_updated_trust_info(self, recipes):
+        if not isinstance(recipes, list):
+            return []
+
         if len(recipes) > 0:
             transform = []
             for recipe in recipes:
@@ -80,6 +94,7 @@ class StandardisedContext:
                 "summary_text": "The following recipes have updated trust information:",
                 "data_rows": transform
             }
+        return []
 
     def _get_failures(self):
         _object = self.plist_data["failures"]
@@ -117,7 +132,7 @@ class StandardisedContext:
             }
         except KeyError:
                 return []
-    
+
     def _get_urls_downloaded(self):
         try:
             _object = self.plist_data["summary_results"]["url_downloader_summary_result"]
