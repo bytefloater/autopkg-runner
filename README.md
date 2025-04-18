@@ -34,7 +34,9 @@ A modular, pipeline‑driven wrapper around [AutoPkg](https://github.com/autopkg
 - **HTML Reporting**  
   Uses Django’s templating engine to render a customizable HTML report saved into the repo.  
 - **Garbage Collection**  
-  Cleans AutoPkg’s cache, temporary Munki files, and prunes old HTML reports based on retention settings.
+  Cleans AutoPkg’s cache, temporary Munki files, and prunes old HTML reports based on retention settings.  
+- **Notifications on completion**  
+  Will push notification using the configured providers.
 
 ## Requirements
 
@@ -134,6 +136,7 @@ python3 main.py
 - Run AutoPkg
 - Generate HTML Report
 - Garbage Collector
+- Notify (using providers) on completion
 
 Each stage implements:
 - `pre_check() → bool`
