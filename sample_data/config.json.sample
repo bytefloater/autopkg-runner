@@ -8,6 +8,7 @@
     "repository": {
         "mount_path": "",
         "server_address": "",
+        "public_url": "https://",
         "server_share": "",
         "username": "",
         "password": "",
@@ -32,9 +33,15 @@
         "core.generate_report": {
             "template": "bootstrap_template.html"
         },
-        "notify.pushover": {
-            "app_token": "",
-            "user_token": ""
+        "core.notify": {
+            "providers": [
+                "pushover"
+            ],
+            "notifiers.pushover": {
+                "app_token": "",
+                "user_token": "",
+                "supports_html": true
+            }
         }
     },
     "log_level": "debug",

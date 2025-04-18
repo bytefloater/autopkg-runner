@@ -13,6 +13,7 @@ class AutopkgConfig:
 class RepositoryConfig:
     mount_path: Path
     server_address: str
+    public_url: str
     server_share: str
     username: str
     password: str
@@ -23,7 +24,7 @@ class RepositoryConfig:
 class ModuleSettings:
     garbage_collector: dict[str, any]
     generate_report: dict[str, any]
-    notify_pushover: dict[str, any]
+    notify: dict[str, any]
 
 @dataclass(frozen=True)
 class PipelineConfig:
@@ -47,6 +48,7 @@ def load_config(path: str) -> PipelineConfig:
         repository=RepositoryConfig(
             mount_path=Path(raw["repository"]["mount_path"]).expanduser(),
             server_address=raw["repository"]["server_address"],
+            public_url=raw["repository"]["public_url"],
             server_share=raw["repository"]["server_share"],
             username=raw["repository"]["username"],
             password=raw["repository"]["password"],
@@ -56,7 +58,7 @@ def load_config(path: str) -> PipelineConfig:
         module_settings=ModuleSettings(
             garbage_collector=raw["module_settings"]["core.garbage_collector"],
             generate_report=raw["module_settings"]["core.generate_report"],
-            notify_pushover=raw["module_settings"]["notify.pushover"],
+            notify=raw["module_settings"]["core.notify"],
         ),
         log_level=raw["log_level"],
         flags=raw["flags"],

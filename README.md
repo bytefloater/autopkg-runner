@@ -21,7 +21,6 @@ A modular, pipeline‑driven wrapper around [AutoPkg](https://github.com/autopkg
 - [Contributing](#contributing)  
 - [License](#license)  
 
----
 ## Features
 
 - **Environment Check**  
@@ -37,7 +36,6 @@ A modular, pipeline‑driven wrapper around [AutoPkg](https://github.com/autopkg
 - **Garbage Collection**  
   Cleans AutoPkg’s cache, temporary Munki files, and prunes old HTML reports based on retention settings.
 
----
 ## Requirements
 
 - **macOS** with `mount_smbfs` and `umount` utilities  
@@ -47,7 +45,6 @@ A modular, pipeline‑driven wrapper around [AutoPkg](https://github.com/autopkg
   - `django==4.2.20`  
   - `logbook==1.8.1`
 
----
 ## Installation
 ```bash
 git clone https://github.com/bytefloater/autopkg-runner.git
@@ -55,7 +52,6 @@ cd autopkg-runner
 pip3 install --user -r requirements.txt
 ```
 
----
 ## Configuration
 Example configuration: (`config.json`)
 ```json
@@ -69,6 +65,7 @@ Example configuration: (`config.json`)
     "repository": {
         "mount_path": "<< local_mount_point >>",
         "server_address": "<< ipv4_address >>",
+        "public_url": "https://<< public domain >>",
         "server_share": "<< munki_repo_share_name >>",
         "username": "<< samba_username >>",
         "password": "<< samba_password >>",
@@ -93,9 +90,15 @@ Example configuration: (`config.json`)
         "core.generate_report": {
             "template": "bootstrap_template.html"
         },
-        "notify.pushover": {
-            "app_token": "<< pushover_app_token >>",
-            "user_token": "<< pushover_user_token >>"
+        "core.notify": {
+            "providers": [
+                "pushover"
+            ],
+            "notifiers.pushover": {
+                "app_token": "<< pushover_app_token >>",
+                "user_token": "<< pushover_user_token >>",
+                "supports_html": true
+            }
         }
     },
     "log_level": "debug",
@@ -111,7 +114,7 @@ Example configuration: (`config.json`)
 > <b>` module_settings`</b>  
 > `core.garbage_collector`: retention string (7d, 12h, 1w) and toggles.  
 > `core.generate_report`: name of the HTML template in /report_templates.  
-> `notify.pushover`: (future) Pushover credentials and enablement flag.  
+> `core.notify`: configuration of notification providers and provider-specific settings  
 >
 > <b>`log_level`</b>  
 > One of DEBUG, INFO, WARNING, ERROR.
@@ -119,13 +122,11 @@ Example configuration: (`config.json`)
 > <b>`flags`</b>  
 > Reserved for future feature flags.
 
----
 ## Usage
 ```bash
 python3 main.py
 ```
 
----
 ## Pipeline Stages
 - Environment Check
 - Trust Verification
@@ -140,13 +141,11 @@ Each stage implements:
 - `post_check() → bool`
 - `cleanup()` (on failure)
 
----
 ## Contributing
 - Fork the repository
 - Create a feature branch (`git checkout -b feature/YourFeature`)
 - Implement your changes, adhering to PEP8 and adding tests where appropriate
 - Submit a pull request with a clear description
 
----
 ## License
 This project is licensed under the Apache License 2.0 – see the [LICENSE](/LICENSE) file for details.
