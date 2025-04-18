@@ -19,7 +19,14 @@ class Stage(ABC):
         self.logger.info(f"Starting stage: {self.name}")
         if not self.pre_check():
             raise RuntimeError(f"Pre‑check failed for {self.name}")
-        self.run()
+
+        # Capture the stages return value
+        result = self.run()
+
+        # Store this in context for later use
+        outputs = self.ctx.setdefault("stage_outputs", {})
+        outputs[self.__class__.__name__] = result
+
         if not self.post_check():
             raise RuntimeError(f"Post‑check failed for {self.name}")
 
