@@ -1,5 +1,6 @@
 import importlib
 from libs.stage import Stage
+from stages import GenerateReport
 
 
 class NotifyOnCompletion(Stage):
@@ -33,20 +34,19 @@ class NotifyOnCompletion(Stage):
                     configuration=provider_config,
                     message=self._generate_message(supports_html)
                 )
-            except Exception as err:
+            except Exception:
                 self.logger.error("Failed to send notification")
         
     def _generate_message(self, supports_html) -> str:
+        report_url: str = self.ctx.get("stage_outputs", {}).get(GenerateReport)
         if supports_html:
-            return self._gen_html_msg()
-        return self._gen_non_html_msg()
+            return self._gen_html_msg(report_url)
+        return self._gen_non_html_msg(report_url)
 
-    def _gen_non_html_msg(self) -> str:
-        report_url: str = self.ctx.get("stage_outputs", {}).get("GenerateReport")
+    def _gen_non_html_msg(self, report_url) -> str:
         message = f"""AutoPkg run complete, a new report is available from {report_url}"""
         return message
 
-    def _gen_html_msg(self) -> str:
-        report_url: str = self.ctx.get("stage_outputs", {}).get("GenerateReport")
+    def _gen_html_msg(self, report_url) -> str:
         message = f"""AutoPkg run complete, a new report is available <a href="{report_url}">here</a>"""
         return message
