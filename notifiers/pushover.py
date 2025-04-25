@@ -9,11 +9,13 @@ def send(configuration: dict, message: str, title: str=None):
     """Send a pushover notification
 
     Parameters:
-        token (str): Application-specific token
-        user (str): User token for the Pushover API
+        configuration (dict): {
+            app_token (str): Application-specific token
+            user_user (str): User token for the Pushover API
+        }
         message (str): Body content of notification
         title (str): Notification title [OPTIONAL]"""
-    conn = http.client.HTTPSConnection("api.pushover.net:443")
+    conn = http.client.HTTPSConnection("api.pushover.net", 443)
     parameters = {
         "token": configuration["app_token"],
         "user": configuration["user_token"],
@@ -44,12 +46,12 @@ if __name__ == "__main__":
 
     settings: dict = raw["module_settings"]["core.notify"]["notifiers.pushover"]
 
-    configuration = {
+    config = {
         "app_token": settings.get("app_token"),
         "user_token": settings.get("user_token")
     }
 
     send(
-        configuration=configuration,
+        configuration=config,
         message='Test notification'
     )
