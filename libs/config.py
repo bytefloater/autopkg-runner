@@ -12,7 +12,7 @@ class AutopkgConfig:
 @dataclass(frozen=True)
 class RepositoryConfig:
     mount_path: Path
-    server_address: str
+    host: str
     public_url: str
     server_share: str
     username: str
@@ -46,14 +46,16 @@ def load_config(path: str) -> PipelineConfig:
             report_plist=Path(raw["autopkg"]["report_plist"]).expanduser(),
         ),
         repository=RepositoryConfig(
-            mount_path=Path(raw["repository"]["mount_path"]).expanduser(),
-            server_address=raw["repository"]["server_address"],
-            public_url=raw["repository"]["public_url"],
-            server_share=raw["repository"]["server_share"],
-            username=raw["repository"]["username"],
-            password=raw["repository"]["password"],
-            check_dirs=raw["repository"]["check_dirs"],
-            report_dir=raw["repository"]["report_dir"]
+            host=raw["repository"]["server"]["host"],
+            server_share=raw["repository"]["server"]["share"],
+            mount_path=Path(raw["repository"]["server"]["mount_path"]).expanduser(),
+            public_url=raw["repository"]["server"]["public_url"],
+            
+            username=raw["repository"]["authentication"]["username"],
+            password=raw["repository"]["authentication"]["password"],
+            
+            check_dirs=raw["repository"]["directories"]["check"],
+            report_dir=raw["repository"]["directories"]["report_dir"]
         ),
         module_settings=ModuleSettings(
             garbage_collector=raw["module_settings"]["core.garbage_collector"],
