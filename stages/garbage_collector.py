@@ -3,9 +3,11 @@ import glob
 import os
 from pathlib import Path
 import re
+import subprocess
 import shutil
 
 from libs.stage import Stage
+from libs.run_command import run_cmd
 
 
 class GarbageCollector(Stage):
@@ -18,11 +20,19 @@ class GarbageCollector(Stage):
         self.local_mnt: Path        = config.repository.mount_path
         self.report_dir: str        = config.repository.report_dir
         collector_settings: dict    = config.module_settings.garbage_collector
+        self.repoclean_fpath: str   = collector_settings["repoclean_bin_path"]
+        retention: dict             = collector_settings["retention"]
+        targets: dict               = collector_settings["targets"]
 
-        self.retention: str         = collector_settings["retention_period"]
-        self.will_clear_cache: bool = collector_settings["clear_autopkg_cache"]
-        self.will_clear_temp: bool  = collector_settings["clear_temp_files"]
-        self.will_clear_old_reports: bool = collector_settings["clear_old_reports"]
+        # Retention settings
+        self.retention_period: str        = retention["period"]
+        self.keep_versions: int           = collector_settings.get("keep_versions", 3) 
+
+        # Cleanup target flags
+        self.will_clear_cache: bool       = targets.get("autopkg_cache", False)
+        self.will_clear_temp: bool        = targets.get("temp_files", False)
+        self.will_clear_old_reports: bool = targets.get("old_reports", False)
+        self.will_clean_repo: bool        = targets.get("repository_index", False)
 
     def _parse_retention(self, retention: str) -> timedelta:
         """
@@ -32,13 +42,13 @@ class GarbageCollector(Stage):
         d = days
         w = weeks
         """
-        m = re.fullmatch(r'(\d+)([hdw])', retention)
-        if not m:
+        match = re.fullmatch(r'(\d+)([hdw])', retention)
+        if not match:
             raise ValueError(
                 f"Invalid retention '{retention}'. Must be e.g. '12h', '7d' or '1w'."
             )
 
-        value, unit = int(m.group(1)), m.group(2)
+        value, unit = int(match.group(1)), match.group(2)
         unit_map = {
             "h": lambda: timedelta(hours=value),
             "d": lambda: timedelta(days=value),
@@ -76,7 +86,7 @@ class GarbageCollector(Stage):
         cutoff = datetime.now() - self._parse_retention(retention)()
         expired = []
 
-        self.logger.info(f"Found {len(reports)} reports(s) on the repository")
+        self.logger.info(f"Found {len(reports)} report(s) on the repository")
         for entry in reports:
             modify_time = datetime.fromtimestamp(os.path.getmtime(entry))
             if modify_time < cutoff:
@@ -86,8 +96,7 @@ class GarbageCollector(Stage):
         for entry in expired:
             self.logger.debug(f"Removing '{entry}'")
             try:
-                # os.remove(entry)
-                pass
+                os.remove(entry)
             except OSError:
                 self.logger.exception(f"Could not remove: '{entry}'")
 
@@ -108,10 +117,30 @@ class GarbageCollector(Stage):
             except OSError:
                 self.logger.warning(f"Unable to delete '{item}'")
 
+    def clean_repo(self):
+        if not os.path.exists(self.repoclean_fpath):
+            self.logger.warning("Cannot run 'repoclean', binary not found")
+            return
+
+        self.logger.info("Cleaning previous version(s) from repo...")
+        try:
+            run_cmd([
+                self.repoclean_fpath,
+                f"--keep={self.keep_versions}",
+                "--auto", # Bypass confirmation prompts on deletion
+                self.local_mnt
+            ], self.logger)
+        except subprocess.CalledProcessError:
+            self.logger.error("Failed to clean repo, check your configuration!")
+
     def run(self):
-        if self.will_clear_cache:
-            self.clear_autopkg_cache(self.retention)
-        if self.will_clear_temp:
-            self.clear_temp_files()
-        if self.will_clear_old_reports:
-            self.clear_old_reports(self.retention)
+        actions = {
+            'will_clear_cache': lambda: self.clear_autopkg_cache(self.retention_period),
+            'will_clear_temp': self.clear_temp_files,
+            'will_clear_old_reports': lambda: self.clear_old_reports(self.retention_period),
+            'will_clean_repo': self.clean_repo,
+        }
+
+        for flag, action in actions.items():
+            if getattr(self, flag, False):
+                action()
