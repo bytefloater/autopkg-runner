@@ -8,6 +8,7 @@ import django.conf
 import django.template.loader
 
 from libs.stage import Stage
+from stages import TrustVerification
 from __info__ import TEMPLATE_DIR
 
 
@@ -45,7 +46,7 @@ class GenerateReport(Stage):
     def run(self) -> str:
         self.logger.info("Generating report")
 
-        updated_recipes: list  = self.ctx.get("stage_outputs", {}).get("TrustVerification")
+        updated_recipes: list  = self.ctx.get("stage_outputs", {}).get(TrustVerification)
         context = StandardisedContext(
             self.plist_data,
             updated_recipes

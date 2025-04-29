@@ -25,7 +25,7 @@ class Stage(ABC):
 
         # Store this in context for later use
         outputs = self.ctx.setdefault("stage_outputs", {})
-        outputs[self.__class__.__name__] = result
+        outputs[self.__class__] = result
 
         if not self.post_check():
             raise RuntimeError(f"Post‑check failed for {self.name}")
