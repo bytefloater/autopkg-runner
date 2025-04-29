@@ -24,7 +24,7 @@ A modular, pipeline‑driven wrapper around [AutoPkg](https://github.com/autopkg
 ## Features
 
 - **Environment Check**  
-  Confirms AutoPkg binary and recipe list exist before running.  
+  Confirms AutoPkg binary and recipe list exist and there are no mounting conflicts before running.  
 - **Trust Verification**  
   Verifies each recipe’s trust info; auto‑updates recipes that fail.  
 - **SMB‑Hosted Munki Support**  
@@ -41,11 +41,14 @@ A modular, pipeline‑driven wrapper around [AutoPkg](https://github.com/autopkg
 ## Requirements
 
 - **macOS** with `mount_smbfs` and `umount` utilities  
-- **AutoPkg** installed and on your `$PATH`
+- **AutoPkg** installed on your system
 - **Python 3.8+**  
 - **Python packages**:
-  - `django==4.2.20`  
+  - `django==4.2.20`
+  - `dnspython==2.7.0`
   - `logbook==1.8.1`
+  - `psutil==7.0.0`
+  - `zeroconf==0.146.5`
 
 ## Installation
 ```bash
@@ -59,35 +62,48 @@ Example configuration: (`config.json`)
 ```json
 {
     "autopkg": {
-        "bin_path": "<< path_to_autopkg_binary >>",
-        "cache_path": "<< path_to_autopkg_cache >>",
-        "recipe_list": "<< path_to_recipe_list_file>>",
-        "report_plist": "<< path_to_save_report_plist >>"
+        "bin_path": "/usr/local/bin/autopkg",
+        "cache_path": "~/Library/AutoPkg/Cache",
+        "recipe_list": "~/Library/Application Support/AutoPkgr/recipe_list.txt",
+        "report_plist": "~/Documents/autopkg_report.plist"
     },
     "repository": {
-        "mount_path": "<< local_mount_point >>",
-        "server_address": "<< ipv4_address >>",
-        "public_url": "https://<< public domain >>",
-        "server_share": "<< munki_repo_share_name >>",
-        "username": "<< samba_username >>",
-        "password": "<< samba_password >>",
-        "check_dirs": [
-            "catalogs",
-            "client_resources",
-            "icons",
-            "manifests",
-            "pkgs",
-            "pkgsinfo",
-            "reports"
-        ],
-        "report_dir": "reports"
+        "server": {
+            "host": "<< ipv4_or_zeroconf_name>>",
+            "share": "<< munki_repo_share_name >>",
+            "mount_path": "/tmp/Munki",
+            "public_url": "https://<< public_domain >>"
+        },
+        "authentication":{
+            "username": "<< username >>",
+            "password": "<< password >>"
+        },
+        "directories": {
+            "check": [
+                "catalogs",
+                "client_resources",
+                "icons",
+                "manifests",
+                "pkgs",
+                "pkgsinfo",
+                "reports"
+            ],
+            "report_dir": "reports"
+        }
     },
     "module_settings": {
         "core.garbage_collector": {
-            "retention_period": "1w",
-            "clear_autopkg_cache": true,
-            "clear_temp_files": true,
-            "clear_old_reports": true
+            "repoclean_bin_path": "/usr/local/munki/repoclean",
+            "retention": {
+                "period": "1w",
+                "keep_versions": 3
+            },
+            "targets": {
+                "autopkg_cache": true,
+                "temp_files": true,
+                "old_reports": true,
+                "repository_index": true
+            }
         },
         "core.generate_report": {
             "template": "bootstrap_template.html"
@@ -97,15 +113,20 @@ Example configuration: (`config.json`)
                 "pushover"
             ],
             "notifiers.pushover": {
-                "app_token": "<< pushover_app_token >>",
-                "user_token": "<< pushover_user_token >>",
+                "app_token": "",
+                "user_token": "",
                 "supports_html": true
+            },
+            "notifiers.discord": {
+                "webhook_id": "",
+                "webhook_token": ""
             }
         }
     },
     "log_level": "debug",
     "flags": []
 }
+
 ```
 > <b>`autopkg`</b>  
 > Paths to the AutoPkg binary, its cache directory, your recipe list, and the output plist.
@@ -113,7 +134,7 @@ Example configuration: (`config.json`)
 > <b>`repository`</b>  
 > SMB mount point, server address/share, credentials, required subdirectories, and report output folder.
 >
-> <b>` module_settings`</b>  
+> <b>`module_settings`</b>  
 > `core.garbage_collector`: retention string (7d, 12h, 1w) and toggles.  
 > `core.generate_report`: name of the HTML template in /report_templates.  
 > `core.notify`: configuration of notification providers and provider-specific settings  
@@ -125,8 +146,18 @@ Example configuration: (`config.json`)
 > Reserved for future feature flags.
 
 ## Usage
+### Running the application:
 ```bash
 python3 main.py
+```
+| Option           | Description                                                            |
+|------------------|------------------------------------------------------------------------|
+| `-c`, `--config` | Specify the path to your configuration file (defaults to: config.json) |
+| `-s`, `--stage`  | Specify a single stage to run for testing                              |
+
+### Running a module (like a notifier):
+```bash
+python3 -m notifiers.pushover
 ```
 
 ## Pipeline Stages
