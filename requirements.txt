@@ -1,4 +1,4 @@
-django==4.2.20
+django>=4.2.24
 dnspython==2.7.0
 logbook==1.8.1
 psutil==7.0.0
