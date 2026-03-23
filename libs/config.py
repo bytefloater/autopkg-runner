@@ -25,13 +25,20 @@ class ModuleSettings:
     garbage_collector: dict[str, any]
     generate_report: dict[str, any]
     notify: dict[str, any]
+    update_repos: dict[str, any]
+
+@dataclass(frozen=True)
+class LogSettings:
+    level: str
+    logtofile_enable: bool
+    logtofile_path: Path
 
 @dataclass(frozen=True)
 class PipelineConfig:
     autopkg: AutopkgConfig
     repository: RepositoryConfig
     module_settings: ModuleSettings
-    log_level: str
+    log_settings: LogSettings
     flags: list[str]
 
 def load_config(path: str) -> PipelineConfig:
@@ -61,7 +68,12 @@ def load_config(path: str) -> PipelineConfig:
             garbage_collector=raw["module_settings"]["core.garbage_collector"],
             generate_report=raw["module_settings"]["core.generate_report"],
             notify=raw["module_settings"]["core.notify"],
+            update_repos=raw["module_settings"]["core.update_repos"]
         ),
-        log_level=raw["log_level"],
+        log_settings=LogSettings(
+            level=raw["log_settings"]["level"],
+            logtofile_enable=raw["log_settings"]["logtofile_enable"],
+            logtofile_path=Path(raw["log_settings"]["logtofile_path"]).expanduser()
+        ),
         flags=raw["flags"],
     )

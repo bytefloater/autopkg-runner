@@ -3,11 +3,12 @@ import inspect
 import platform
 import sys
 import textwrap
-from logbook import Logger, Processor, StreamHandler
+from datetime import datetime
+from logbook import Logger, Processor, StreamHandler, FileHandler
 
 from __info__ import LOGGER_NAME, FRIENDLY_APP_NAME, APP_VERSION_STR, APP_CHANNEL
 from libs.stage import Stage
-from libs.config import load_config
+from libs.config import load_config, LogSettings
 from libs.orchestrator import Orchestrator
 
 
@@ -27,7 +28,7 @@ def _inject_classprefix(record):
     # Fallback if nothing found
     record.extra['classprefix'] = ''
 
-def setup_logger(log_level) -> Logger:
+def setup_logger(log_settings: LogSettings) -> Logger:
     FORMAT_STRING = '[{record.time:%Y-%m-%d %H:%M:%S.%f}] {record.level_name:<8} : [{record.extra[classprefix]}{record.func_name}] {record.message}'
 
     # Enable class name injection into logging calls
@@ -37,11 +38,20 @@ def setup_logger(log_level) -> Logger:
     if sys.stdout:
         streamhandler = StreamHandler(
             sys.stdout,
-            level=log_level.upper(),
+            level=log_settings.level.upper(),
             bubble=True,
             format_string=FORMAT_STRING
         )
         streamhandler.push_application()
+    
+    if log_settings.logtofile_enable:
+        filehandler = FileHandler(
+            f"{log_settings.logtofile_path}/{datetime.now().strftime('%Y-%m-%d')}.log",
+            level=log_settings.level.upper(),
+            bubble=True,
+            format_string=FORMAT_STRING,
+        )
+        filehandler.push_application()
 
     return Logger(LOGGER_NAME)
 
@@ -77,7 +87,7 @@ if __name__ == "__main__":
     # Application setup
     args = parser.parse_args()
     config = load_config(args.config)
-    logger = setup_logger(config.log_level)
+    logger = setup_logger(config.log_settings)
 
     # Platform Check
     if platform.system() != "Darwin":
