@@ -4,13 +4,14 @@ from libs.stage import Stage
 from libs.config import PipelineConfig
 from stages import (
     EnvironmentCheck, TrustVerification, MountRepository, RunAutoPkg,
-    GarbageCollector, GenerateReport, NotifyOnCompletion
+    GarbageCollector, GenerateReport, NotifyOnCompletion, UpdateRepos
 )
 
 class Orchestrator:
     STAGE_CLASSES: list[Stage] = [
         EnvironmentCheck,
         MountRepository,
+        UpdateRepos,
         TrustVerification,
         RunAutoPkg,
         GarbageCollector,

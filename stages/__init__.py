@@ -5,6 +5,7 @@ from .run_autopkg import RunAutoPkg
 from .generate_report import GenerateReport
 from .garbage_collector import GarbageCollector
 from .notify import NotifyOnCompletion
+from .update_repos import UpdateRepos
 
 __all__ = [
     "EnvironmentCheck",
@@ -13,5 +14,6 @@ __all__ = [
     "RunAutoPkg",
     "GenerateReport",
     "GarbageCollector",
-    "NotifyOnCompletion"
+    "NotifyOnCompletion",
+    "UpdateRepos"
 ]
