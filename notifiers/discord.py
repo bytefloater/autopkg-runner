@@ -2,10 +2,11 @@
 A helper module for sending notifications to Discord
 """
 import http.client
-import urllib
+from typing import Optional
+from urllib.parse import urlencode
 
 
-def send(configuration: dict, message: str, title: str=None):
+def send(configuration: dict, message: str, title: Optional[str]=None):
     """Send a pushover notification
 
     Parameters:
@@ -28,7 +29,7 @@ def send(configuration: dict, message: str, title: str=None):
 
     conn.request(
         "POST", f"/api/webhooks/{configuration['webhook_id']}/{configuration['webhook_token']}",
-        urllib.parse.urlencode(dict(parameters)),
+        urlencode(dict(parameters)),
         {"Content-type": "application/x-www-form-urlencoded"}
     )
     conn.getresponse()

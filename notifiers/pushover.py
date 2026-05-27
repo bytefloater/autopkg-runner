@@ -2,10 +2,11 @@
 A helper module for sending notifications to Pushover
 """
 import http.client
-import urllib
+from typing import Optional
+from urllib.parse import urlencode
 
 
-def send(configuration: dict, message: str, title: str=None):
+def send(configuration: dict, message: str, title: Optional[str]=None):
     """Send a pushover notification
 
     Parameters:
@@ -32,7 +33,7 @@ def send(configuration: dict, message: str, title: str=None):
 
     conn.request(
         "POST", "/1/messages.json",
-        urllib.parse.urlencode(dict(parameters)),
+        urlencode(dict(parameters)),
         {"Content-type": "application/x-www-form-urlencoded"}
     )
     conn.getresponse()
