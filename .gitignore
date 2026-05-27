@@ -181,6 +181,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Django collected static
+staticfiles/
+
 # Prevent accidental publishing of private settings
 script_settings.plist
 config.json
