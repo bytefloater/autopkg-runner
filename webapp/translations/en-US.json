@@ -1,0 +1,115 @@
+{
+    "NAME": "English (United States)",
+    "APP": {
+        "NAME": "AutoPkg Runner",
+        "VERSION": "${project.version}",
+
+        "STATE_SUCCESS": "Success",
+        "STATE_RUNNING": "Running",
+        "STATE_FAILURE": "Failure",
+        "STATE_LIVE": "Live",
+
+        "DARKMODE_STATE_LIGHT": "Light Mode",
+        "DARKMODE_STATE_DARK": "Dark Mode",
+        "DARKMODE_STATE_SYSTEM": "Follow System",
+        
+        "ACTION_TRIGGER_RUN": "Trigger Run",
+        "ACTION_VIEW_LOGS": "View Logs",
+        "ACTION_CHANGE_PWD": "Change Password",
+        "ACTION_RESET_PWD": "Reset Password",
+        "ACTION_LOGIN": "Sign In",
+        "ACTION_LOGOUT": "Sign Out",
+        "ACTION_EDIT": "Edit",
+
+        "VIEWS_DASHBOARD": "Dashboard",
+        "VIEWS_RUNS": "Runs",
+        "VIEWS_SCHEDULES": "Schedule",
+        "VIEWS_CONFIG": "Configuration",
+        "VIEWS_TOKENS": "Tokens",
+        "VIEWS_USERS": "Users",
+
+        "FIELDNAME_USERNAME": "Username",
+        "FIELDNANE_PASSWORD": "Password",
+
+        "ROLE_SUPERUSER": "Administrator",
+
+        "RUN_TRIGGER_TYPE_WEB": "Manual",
+        "RUN_TRIGGER_TYPE_API": "API",
+        "RUN_TRIGGER_TYPE_SCHEULE": "Schedule"
+    },
+    "DASHBOARD_VIEW": {
+        "HEADER_RUN_COUNT": "Runs",
+        "HEADER_SUCCESS_RATE": "Success Rate",
+        "HEADER_NEXT_RUN": "Next Scheduled Run",
+
+        "STATE_NO_RUN_SCHEDULED": "Not Scheduled",
+
+        "ACTION_VIEW_LOGS": "@:APP.ACTION_VIEW_LOGS",
+        "ACTION_VIEW_ALL": "View All"
+    },
+    "SCHEDULE_VIEW": {
+        "DESC_SCHEDULER": "Configure when the AutoPkg pipeline runs automatically. Use standard cron syntax.",
+
+        "ENABLE_SCHEDULER_TOGGLE_HEADER": "Enable Scheduled Runs",
+        "ENABLE_SCHEDULER_TOGGLE_DESC": "When disabled, the pipeline only runs when triggered via the WebUI or API."
+    },
+    "TOKENS_VIEW": {
+        "SECTION_API_TOKENS": "API Tokens",
+        "SECTION_API_REFERENCE": "API Reference",
+
+        "ACTION_NEW_TOKEN": "New Token"
+    },
+    "USER_VIEW": {
+        "SECTION_USERS": "@:APP.VIEWS_USERS",
+        
+        "TABLE_CAT_USERNAME": "Username",
+        "TABLE_CAT_EMAIL": "Email",
+        "TABLE_CAT_ACTIVE": "Active",
+        "TABLE_CAT_ROLE": "Role",
+
+        "ACTION_ADD_USER": "Add User"
+    },
+    "CONFIG_VIEW": {
+        "HEADER_CONFIG": "@:APP.VIEWS_CONFIG",
+
+        "REPOTYPE_LOCAL": "Local",
+        "REPOTYPE_REMOTE": "Remote",
+
+        "CONNECTION_TYPE_SSH": "SSH",
+        "CONNECTION_TYPE_SMB": "SMB",
+        
+        "TAB_AUTOPKG": "AutoPkg",
+        "TAB_REPO": "Repository",
+        "TAB_WORKFLOW": "Workflow",
+        "TAB_GARBAGE_COLLECTOR": "Garbage Collector",
+        "TAB_NOTIFICATIONS": "Notifications",
+        "TAB_LOGGING": "Logging",
+        "TAB_WEBINTERFACE": "User Interface",
+
+        "ACTION_SAVE_CONFIG": "Save Configuration",
+        "ACTION_SAVE_CONFIG_INFO": "Settings are applied to all new runs",
+
+        "OPT_AUTOPKG_BINARY": "AutoPkg Binary",
+        "OPT_AUTOPKG_BINARY_DESC": "Path to the AutoPkg Binary",
+        "OPT_AUTOPKG_CACHE_PATH": "Cache Path",
+        "OPT_AUTOPKG_CACHE_PATH_DESC": "Path to the AutoPkg Cache Directory",
+        "OPT_AUTOPKG_RECIPE_LIST": "AutoPkg Recipe List",
+        "OPT_AUTOPKG_RECIPE_LIST_DESC": "Path to the file containing the list of AutoPkg recipes to run",
+        "OPT_AUTOPKG_REPORT_PLIST": "Path to the AutoPkg Report Output PLIST",
+
+        "OPT_UPDATE_REPOS": "Update Repos",
+        "OPT_UPDATE_REPOS_DESC": "Update remote Git repositories before each run",
+
+        "OPT_REPO_TYPE": "Repository Type",
+        "OPT_CONNECTION_TYPE": "Connection Method",
+        "OPT_SERVER_HOST": "Server Host",
+        "OPT_SERVER_LOCAL_MNT_PATH": "Local Mount Path",
+        "OPT_SERVER_PUBLIC_URL": "Public URL",
+        
+        "OPT_SMB_SERVER_SHARE": "Server Share",
+
+        "OPT_LOG_LEVEL": "Log Level",
+
+        "OPT_LANG_SELECT": "Display Langauge"
+    }
+}
