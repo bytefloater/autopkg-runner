@@ -24,13 +24,12 @@ class MountRepository(Stage):
         self.check_dirs: list[str]  = config.repository.check_dirs
 
     def pre_check(self) -> bool:
-        if self._can_resolve_host():
-            if all([
-                self._is_server_available(self._resolve_host()),
-                self._is_mount_point_available(self.local_mnt)
-            ]):
-                return True
-        return False
+        if not self._can_resolve_host():
+            return False
+        return (
+            self._is_server_available(self._resolve_host())
+            and self._is_mount_point_available(self.local_mnt)
+        )
 
     def _can_resolve_host(self) -> bool:
         if is_ipv4(self.host):
@@ -71,7 +70,7 @@ class MountRepository(Stage):
                     addr_str=self._resolve_host(),
                     srv_share=self.server_share
                 ),
-                self.local_mnt
+                str(self.local_mnt)
             ], self.logger)
         except subprocess.CalledProcessError as err:
             raise RuntimeError from err
@@ -96,7 +95,7 @@ class MountRepository(Stage):
             self.logger.info("Unmounting remote server...")
             run_cmd([
                 "umount",
-                self.local_mnt
+                str(self.local_mnt)
             ], self.logger)
         except subprocess.CalledProcessError as err:
             self.logger.warning(str(err))
@@ -109,18 +108,31 @@ class MountRepository(Stage):
         except OSError:
             self.logger.error("The mount point specified is not an empty directory, please delete it manually.")
 
-    def _is_server_available(self, addr_str: str, port=445) -> bool:
+    def _is_server_available(self, addr_str: str, port: int=445, timeout: int=10) -> bool:
         addr = ipaddress.ip_address(addr_str)
         if not isinstance(addr, ipaddress.IPv4Address):
             raise TypeError("Connection address must be of type ipaddress.IPv4Address")
 
         self.logger.info(f"Checking server availability... ({addr_str})")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex((addr_str, port))
+        sock.settimeout(timeout)
+        try:
+            result = sock.connect_ex((addr_str, port))
+        except socket.timeout:
+            self.logger.error(
+                f"Server '{addr_str}' is not reachable: connection timed out after {timeout}s"
+            )
+            return False
+        finally:
+            sock.close()
 
         if result == 0:
             self.logger.info(f"Server '{addr_str}' is available")
             return True
+
+        self.logger.error(
+            f"Server '{addr_str}' is not reachable on port {port} (error code {result})"
+        )
         return False
 
     def _is_mount_point_available(self, mount_point) -> bool:
