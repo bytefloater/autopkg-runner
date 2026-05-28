@@ -1,0 +1,375 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}Run — AutoPkg Runner{% endblock %}
+
+{# iOS-style back button: chevron + previous-screen label #}
+{% block nav_left %}
+<a href="{% url 'run-list' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400
+          active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{# Status badge in the nav title; IDs allow JS to update it live via SSE #}
+{% block nav_title %}
+<span id="run-status-badge" class="inline-flex items-center gap-1.5">
+  <span id="run-status-dot"
+        class="w-2 h-2 rounded-full flex-shrink-0 {{ run.status|status_dot }}"></span>
+  <span id="run-status-text"
+        class="text-[17px] font-semibold
+          {% if run.status == 'success' %}text-green-500
+          {% elif run.status == 'running' %}text-blue-500
+          {% elif run.status == 'failed' %}text-red-500
+          {% elif run.status == 'cancelled' %}text-amber-500
+          {% else %}text-gray-500{% endif %}">
+    {{ run.get_status_display }}
+  </span>
+</span>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<div x-data="runDetail('{{ run.id }}', '{{ run.status }}')"
+     x-init="init()">
+
+  {# ── Stages ──────────────────────────────────────────────────────────────── #}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Stages</p>
+  <div id="stages-list" class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    {% for stage in stages %}
+    <div id="stage-row-{{ stage.order }}"
+         x-data="{ open: {% if stage.status == 'failed' %}true{% else %}false{% endif %} }">
+
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+
+        {# Icon container — ID keyed on stage.order so JS can swap it via SSE #}
+        <span id="stage-icon-{{ stage.order }}"
+              class="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+          {% if stage.status == 'success' %}
+            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+          {% elif stage.status == 'failed' %}
+            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          {% elif stage.status == 'running' %}
+            <svg class="w-4 h-4 text-blue-500 spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+            </svg>
+          {% else %}
+            <span class="w-3 h-3 rounded-full bg-gray-200 dark:bg-[#48484a] inline-block"></span>
+          {% endif %}
+        </span>
+
+        <span class="flex-1 text-[16px] text-gray-900 dark:text-white text-left">{{ stage.name }}</span>
+
+        <span id="stage-duration-{{ stage.order }}" class="text-[13px] text-gray-400 tabular-nums flex-shrink-0">
+          {% if stage.started_at and stage.completed_at %}{{ stage.started_at|duration:stage.completed_at }}{% endif %}
+        </span>
+
+        <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0 transition-transform duration-200"
+             :class="open ? 'rotate-180' : ''"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+
+      {# Stage log entries — uses logs_by_stage dict keyed by stage name #}
+      <div x-show="open"
+           x-transition:enter="transition ease-out duration-150"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-100">
+        {% with stage_logs=logs_by_stage|lookup:stage.name %}
+        <div class="bg-gray-950 max-h-64 overflow-y-auto">
+          {% if stage_logs %}
+          <div class="px-3 py-2 space-y-0.5">
+            {% for entry in stage_logs %}
+            <div class="log-line flex gap-2 py-0.5">
+              <span class="text-gray-600 flex-shrink-0 tabular-nums w-14">{{ entry.timestamp|date:"H:i:s" }}</span>
+              <span class="flex-shrink-0 w-14 text-right {{ entry.level|level_color }}">{{ entry.level }}</span>
+              <span class="text-gray-300 break-all">{{ entry.message }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="px-4 py-3 text-xs text-gray-600">No log entries for this stage.</p>
+          {% endif %}
+        </div>
+        {% endwith %}
+      </div>
+    </div>
+    {% empty %}
+    <div id="stages-placeholder" class="px-4 py-8 text-center">
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">No stage data yet.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Live log (only shown while run is active) ─────────────────────────── #}
+  {% if run.status == 'running' or run.status == 'pending' %}
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Live Output</p>
+  <div class="bg-gray-950 dark:bg-black mx-4 rounded-xl overflow-hidden" id="live-log-panel">
+    <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800/60">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Output</span>
+      <span x-show="!runComplete" class="flex items-center gap-1.5 text-xs text-blue-400">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+        Live
+      </span>
+      <span x-show="runComplete" x-cloak class="text-xs text-gray-500">Done</span>
+    </div>
+    <div class="p-3 space-y-0.5 h-52 overflow-y-auto" x-ref="logContainer">
+      <template x-for="(e, i) in liveEntries" :key="i">
+        <div class="log-line flex gap-2 py-0.5">
+          <span class="text-gray-600 flex-shrink-0 tabular-nums w-14" x-text="e.time"></span>
+          <span class="flex-shrink-0 w-14 text-right" :class="levelClass(e.level)" x-text="e.level"></span>
+          <span class="text-gray-300 break-all" x-text="e.message"></span>
+        </div>
+      </template>
+      <p class="text-gray-600 text-xs text-center py-8" x-show="liveEntries.length === 0">Connecting…</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Recipe results ─────────────────────────────────────────────────────── #}
+  {% for result in results %}
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+    {{ result.result_type|cut:"_"|capfirst }}
+  </p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    {% if result.data %}
+    {% for row in result.data %}
+    {% for key, val in row.items %}
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ key|capfirst }}</span>
+      <span class="text-[16px] text-gray-500 dark:text-gray-400 text-right ml-4 min-w-0 break-all">{{ val }}</span>
+    </div>
+    {% endfor %}
+    {% endfor %}
+    {% else %}
+    <div class="px-4 py-3">
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">No data.</p>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {# ── Run metadata ───────────────────────────────────────────────────────── #}
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Details</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">Triggered by</span>
+      <span class="text-[16px] text-gray-500 dark:text-gray-400">{{ run.triggered_by|capfirst }}</span>
+    </div>
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">Started</span>
+      <span class="text-[16px] text-gray-500 dark:text-gray-400 tabular-nums">{{ run.started_at|date:"d M Y, H:i:s" }}</span>
+    </div>
+    {% if run.completed_at %}
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">Duration</span>
+      <span class="text-[16px] text-gray-500 dark:text-gray-400 tabular-nums">{{ run.started_at|duration:run.completed_at }}</span>
+    </div>
+    {% endif %}
+    <div class="flex items-start justify-between px-4 py-3 gap-4">
+      <span class="text-[16px] text-gray-900 dark:text-white flex-shrink-0">Run ID</span>
+      <span class="text-[13px] font-mono text-gray-400 dark:text-gray-500 select-all text-right break-all">{{ run.id }}</span>
+    </div>
+  </div>
+
+  <div class="h-4"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function runDetail(runId, initialStatus) {
+  return {
+    currentStatus: initialStatus,
+    runComplete:   ['success', 'failed', 'cancelled'].includes(initialStatus),
+    liveEntries:   [],
+    eventSource:   null,
+
+    init() {
+      if (!this.runComplete) {
+        this.startSSE(runId);
+        // Close the SSE connection if the user navigates away via the SPA router
+        // (Alpine.destroyTree is called on the main element before swap)
+        this.$cleanup(() => {
+          if (this.eventSource) { this.eventSource.close(); this.eventSource = null; }
+        });
+      }
+    },
+
+    startSSE(runId) {
+      this.eventSource = new EventSource(`/runs/${runId}/stream/?from=0`);
+
+      this.eventSource.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+
+        if (data.type === 'log') {
+          // Guard: ignore entries delivered by a reconnect after completion
+          if (this.runComplete) return;
+          const t = new Date(data.timestamp).toTimeString().slice(0, 8);
+          this.liveEntries.push({ time: t, level: data.level, stage: data.stage, message: data.message });
+          this.$nextTick(() => {
+            const c = this.$refs.logContainer;
+            if (c) c.scrollTop = c.scrollHeight;
+          });
+
+        } else if (data.type === 'stage') {
+          this.handleStageUpdate(data);
+
+        } else if (data.type === 'complete') {
+          this.currentStatus = data.status;
+          this.runComplete   = true;
+          this.updateStatusBadge(data.status);
+          if (navigator.vibrate) {
+            navigator.vibrate(data.status === 'success' ? [40] : [30, 60, 30]);
+          }
+          this._closeSSE();
+        }
+      };
+
+      this.eventSource.addEventListener('done', () => { this._closeSSE(); });
+      this.eventSource.onerror = () => { this._closeSSE(); };
+    },
+
+    // Null out all handlers then close — prevents the browser auto-reconnect
+    // from re-delivering entries after the run finishes.
+    _closeSSE() {
+      if (this.eventSource) {
+        this.eventSource.onmessage = null;
+        this.eventSource.onerror   = null;
+        this.eventSource.close();
+        this.eventSource = null;
+      }
+    },
+
+    // Handle a stage SSE event — creates the row if it doesn't exist yet,
+    // then updates the icon and (if completed) the duration.
+    handleStageUpdate(data) {
+      const { order, status, name, started_at, completed_at } = data;
+
+      if (!document.getElementById(`stage-row-${order}`)) {
+        const list = document.getElementById('stages-list');
+        if (list) {
+          const placeholder = document.getElementById('stages-placeholder');
+          if (placeholder) placeholder.remove();
+
+          const row = document.createElement('div');
+          row.id = `stage-row-${order}`;
+          // Use Alpine x-data; auto-expand on failure
+          row.setAttribute('x-data', `{ open: ${status === 'failed'} }`);
+          row.innerHTML = `
+            <button @click="open = !open"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-left
+                           active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+              <span id="stage-icon-${order}"
+                    class="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                <span class="w-3 h-3 rounded-full bg-gray-200 dark:bg-[#48484a] inline-block"></span>
+              </span>
+              <span class="flex-1 text-[16px] text-gray-900 dark:text-white text-left">
+                ${this._esc(name)}
+              </span>
+              <span id="stage-duration-${order}"
+                    class="text-[13px] text-gray-400 tabular-nums flex-shrink-0"></span>
+              <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0 transition-transform duration-200"
+                   :class="open ? 'rotate-180' : ''"
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100">
+              <div class="bg-gray-950 max-h-64 overflow-y-auto">
+                <p class="px-4 py-3 text-xs text-gray-600">No log entries for this stage.</p>
+              </div>
+            </div>`;
+          list.appendChild(row);
+          if (window.Alpine) Alpine.initTree(row);
+        }
+      }
+
+      this.updateStageIcon(order, status);
+
+      if (started_at && completed_at) {
+        const dEl = document.getElementById(`stage-duration-${order}`);
+        if (dEl) dEl.textContent = this._dur(started_at, completed_at);
+      }
+
+      if (status === 'running') {
+        const row = document.getElementById(`stage-row-${order}`);
+        if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    },
+
+    updateStageIcon(order, status) {
+      const el = document.getElementById(`stage-icon-${order}`);
+      if (!el) return;
+      const icons = {
+        running: `<svg class="w-4 h-4 text-blue-500 spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>`,
+        success: `<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>`,
+        failed:  `<svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>`,
+      };
+      el.innerHTML = icons[status] ||
+        `<span class="w-3 h-3 rounded-full bg-gray-200 dark:bg-[#48484a] inline-block"></span>`;
+    },
+
+    updateStatusBadge(status) {
+      const cfg = {
+        success:   { dotClass: 'bg-green-500',  textClass: 'text-green-500',  label: 'Success' },
+        failed:    { dotClass: 'bg-red-500',     textClass: 'text-red-500',    label: 'Failed' },
+        cancelled: { dotClass: 'bg-amber-500',   textClass: 'text-amber-500',  label: 'Cancelled' },
+      }[status];
+      if (!cfg) return;
+      const dot  = document.getElementById('run-status-dot');
+      const text = document.getElementById('run-status-text');
+      if (dot)  dot.className  = `w-2 h-2 rounded-full flex-shrink-0 ${cfg.dotClass}`;
+      if (text) {
+        text.className = `text-[17px] font-semibold ${cfg.textClass}`;
+        text.textContent = cfg.label;
+      }
+    },
+
+    levelClass(l) {
+      return {
+        DEBUG:    'text-gray-500',
+        INFO:     'text-gray-300',
+        NOTICE:   'text-blue-400',
+        WARNING:  'text-yellow-400',
+        ERROR:    'text-red-400',
+        CRITICAL: 'text-red-300',
+      }[l] || 'text-gray-400';
+    },
+
+    // Format a duration from ISO timestamps
+    _dur(a, b) {
+      const s = Math.floor((new Date(b) - new Date(a)) / 1000);
+      if (s < 0)  return '—';
+      if (s < 60) return `${s}s`;
+      const m = Math.floor(s / 60), r = s % 60;
+      return m < 60 ? `${m}m ${r}s` : `${Math.floor(m / 60)}h ${m % 60}m`;
+    },
+
+    // Minimal HTML escaping for dynamic stage names
+    _esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    },
+  };
+}
+</script>
+{% endblock %}

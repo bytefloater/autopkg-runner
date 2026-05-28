@@ -1,0 +1,56 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.CONFIG_VIEW.TAB_AUTOPKG }} — {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.CONFIG_VIEW.TAB_AUTOPKG }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="config-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="config-form">
+  {% csrf_token %}
+
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.TAB_AUTOPKG }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_AUTOPKG_BINARY }}</label>
+      <p class="text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">{{ t.CONFIG_VIEW.OPT_AUTOPKG_BINARY_DESC }}</p>
+      <input type="text" name="autopkg.bin_path" value="{{ s|lookup:'autopkg.bin_path' }}"
+             class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+    </div>
+
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_AUTOPKG_CACHE_PATH }}</label>
+      <p class="text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">{{ t.CONFIG_VIEW.OPT_AUTOPKG_CACHE_PATH_DESC }}</p>
+      <input type="text" name="autopkg.cache_path" value="{{ s|lookup:'autopkg.cache_path' }}"
+             class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+    </div>
+
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_AUTOPKG_RECIPE_LIST }}</label>
+      <p class="text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">{{ t.CONFIG_VIEW.OPT_AUTOPKG_RECIPE_LIST_DESC }}</p>
+      <input type="text" name="autopkg.recipe_list" value="{{ s|lookup:'autopkg.recipe_list' }}"
+             class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+    </div>
+
+  </div>
+
+  <div class="h-8"></div>
+</form>
+{% endblock %}

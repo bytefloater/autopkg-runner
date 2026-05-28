@@ -20,6 +20,8 @@
     "ACTION_LOGIN": "Se connecter",
     "ACTION_LOGOUT": "Se déconnecter",
     "ACTION_EDIT": "Modifier",
+    "ACTION_SAVE": "Enregistrer",
+    "ACTION_BACK": "Retour",
     
     "VIEWS_DASHBOARD": "Tableau de bord",
     "VIEWS_RUNS": "Courses",

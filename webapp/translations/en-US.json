@@ -20,6 +20,8 @@
         "ACTION_LOGIN": "Sign In",
         "ACTION_LOGOUT": "Sign Out",
         "ACTION_EDIT": "Edit",
+        "ACTION_SAVE": "Save",
+        "ACTION_BACK": "Back",
 
         "VIEWS_DASHBOARD": "Dashboard",
         "VIEWS_RUNS": "Runs",

@@ -1,0 +1,125 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}Dashboard — AutoPkg Runner{% endblock %}
+{% block nav_title %}AutoPkg Runner{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+{# ── 30-day stats ────────────────────────────────────────────────────────── #}
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="grid grid-cols-2 divide-x divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="px-4 py-4">
+      <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Runs (30d)</p>
+      <p class="text-[28px] font-bold mt-1 text-gray-900 dark:text-white tabular-nums leading-tight">{{ total_runs_30d }}</p>
+    </div>
+    <div class="px-4 py-4">
+      <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Success Rate</p>
+      <p class="text-[28px] font-bold mt-1 tabular-nums leading-tight
+                {% if success_rate_30d >= 90 %}text-green-500
+                {% elif success_rate_30d >= 70 %}text-yellow-500
+                {% else %}text-red-500{% endif %}">
+        {{ success_rate_30d }}%
+      </p>
+    </div>
+  </div>
+</div>
+
+{# ── Next scheduled run + Trigger Run ────────────────────────────────────── #}
+<div class="h-4"></div>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="flex items-center justify-between px-4 py-3">
+    <span class="text-[16px] text-gray-900 dark:text-white">Next Run</span>
+    <span class="text-[16px] text-gray-500 dark:text-gray-400">
+      {% if next_run %}{{ next_run|date:"D, d M H:i" }}{% else %}Not scheduled{% endif %}
+    </span>
+  </div>
+
+  <div x-data="{ loading: false }">
+    <button
+      @click="
+        if (loading) return;
+        loading = true;
+        fetch('{% url 'trigger-run' %}', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': '{{ csrf_token }}', 'HX-Request': 'true' }
+        })
+        .then(r => r.json())
+        .then(d => { window.location.href = '/runs/' + d.run_id + '/'; })
+        .catch(() => { loading = false; });
+      "
+      :disabled="loading"
+      class="w-full flex items-center gap-3 px-4 py-3
+             active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75
+             disabled:opacity-60">
+      <span class="w-[29px] h-[29px] rounded-[7px] flex items-center justify-center flex-shrink-0 transition-colors duration-75"
+            :class="loading ? 'bg-gray-400 dark:bg-gray-600' : 'bg-blue-600'">
+        <template x-if="!loading">
+          {% lucide "play" "w-4 h-4 text-white" %}
+        </template>
+        <template x-if="loading">
+          <svg class="w-4 h-4 text-white spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+          </svg>
+        </template>
+      </span>
+      <span class="flex-1 text-[16px] text-left text-gray-900 dark:text-white"
+            x-text="loading ? 'Starting…' : 'Run Now'"></span>
+    </button>
+  </div>
+</div>
+
+{# ── Recent Runs ─────────────────────────────────────────────────────────── #}
+<div id="recent-runs-section"
+     hx-get="{% url 'dashboard' %}"
+     hx-trigger="every 10s"
+     hx-select="#recent-runs-section"
+     hx-target="#recent-runs-section"
+     hx-swap="outerHTML">
+
+<p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Recent Runs</p>
+
+{% if recent_runs %}
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  {% for run in recent_runs %}
+  <a href="{% url 'run-detail' run.id %}"
+     class="flex items-center gap-3 px-4 py-3 active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 {{ run.status|status_dot }}"></span>
+    <div class="flex-1 min-w-0">
+      <p class="text-[16px] font-medium text-gray-900 dark:text-white">{{ run.started_at|date:"d M, H:i" }}</p>
+      <p class="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">
+        {{ run.triggered_by|capfirst }}{% if run.completed_at %} · {{ run.started_at|duration:run.completed_at }}{% endif %}
+      </p>
+    </div>
+    <span class="text-[13px] flex-shrink-0
+      {% if run.status == 'success' %}text-green-500
+      {% elif run.status == 'running' %}text-blue-500
+      {% elif run.status == 'failed' %}text-red-500
+      {% elif run.status == 'cancelled' %}text-amber-500
+      {% else %}text-gray-500{% endif %}">
+      {{ run.get_status_display }}
+    </span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+  {% endfor %}
+</div>
+<div class="mt-3 text-center">
+  <a href="{% url 'run-list' %}"
+     class="text-[15px] text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+    See all runs
+  </a>
+</div>
+{% else %}
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+  <div class="flex flex-col items-center justify-center py-20">
+    {% lucide "list" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
+    <p class="text-[15px] text-gray-400 dark:text-gray-500">No runs yet. Tap Run Now to start.</p>
+  </div>
+</div>
+{% endif %}
+
+</div>{# /recent-runs-section #}
+<div class="h-4"></div>
+{% endblock %}

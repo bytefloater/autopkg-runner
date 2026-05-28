@@ -1,0 +1,93 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.APP.VIEWS_CONFIG }} — {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.APP.VIEWS_CONFIG }}{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+{# ── Section 1: Pipeline ─────────────────────────────────────────────────── #}
+<p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Pipeline</p>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+  <a href="{% url 'config-autopkg' %}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-[29px] h-[29px] rounded-[7px] bg-orange-500 flex items-center justify-center flex-shrink-0">
+      {% lucide "package" "w-4 h-4 text-white" %}
+    </span>
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_AUTOPKG }}</span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+
+  <a href="{% url 'config-workflow' %}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-[29px] h-[29px] rounded-[7px] bg-purple-500 flex items-center justify-center flex-shrink-0">
+      {% lucide "git-branch" "w-4 h-4 text-white" %}
+    </span>
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_WORKFLOW }}</span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+
+  <a href="{% url 'config-repository' %}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-[29px] h-[29px] rounded-[7px] bg-blue-500 flex items-center justify-center flex-shrink-0">
+      {% lucide "hard-drive" "w-4 h-4 text-white" %}
+    </span>
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_REPO }}</span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+
+  <a href="{% url 'config-gc' %}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-[29px] h-[29px] rounded-[7px] bg-gray-500 flex items-center justify-center flex-shrink-0">
+      {% lucide "trash-2" "w-4 h-4 text-white" %}
+    </span>
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_GARBAGE_COLLECTOR }}</span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+
+</div>
+
+{# ── Section 2: System ───────────────────────────────────────────────────── #}
+<p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">System</p>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+  <a href="{% url 'config-notifications' %}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-[29px] h-[29px] rounded-[7px] bg-red-500 flex items-center justify-center flex-shrink-0">
+      {% lucide "bell" "w-4 h-4 text-white" %}
+    </span>
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+
+  <a href="{% url 'config-logging' %}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-[29px] h-[29px] rounded-[7px] bg-teal-500 flex items-center justify-center flex-shrink-0">
+      {% lucide "file-text" "w-4 h-4 text-white" %}
+    </span>
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_LOGGING }}</span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+
+</div>
+
+{# ── Section 3: App ──────────────────────────────────────────────────────── #}
+<p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.TAB_WEBINTERFACE }}</p>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+  <a href="{% url 'config-ui' %}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-[29px] h-[29px] rounded-[7px] bg-indigo-500 flex items-center justify-center flex-shrink-0">
+      {% lucide "globe" "w-4 h-4 text-white" %}
+    </span>
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_LANG_SELECT }}</span>
+    <span class="text-[14px] text-gray-400 dark:text-gray-500 mr-1">{{ current_language }}</span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+
+</div>
+
+<div class="h-8"></div>
+{% endblock %}

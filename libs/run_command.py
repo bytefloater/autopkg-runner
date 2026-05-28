@@ -1,10 +1,11 @@
 import os
+import select
 import subprocess
-import threading
 from logbook import Logger
 
+
 def run_cmd(command: list[str], logger: Logger):
-    # for Python children, ensure unbuffered; harmless for others
+    # For Python children, ensure unbuffered output; harmless for others.
     env = os.environ.copy()
     env.setdefault("PYTHONUNBUFFERED", "1")
 
@@ -12,27 +13,30 @@ def run_cmd(command: list[str], logger: Logger):
         command,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        text=True,        # universal_newlines=True
-        bufsize=1,        # line‑buffering
+        text=True,
+        bufsize=1,   # line-buffered
         env=env,
     )
 
-    def log_stream(stream, log_method):
-        for line in stream:
-            log_method(line.rstrip())
-        stream.close()
+    # Read both pipes in the *calling* thread rather than spawning reader
+    # threads.  This is essential so that Logbook's thread-local handler
+    # stack — which holds DBLogHandler — is active when each line is logged.
+    # select.select() lets us multiplex both pipes without blocking on either.
+    open_fds = {proc.stdout, proc.stderr}
+    while open_fds:
+        readable, _, _ = select.select(open_fds, [], [])
+        for fd in readable:
+            line = fd.readline()
+            if line:
+                if fd is proc.stdout:
+                    logger.info(line.rstrip())
+                else:
+                    logger.error(line.rstrip())
+            else:
+                # EOF on this pipe — process has closed it.
+                open_fds.discard(fd)
 
-    threads = [
-        threading.Thread(target=log_stream, args=(proc.stdout, logger.info), daemon=True),
-        threading.Thread(target=log_stream, args=(proc.stderr, logger.error), daemon=True),
-    ]
-    for t in threads:
-        t.start()
-
-    returncode = proc.wait()
-    for t in threads:
-        t.join()
-
-    if returncode:
-        logger.error(f"Command {command!r} exited with code {returncode}")
-        raise subprocess.CalledProcessError(returncode, command)
+    proc.wait()
+    if proc.returncode:
+        logger.error(f"Command {command!r} exited with code {proc.returncode}")
+        raise subprocess.CalledProcessError(proc.returncode, command)

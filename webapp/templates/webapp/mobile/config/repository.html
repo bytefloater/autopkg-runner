@@ -1,0 +1,145 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.CONFIG_VIEW.TAB_REPO }} — {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.CONFIG_VIEW.TAB_REPO }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="config-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="config-form"
+      x-data="{
+        repoType: '{{ s|lookup:'repository.type'|default:'remote' }}',
+        connType: '{{ s|lookup:'repository.connection_type'|default:'smb' }}'
+      }">
+  {% csrf_token %}
+
+  {# ── Type selector ──────────────────────────────────────────────────────── #}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_REPO_TYPE }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.REPOTYPE_LOCAL }}</span>
+      <input type="radio" name="repository.type" value="local" x-model="repoType" class="w-5 h-5 accent-blue-600">
+    </label>
+
+    <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.REPOTYPE_REMOTE }}</span>
+      <input type="radio" name="repository.type" value="remote" x-model="repoType" class="w-5 h-5 accent-blue-600">
+    </label>
+
+  </div>
+
+  {# ── Local path ─────────────────────────────────────────────────────────── #}
+  <div x-show="repoType === 'local'" x-transition>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Local Repository</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Repository Path</label>
+        <input type="text" name="repository.local_path" value="{{ s|lookup:'repository.local_path' }}"
+               placeholder="/Volumes/Munki"
+               class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+      </div>
+    </div>
+  </div>
+
+  {# ── Remote settings ────────────────────────────────────────────────────── #}
+  <div x-show="repoType === 'remote'" x-transition>
+
+    {# Connection type #}
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_CONNECTION_TYPE }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.CONNECTION_TYPE_SMB }}</span>
+        <input type="radio" name="repository.connection_type" value="smb" x-model="connType" class="w-5 h-5 accent-blue-600">
+      </label>
+      <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.CONNECTION_TYPE_SSH }}</span>
+        <input type="radio" name="repository.connection_type" value="sftp" x-model="connType" class="w-5 h-5 accent-blue-600">
+      </label>
+    </div>
+
+    {# Credentials — shown for all remote types #}
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Credentials</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
+         x-data="{ showPw: false }">
+
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Username</label>
+        <input type="text" name="repository.username" value="{{ s|lookup:'repository.username' }}"
+               autocomplete="username"
+               class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+      </div>
+
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Password</label>
+        <div class="flex gap-2">
+          <input :type="showPw ? 'text' : 'password'" name="repository.password"
+                 value="{{ s|lookup:'repository.password' }}"
+                 autocomplete="current-password"
+                 class="flex-1 text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+          <button type="button" @click="showPw = !showPw"
+                  class="flex-shrink-0 text-[13px] font-medium text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75"
+                  x-text="showPw ? 'Hide' : 'Show'"></button>
+        </div>
+      </div>
+
+    </div>
+
+    {# SMB-specific settings #}
+    <div x-show="connType === 'smb'" x-transition>
+      <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.CONNECTION_TYPE_SMB }} Server</p>
+      <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+        <div class="px-4 py-3">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_HOST }}</label>
+          <input type="text" name="repository.host" value="{{ s|lookup:'repository.host' }}"
+                 placeholder="munki.example.com"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+
+        <div class="px-4 py-3">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SMB_SERVER_SHARE }}</label>
+          <input type="text" name="repository.share" value="{{ s|lookup:'repository.share' }}"
+                 placeholder="Munki"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+
+        <div class="px-4 py-3">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_LOCAL_MNT_PATH }}</label>
+          <input type="text" name="repository.mount_path" value="{{ s|lookup:'repository.mount_path' }}"
+                 placeholder="/tmp/Munki"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+
+        <div class="px-4 py-3">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_PUBLIC_URL }}</label>
+          <input type="url" name="repository.public_url" value="{{ s|lookup:'repository.public_url' }}"
+                 placeholder="https://munki.example.com"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+
+      </div>
+    </div>
+
+  </div>{# end remote #}
+
+  <div class="h-8"></div>
+
+</form>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.CONFIG_VIEW.TAB_WEBINTERFACE }} — {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.CONFIG_VIEW.TAB_WEBINTERFACE }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="config-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="config-form">
+  {% csrf_token %}
+
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_LANG_SELECT }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    {% for code, name in available_languages %}
+    <label class="flex items-center justify-between px-4 py-[13px] cursor-pointer
+                  active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ name }}</span>
+      <input type="radio" name="ui.language" value="{{ code }}"
+             {% if current_language == code %}checked{% endif %}
+             class="w-5 h-5 accent-blue-600">
+    </label>
+    {% endfor %}
+
+  </div>
+
+  <div class="h-8"></div>
+</form>
+{% endblock %}

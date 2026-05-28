@@ -14,8 +14,7 @@ class UpdateRepos(Stage):
         super().__init__(config, ctx, logger)
 
         self.autopkg_fpath: Path          = config.autopkg.bin_path
-        update_repos_settings: dict       = config.module_settings.update_repos
-        self.update_before_each_run: bool = update_repos_settings["update_before_each_run"]
+        self.update_before_each_run: bool = config.update_repos
         self.error_flag: bool             = False
 
     def run(self) -> list:
@@ -29,7 +28,7 @@ class UpdateRepos(Stage):
         # Capture the repo-list command output
         try:
             run_cmd([
-                self.autopkg_fpath,
+                str(self.autopkg_fpath),
                 "repo-list"
             ], cmd_out)
         except subprocess.CalledProcessError:
@@ -49,7 +48,7 @@ class UpdateRepos(Stage):
         try:
             for url in repo_urls:
                 run_cmd([
-                    self.autopkg_fpath,
+                    str(self.autopkg_fpath),
                     "repo-update",
                     url
                 ], self.logger)

@@ -1,0 +1,389 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}Run {{ run.id|truncatechars:8 }} — AutoPkg Runner{% endblock %}
+
+{% block content %}
+<div class="space-y-4" x-data="runDetail('{{ run.id }}', '{{ run.status }}')" x-init="init()">
+
+  {# ── Breadcrumb + run header ── #}
+  <div class="flex items-center gap-3 flex-wrap">
+    <a href="{% url 'run-list' %}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1">
+      {% lucide "chevron-left" "w-4 h-4" %} All Runs
+    </a>
+    <span class="text-gray-300 dark:text-gray-600">/</span>
+    <span class="text-sm font-mono text-gray-600 dark:text-gray-300">{{ run.id }}</span>
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ml-auto"
+          :class="statusBadgeClass(currentStatus)">
+      <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass(currentStatus)"></span>
+      <span x-text="statusLabel(currentStatus)"></span>
+    </span>
+  </div>
+
+  {# ── Meta row ── #}
+  <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-4 flex-wrap items-center">
+    <span>Triggered by <strong class="text-gray-700 dark:text-gray-300">{{ run.triggered_by }}</strong></span>
+    <span>Started <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|date:"d M Y, H:i:s" }}</strong></span>
+    {% if run.completed_at %}
+    <span>Duration <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|duration:run.completed_at }}</strong></span>
+    {% endif %}
+    <span class="text-xs text-blue-500 dark:text-blue-400 tabular-nums" x-text="liveStatus"></span>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════════ #}
+  {# ACCORDION — one panel per stage                               #}
+  {# ══════════════════════════════════════════════════════════════ #}
+  <div class="space-y-2">
+
+    {# ── Server-rendered stages (completed or partially started) ── #}
+    {% for stage in stages %}
+    <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+
+      {# Header #}
+      <button type="button"
+              @click="openStage = openStage === '{{ stage.name }}' ? null : '{{ stage.name }}'"
+              class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors">
+
+        {# Expand chevron #}
+        <span class="flex-shrink-0 text-gray-400 dark:text-gray-500 transition-transform duration-200"
+              :class="openStage === '{{ stage.name }}' ? 'rotate-90' : ''">
+          {% lucide "chevron-right" "w-4 h-4" %}
+        </span>
+
+        {# Status icon #}
+        <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+          <template x-if="(stageStatuses['{{ stage.name }}'] || '{{ stage.status }}') === 'success'">
+            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          </template>
+          <template x-if="(stageStatuses['{{ stage.name }}'] || '{{ stage.status }}') === 'failed'">
+            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+          </template>
+          <template x-if="(stageStatuses['{{ stage.name }}'] || '{{ stage.status }}') === 'running'">
+            <svg class="w-4 h-4 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+          </template>
+          <template x-if="!['success','failed','running'].includes(stageStatuses['{{ stage.name }}'] || '{{ stage.status }}')">
+            <span class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+          </template>
+        </span>
+
+        {# Stage name #}
+        <span class="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ stage.name }}</span>
+
+        {# Status badge #}
+        <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
+              :class="stageBadgeClass(stageStatuses['{{ stage.name }}'] || '{{ stage.status }}')">
+          <span x-text="statusLabel(stageStatuses['{{ stage.name }}'] || '{{ stage.status }}')"></span>
+        </span>
+
+        {# Duration #}
+        {% if stage.started_at and stage.completed_at %}
+        <span class="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums ml-1">{{ stage.started_at|duration:stage.completed_at }}</span>
+        {% endif %}
+      </button>
+
+      {# Log body #}
+      <div x-show="openStage === '{{ stage.name }}'"
+           x-transition:enter="transition ease-out duration-150"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-100"
+           class="bg-gray-950 dark:bg-black border-t border-gray-800 overflow-hidden">
+        <div class="p-3 space-y-0.5 max-h-80 overflow-y-auto" data-stage-log="{{ stage.name }}">
+
+          {# Server-rendered log lines for this stage #}
+          {% with stage_logs=logs_by_stage|lookup:stage.name %}
+          {% if stage_logs %}
+          {% for entry in stage_logs %}
+          <div class="log-line flex gap-2 px-1 py-0.5">
+            <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16">{{ entry.timestamp|date:"H:i:s" }}</span>
+            <span class="flex-shrink-0 w-14 text-right text-xs {{ entry.level|level_color }}">{{ entry.level }}</span>
+            <span class="text-gray-300 text-xs break-all">{{ entry.message }}</span>
+          </div>
+          {% endfor %}
+          {% endif %}
+          {% endwith %}
+
+          {# Live log lines arriving via SSE #}
+          <template x-for="(entry, i) in (stageLogs['{{ stage.name }}'] || [])" :key="'l{{ stage.name }}'+i">
+            <div class="log-line flex gap-2 px-1 py-0.5">
+              <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16" x-text="entry.time"></span>
+              <span class="flex-shrink-0 w-14 text-right text-xs" :class="levelClass(entry.level)" x-text="entry.level"></span>
+              <span class="text-gray-300 text-xs break-all" x-text="entry.message"></span>
+            </div>
+          </template>
+
+          {# Empty state for in-progress stages with no logs yet #}
+          <template x-if="{% with sl=logs_by_stage|lookup:stage.name %}{{ sl|length|default:0 }}{% endwith %} === 0 && !(stageLogs['{{ stage.name }}'] || []).length">
+            <p class="text-gray-600 text-xs py-3 text-center italic">No log output for this stage yet.</p>
+          </template>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+
+    {# ── No server stages yet: Alpine-driven placeholders (live run) ── #}
+    <template x-for="stage in dynamicStages" :key="stage.name">
+      <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <button type="button" @click="openStage = openStage === stage.name ? null : stage.name"
+                class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors">
+          <span class="flex-shrink-0 text-gray-400 transition-transform duration-200"
+                :class="openStage === stage.name ? 'rotate-90' : ''">
+            {% lucide "chevron-right" "w-4 h-4" %}
+          </span>
+          <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+            <template x-if="stage.status === 'success'">
+              <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            </template>
+            <template x-if="stage.status === 'failed'">
+              <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+            </template>
+            <template x-if="stage.status === 'running'">
+              <svg class="w-4 h-4 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+            </template>
+            <template x-if="!['success','failed','running'].includes(stage.status)">
+              <span class="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+            </template>
+          </span>
+          <span class="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate" x-text="stage.name"></span>
+          <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold" :class="stageBadgeClass(stage.status)">
+            <span x-text="statusLabel(stage.status)"></span>
+          </span>
+        </button>
+        <div x-show="openStage === stage.name"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             class="bg-gray-950 dark:bg-black border-t border-gray-800">
+          <div class="p-3 space-y-0.5 max-h-80 overflow-y-auto" :data-stage-log="stage.name">
+            <template x-for="(entry, i) in (stageLogs[stage.name] || [])" :key="'d'+i">
+              <div class="log-line flex gap-2 px-1 py-0.5">
+                <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16" x-text="entry.time"></span>
+                <span class="flex-shrink-0 w-14 text-right text-xs" :class="levelClass(entry.level)" x-text="entry.level"></span>
+                <span class="text-gray-300 text-xs break-all" x-text="entry.message"></span>
+              </div>
+            </template>
+            <template x-if="!(stageLogs[stage.name] || []).length">
+              <p class="text-gray-600 text-xs py-3 text-center italic">Waiting for log output…</p>
+            </template>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    {# Waiting placeholder before any SSE stages arrive #}
+    <template x-if="dynamicStages.length === 0">
+      <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-8 text-center shadow-sm">
+        <svg class="w-6 h-6 text-blue-400 animate-spin mx-auto mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+        <p class="text-sm text-gray-400 dark:text-gray-500">Waiting for pipeline to start…</p>
+      </div>
+    </template>
+
+    {% endfor %}
+
+    {# ── General logs (no stage name) ── #}
+    {% with general_logs=logs_by_stage|lookup:"__general__" %}
+    {% if general_logs %}
+    <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      <button type="button" @click="openStage = openStage === '__general__' ? null : '__general__'"
+              class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors">
+        <span class="flex-shrink-0 text-gray-400 transition-transform duration-200" :class="openStage === '__general__' ? 'rotate-90' : ''">
+          {% lucide "chevron-right" "w-4 h-4" %}
+        </span>
+        <span class="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">General</span>
+        <span class="text-xs text-gray-400">{{ general_logs|length }} line{{ general_logs|length|pluralize }}</span>
+      </button>
+      <div x-show="openStage === '__general__'" class="bg-gray-950 dark:bg-black border-t border-gray-800">
+        <div class="p-3 space-y-0.5 max-h-80 overflow-y-auto">
+          {% for entry in general_logs %}
+          <div class="log-line flex gap-2 px-1 py-0.5">
+            <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16">{{ entry.timestamp|date:"H:i:s" }}</span>
+            <span class="flex-shrink-0 w-14 text-right text-xs {{ entry.level|level_color }}">{{ entry.level }}</span>
+            <span class="text-gray-300 text-xs break-all">{{ entry.message }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+  </div>{# end accordion #}
+
+  {# ── Recipe results ── #}
+  {% for result in results %}
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+    <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-800">
+      <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 capitalize">{{ result.result_type|cut:"_" }}</h3>
+    </div>
+    <div class="px-4 py-3 overflow-x-auto">
+      {% if result.data %}
+      <table class="text-xs w-full">
+        <thead>
+          <tr class="text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-slate-800">
+            {% for key in result.data.0.keys %}<th class="text-left pb-1 pr-4 font-medium">{{ key }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
+          {% for row in result.data %}
+          <tr>{% for val in row.values %}<td class="py-1 pr-4 text-gray-700 dark:text-gray-300 max-w-xs truncate">{{ val }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-xs text-gray-400">No data.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function runDetail(runId, initialStatus) {
+  return {
+    currentStatus: initialStatus,
+    openStage:     null,
+    stageStatuses: {},
+    stageLogs:     {},   // { stageName: [{time, level, message}] }
+    dynamicStages: [],   // for live runs before any server stages exist
+    liveStatus:    '',
+    eventSource:   null,
+
+    init() {
+      const terminal = ['success', 'failed', 'cancelled'];
+      if (!terminal.includes(initialStatus)) {
+        this.startSSE(runId);
+      }
+      // When a panel opens (auto or manual), scroll its log to the bottom
+      // so the most recent lines are immediately visible.
+      this.$watch('openStage', (name) => {
+        if (name) this.$nextTick(() => this.scrollToBottom(name, true));
+      });
+    },
+
+    startSSE(runId) {
+      this.liveStatus = '● Live';
+      this.eventSource = new EventSource(`/runs/${runId}/stream/?from=0`);
+
+      this.eventSource.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+
+        if (data.type === 'log') {
+          if (this.currentStatus !== 'running' && this.currentStatus !== 'pending') return;
+          const d = new Date(data.timestamp);
+          const time = d.toTimeString().slice(0, 8);
+          const key = data.stage || '__general__';
+          // Replace the whole stageLogs object so Alpine 3's Proxy detects the change.
+          this.stageLogs = {
+            ...this.stageLogs,
+            [key]: [...(this.stageLogs[key] || []), { time, level: data.level, message: data.message }],
+          };
+          // Auto-scroll after Alpine renders the new row.
+          this.$nextTick(() => this.scrollToBottom(key));
+
+        } else if (data.type === 'stage') {
+          // Replace the whole stageStatuses object — Alpine 3 won't react to
+          // in-place property assignment on a nested object.
+          this.stageStatuses = { ...this.stageStatuses, [data.name]: data.status };
+          // Maintain dynamicStages array for live-only renders.
+          // Replace the array rather than mutating in-place for the same reason.
+          const existing = this.dynamicStages.find(s => s.name === data.name);
+          if (existing) {
+            this.dynamicStages = this.dynamicStages.map(s =>
+              s.name === data.name ? { ...s, status: data.status } : s
+            );
+          } else {
+            this.dynamicStages = [
+              ...this.dynamicStages,
+              { name: data.name, status: data.status, order: data.order },
+            ].sort((a, b) => a.order - b.order);
+          }
+          // When a stage starts, open it (implicitly closing whichever
+          // stage was previously expanded in the single-open accordion).
+          if (data.status === 'running') {
+            this.openStage = data.name;
+          }
+
+        } else if (data.type === 'complete') {
+          this.currentStatus = data.status;
+          this.liveStatus = '';
+          this._closeSSE();
+        }
+      };
+
+      this.eventSource.addEventListener('done', () => {
+        this.liveStatus = '';
+        this._closeSSE();
+      });
+
+      this.eventSource.onerror = () => {
+        this.liveStatus = 'Disconnected';
+        this._closeSSE();
+      };
+    },
+
+    _closeSSE() {
+      if (this.eventSource) {
+        this.eventSource.onmessage = null;
+        this.eventSource.onerror   = null;
+        this.eventSource.close();
+        this.eventSource = null;
+      }
+    },
+
+    // Scroll a stage's log container to the bottom.
+    // Pass force=true (e.g. when a panel opens) to scroll unconditionally.
+    // Otherwise only scrolls if the user is already within 80px of the bottom,
+    // so manual scroll-up to read earlier lines is respected.
+    scrollToBottom(stageName, force = false) {
+      const el = document.querySelector(`[data-stage-log="${CSS.escape(stageName)}"]`);
+      if (!el) return;
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+      if (force || nearBottom) {
+        el.scrollTop = el.scrollHeight;
+      }
+    },
+
+    statusLabel(status) {
+      return { running: 'In Progress', success: 'Success', failed: 'Failure',
+               pending: 'Pending', cancelled: 'Cancelled', skipped: 'Skipped' }[status] || status;
+    },
+
+    stageBadgeClass(status) {
+      return {
+        running:   'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+        success:   'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+        failed:    'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+        pending:   'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400',
+        cancelled: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+        skipped:   'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-500',
+      }[status] || 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400';
+    },
+
+    statusBadgeClass(status) { return this.stageBadgeClass(status); },
+
+    statusDotClass(status) {
+      return {
+        running:   'bg-blue-500 animate-pulse',
+        success:   'bg-green-500',
+        failed:    'bg-red-500',
+        pending:   'bg-gray-400',
+        cancelled: 'bg-yellow-500',
+      }[status] || 'bg-gray-400';
+    },
+
+    // Must stay in sync with the `level_color` filter in webapp_extras.py.
+    levelClass(level) {
+      return {
+        DEBUG:    'text-gray-400 dark:text-gray-500',
+        INFO:     'text-gray-700 dark:text-gray-300',
+        NOTICE:   'text-blue-600 dark:text-blue-400',
+        WARNING:  'text-yellow-600 dark:text-yellow-400',
+        ERROR:    'text-red-600 dark:text-red-400',
+        CRITICAL: 'text-red-700 font-bold dark:text-red-300',
+      }[level] || 'text-gray-600';
+    },
+  };
+}
+</script>
+{% endblock %}

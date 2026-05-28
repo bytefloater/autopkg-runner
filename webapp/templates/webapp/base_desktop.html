@@ -1,0 +1,429 @@
+{% load webapp_extras %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AutoPkg Runner{% endblock %}</title>
+
+  {# Anti-FOUC: apply saved theme class before first paint #}
+  <script>
+    (function(){
+      var t=localStorage.getItem('aptheme')||'auto';
+      if(t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches))
+        document.documentElement.classList.add('dark');
+    })();
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {} },
+    // Log-level colour classes are only referenced inside JS objects (levelClass()),
+    // so the Play CDN scanner may miss them. Safelisting guarantees the rules
+    // are always generated regardless of how/when they're applied to the DOM.
+    safelist: [
+      'text-gray-400', 'dark:text-gray-500',
+      'text-gray-700', 'dark:text-gray-300',
+      'text-blue-600', 'dark:text-blue-400',
+      'text-yellow-600', 'dark:text-yellow-400',
+      'text-red-600', 'dark:text-red-400',
+      'text-red-700', 'dark:text-red-300',
+    ],
+  }</script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    .log-line { font-family: 'SF Mono','Fira Code','Fira Mono','Roboto Mono',monospace; font-size: 0.78rem; line-height: 1.5; }
+  </style>
+</head>
+
+<body class="h-full bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100"
+      x-data="appShell()" x-init="init()">
+
+  {# ── Toast stack (bottom-right) ── #}
+  <div class="fixed bottom-5 right-5 z-[200] flex flex-col-reverse gap-2 pointer-events-none w-80" aria-live="polite">
+    <template x-for="toast in toasts" :key="toast.id">
+      <div x-show="toast.visible"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+           x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 scale-100"
+           x-transition:leave-end="opacity-0 scale-95"
+           class="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium"
+           :class="{
+             'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200': !toast.type || toast.type==='info',
+             'bg-green-50 dark:bg-green-950/60 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200': toast.type==='success',
+             'bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200': toast.type==='error',
+             'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200': toast.type==='warning',
+           }">
+        <span class="flex-1 leading-snug" x-text="toast.message"></span>
+        <button @click="dismiss(toast.id)" class="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity mt-0.5">
+          {% lucide "x" "w-3.5 h-3.5" %}
+        </button>
+      </div>
+    </template>
+  </div>
+
+  {# Django messages → JSON for toast dispatch #}
+  {% if messages %}
+  <script id="django-messages" type="application/json">
+  [{% for msg in messages %}{"type":"{{ msg.tags }}","message":"{{ msg|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
+  </script>
+  {% endif %}
+
+  {# ── TOPBAR — horizontal nav, sticky, full-width ── #}
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm
+                 border-b border-gray-200 dark:border-slate-800">
+    <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center h-14 gap-2">
+
+        {# Logo #}
+        <div class="flex items-center gap-2.5 flex-shrink-0 mr-2">
+          <span class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center
+                       text-white text-xs font-bold select-none">AP</span>
+          <span class="font-semibold text-gray-900 dark:text-white text-sm tracking-tight hidden sm:block">
+            AutoPkg Runner
+          </span>
+        </div>
+
+        {# Horizontal nav — md and above #}
+        <nav class="hidden md:flex items-center gap-0.5 flex-1">
+          {% for tab in nav_tabs %}
+          <a href="{% url tab.url_name %}"
+             class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+                    transition-colors duration-150
+                    {% if active_tab == tab.name %}
+                      bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400
+                    {% else %}
+                      text-gray-600 dark:text-gray-400
+                      hover:text-gray-900 dark:hover:text-white
+                      hover:bg-gray-100 dark:hover:bg-slate-800
+                    {% endif %}">
+            {% lucide tab.icon "w-4 h-4 flex-shrink-0" %}
+            <span>{{ tab.label }}</span>
+          </a>
+          {% endfor %}
+        </nav>
+
+        {# Right-side controls #}
+        <div class="flex items-center gap-1.5 ml-auto">
+
+          {# 3-way theme toggle — icon trio, hidden on xs #}
+          <div class="hidden sm:flex items-center rounded-lg
+                      bg-gray-100 dark:bg-slate-800
+                      border border-gray-200 dark:border-slate-700
+                      p-0.5 gap-0.5">
+            <button @click="setTheme('light')" title="Light mode"
+                    :class="theme==='light'
+                      ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-900 dark:text-white'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="p-1.5 rounded-md transition-all duration-150">
+              {% lucide "sun" "w-3.5 h-3.5" %}
+            </button>
+            <button @click="setTheme('auto')" title="Follow system"
+                    :class="theme==='auto'
+                      ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-900 dark:text-white'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="p-1.5 rounded-md transition-all duration-150">
+              {% lucide "monitor" "w-3.5 h-3.5" %}
+            </button>
+            <button @click="setTheme('dark')" title="Dark mode"
+                    :class="theme==='dark'
+                      ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-900 dark:text-white'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                    class="p-1.5 rounded-md transition-all duration-150">
+              {% lucide "moon" "w-3.5 h-3.5" %}
+            </button>
+          </div>
+
+          {# User dropdown #}
+          <div class="relative" x-data="{ userOpen: false }">
+            <button @click="userOpen=!userOpen"
+                    class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-medium
+                           transition-colors duration-150
+                           text-gray-600 dark:text-gray-400
+                           hover:text-gray-900 dark:hover:text-white
+                           hover:bg-gray-100 dark:hover:bg-slate-800">
+              <span class="w-6 h-6 rounded-full
+                           bg-blue-100 dark:bg-blue-600/20
+                           border border-blue-200 dark:border-blue-500/30
+                           flex items-center justify-center
+                           text-xs font-bold text-blue-700 dark:text-blue-400
+                           select-none uppercase flex-shrink-0">{{ request.user.username|first }}</span>
+              <span class="hidden sm:block max-w-[6rem] truncate">{{ request.user.username }}</span>
+              <span :class="userOpen && 'rotate-180'" class="transition-transform duration-150 text-gray-400">
+                {% lucide "chevron-down" "w-3.5 h-3.5" %}
+              </span>
+            </button>
+
+            <div x-show="userOpen" x-cloak @click.outside="userOpen=false"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 -translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 class="absolute right-0 top-full mt-1.5 w-44 rounded-xl shadow-lg
+                        border border-gray-200 dark:border-slate-700
+                        bg-white dark:bg-slate-800 py-1 z-50">
+              <div class="px-3 py-2 border-b border-gray-100 dark:border-slate-700">
+                <p class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{{ request.user.username }}</p>
+                {% if request.user.is_superuser %}
+                <p class="text-xs text-gray-400 mt-0.5">Administrator</p>
+                {% endif %}
+              </div>
+              <button @click="showChangePw=true; userOpen=false; $nextTick(()=>{ const f=$refs.changePwForm; if(f) f.reset(); })"
+                      class="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm
+                             text-gray-700 dark:text-gray-300
+                             hover:text-gray-900 dark:hover:text-white
+                             hover:bg-gray-50 dark:hover:bg-slate-700
+                             transition-colors">
+                {% lucide "key" "w-4 h-4 flex-shrink-0" %}
+                Change Password
+              </button>
+              <a href="{% url 'logout' %}"
+                 class="flex items-center gap-2.5 px-3 py-2.5 text-sm
+                        text-red-600 dark:text-red-400
+                        hover:text-red-700 dark:hover:text-red-300
+                        hover:bg-red-50 dark:hover:bg-red-900/20
+                        transition-colors">
+                {% lucide "log-out" "w-4 h-4 flex-shrink-0" %}
+                Sign out
+              </a>
+            </div>
+          </div>
+
+          {# Hamburger — below md only #}
+          <button @click="open=true"
+                  class="md:hidden p-1.5 rounded-lg
+                         text-gray-500 hover:text-gray-900 dark:hover:text-white
+                         hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+            {% lucide "menu" "w-5 h-5" %}
+          </button>
+
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {# ── MOBILE DRAWER — slides in from left below md breakpoint ── #}
+
+  {# Scrim #}
+  <div x-show="open" x-cloak @click="open=false"
+       x-transition:enter="transition-opacity duration-200"
+       x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       x-transition:leave="transition-opacity duration-200"
+       x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+       class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"></div>
+
+  {# Drawer panel #}
+  <div :class="open ? 'translate-x-0' : '-translate-x-full'"
+       class="fixed inset-y-0 left-0 z-50 w-72 flex flex-col
+              bg-white dark:bg-slate-900
+              border-r border-gray-100 dark:border-slate-800
+              shadow-2xl transition-transform duration-200 ease-in-out md:hidden">
+
+    {# Drawer header #}
+    <div class="flex items-center gap-3 h-14 px-4 flex-shrink-0
+                border-b border-gray-100 dark:border-slate-800">
+      <span class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center
+                   text-white text-xs font-bold select-none">AP</span>
+      <span class="font-semibold text-gray-900 dark:text-white text-sm">AutoPkg Runner</span>
+      <button @click="open=false"
+              class="ml-auto p-1.5 rounded-lg
+                     text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                     hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+        {% lucide "x" "w-4 h-4" %}
+      </button>
+    </div>
+
+    {# Drawer nav #}
+    <nav class="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+      {% for tab in nav_tabs %}
+      <a href="{% url tab.url_name %}" @click="open=false"
+         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                transition-colors duration-150
+                {% if active_tab == tab.name %}
+                  bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400
+                {% else %}
+                  text-gray-600 dark:text-gray-400
+                  hover:text-gray-900 dark:hover:text-white
+                  hover:bg-gray-100 dark:hover:bg-slate-800
+                {% endif %}">
+        {% lucide tab.icon "w-4 h-4 flex-shrink-0" %}
+        {{ tab.label }}
+      </a>
+      {% endfor %}
+    </nav>
+
+    {# Drawer footer: theme + user #}
+    <div class="flex-shrink-0 px-3 pb-4 pt-2
+                border-t border-gray-100 dark:border-slate-800 space-y-2">
+
+      {# Theme toggle — full-width trio #}
+      <div class="flex items-center rounded-lg bg-gray-100 dark:bg-slate-800 p-1 gap-0.5">
+        <button @click="setTheme('light')"
+                :class="theme==='light'
+                  ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md
+                       text-xs font-medium transition-all duration-150">
+          {% lucide "sun" "w-3.5 h-3.5" %} Light
+        </button>
+        <button @click="setTheme('auto')"
+                :class="theme==='auto'
+                  ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md
+                       text-xs font-medium transition-all duration-150">
+          {% lucide "monitor" "w-3.5 h-3.5" %} Auto
+        </button>
+        <button @click="setTheme('dark')"
+                :class="theme==='dark'
+                  ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                class="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md
+                       text-xs font-medium transition-all duration-150">
+          {% lucide "moon" "w-3.5 h-3.5" %} Dark
+        </button>
+      </div>
+
+      {# User row + sign-out #}
+      <div class="flex items-center gap-2.5 px-1 py-1.5">
+        <span class="w-7 h-7 rounded-full flex-shrink-0
+                     bg-blue-100 dark:bg-blue-600/20
+                     border border-blue-200 dark:border-blue-500/30
+                     flex items-center justify-center
+                     text-xs font-bold text-blue-700 dark:text-blue-400
+                     select-none uppercase">{{ request.user.username|first }}</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ request.user.username }}</p>
+          {% if request.user.is_superuser %}
+          <p class="text-xs text-gray-400">Administrator</p>
+          {% endif %}
+        </div>
+        <button @click="showChangePw=true; open=false; $nextTick(()=>{ const f=$refs.changePwForm; if(f) f.reset(); })"
+                class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200
+                       hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                title="Change Password">
+          {% lucide "key" "w-4 h-4" %}
+        </button>
+        <a href="{% url 'logout' %}"
+           class="p-1.5 rounded-lg
+                  text-gray-400 hover:text-red-500 dark:hover:text-red-400
+                  hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+           title="Sign out">
+          {% lucide "log-out" "w-4 h-4" %}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {# ── PAGE CONTENT ── #}
+  <main class="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block scripts %}{% endblock %}
+
+  {# ══════════════ CHANGE PASSWORD MODAL ══════════════ #}
+  <div x-show="showChangePw" x-cloak
+       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+       x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="absolute inset-0 bg-black/60" @click="showChangePw=false"></div>
+    <div class="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 p-6"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+            {% lucide "key" "w-4 h-4 text-blue-600 dark:text-blue-400" %}
+          </div>
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Change Password</h3>
+        </div>
+        <button @click="showChangePw=false" class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          {% lucide "x" "w-4 h-4" %}
+        </button>
+      </div>
+      <form method="post" action="{% url 'change-password' %}" x-ref="changePwForm" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
+          <input type="password" name="current_password" required autocomplete="current-password"
+                 class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
+          <input type="password" name="new_password" required autocomplete="new-password" minlength="8"
+                 class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm New Password</label>
+          <input type="password" name="confirm_password" required autocomplete="new-password" minlength="8"
+                 class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500">Minimum 8 characters. You will stay logged in.</p>
+        <div class="flex gap-3 pt-1">
+          <button type="button" @click="showChangePw=false"
+                  class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+            Change Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function appShell() {
+      return {
+        open:         false,
+        showChangePw: false,
+        theme:        localStorage.getItem('aptheme') || 'auto',
+        toasts:       [],
+        _tid:         0,
+
+        init() {
+          this._applyTheme();
+          window.matchMedia('(prefers-color-scheme: dark)')
+            .addEventListener('change', () => { if (this.theme === 'auto') this._applyTheme(); });
+          // Drain Django messages into toast queue
+          const el = document.getElementById('django-messages');
+          if (el) {
+            try { JSON.parse(el.textContent || '[]').forEach(m => this.toast(m.type, m.message)); }
+            catch (_) {}
+          }
+        },
+
+        setTheme(mode) {
+          this.theme = mode;
+          localStorage.setItem('aptheme', mode);
+          this._applyTheme();
+        },
+
+        _applyTheme() {
+          const dark = this.theme === 'dark' ||
+            (this.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+        },
+
+        toast(type, message) {
+          const id = ++this._tid;
+          this.toasts.push({ id, type, message, visible: true });
+          setTimeout(() => this.dismiss(id), 4500);
+        },
+
+        dismiss(id) {
+          const t = this.toasts.find(t => t.id === id);
+          if (t) t.visible = false;
+          setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 250);
+        },
+      }
+    }
+  </script>
+</body>
+</html>

@@ -8,8 +8,5 @@ CONFIG_FILE = "config.json"
 # Logger
 LOGGER_NAME = APP_NAME
 
-# Django
-TEMPLATE_DIR = "report_templates"
-
 # Name-resolution configuration file
 RESOLV_CONF = "/etc/resolv.conf"

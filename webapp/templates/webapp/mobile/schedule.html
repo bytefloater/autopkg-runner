@@ -1,0 +1,58 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}Schedule — AutoPkg Runner{% endblock %}
+{% block nav_title %}Schedule{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="schedule-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="schedule-form" x-data="{ enabled: {{ schedule.enabled|yesno:'true,false' }} }">
+  {% csrf_token %}
+
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Schedule</p>
+
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    {# Enable / disable toggle #}
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">Scheduled Runs</span>
+      <input type="hidden" name="enabled" :value="enabled ? 'on' : ''">
+      <button type="button" @click="enabled = !enabled"
+              :class="enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="enabled ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+  </div>
+
+  {# Cron expression fields — visible only when enabled #}
+  <div x-show="enabled" x-transition>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cron Expression</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      {% for label, name, value, hint in cron_fields %}
+      <div class="flex items-center justify-between px-4 py-3">
+        <div class="flex-1 min-w-0 pr-4">
+          <span class="text-[16px] text-gray-900 dark:text-white">{{ label }}</span>
+          {% if hint %}<p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ hint }}</p>{% endif %}
+        </div>
+        <input type="text" name="{{ name }}" value="{{ value }}"
+               class="text-center w-20 text-[15px] font-mono rounded-lg border border-gray-300 dark:border-[#38383a] bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</form>
+
+<div class="h-8"></div>
+{% endblock %}

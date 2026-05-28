@@ -1,0 +1,95 @@
+{% load webapp_extras %}
+<div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+  <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+    <h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ title }}</h2>
+  </div>
+  <div class="px-5 py-4 space-y-4">
+
+    {% for label, name, value, hint in fields %}
+    <div class="grid grid-cols-3 gap-4 items-start">
+      <label for="id_{{ name }}" class="text-sm font-medium text-gray-700 dark:text-gray-300 pt-2 col-span-1">
+        {{ label }}
+        {% if hint %}<p class="text-xs text-gray-400 font-normal mt-0.5">{{ hint }}</p>{% endif %}
+      </label>
+      <div class="col-span-2">
+        <input type="text" name="{{ name }}" id="id_{{ name }}" value="{{ value }}"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700
+                      bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                      focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+      </div>
+    </div>
+    {% endfor %}
+
+    {% for label, name, value, hint in password_fields %}
+    <div class="grid grid-cols-3 gap-4 items-start">
+      <label for="id_{{ name }}" class="text-sm font-medium text-gray-700 dark:text-gray-300 pt-2 col-span-1">
+        {{ label }}
+        {% if hint %}<p class="text-xs text-gray-400 font-normal mt-0.5">{{ hint }}</p>{% endif %}
+      </label>
+      <div class="col-span-2 flex gap-2" x-data="{ show: false }">
+        <input :type="show ? 'text' : 'password'" name="{{ name }}" id="id_{{ name }}" value="{{ value }}"
+               class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700
+                      bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                      focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+        <button type="button" @click="show = !show"
+                class="px-3 py-2 text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700
+                       text-gray-600 dark:text-gray-300 rounded-lg border border-gray-300 dark:border-gray-700 transition-colors"
+                x-text="show ? 'Hide' : 'Show'"></button>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% for label, name, checked, hint in bool_fields %}
+    <div class="grid grid-cols-3 gap-4 items-center">
+      <span class="text-sm font-medium text-gray-700 dark:text-gray-300 col-span-1">
+        {{ label }}
+        {% if hint %}<p class="text-xs text-gray-400 font-normal mt-0.5">{{ hint }}</p>{% endif %}
+      </span>
+      <div class="col-span-2" x-data="{ val: {{ checked|yesno:'true,false' }} }">
+        <input type="hidden" name="{{ name }}" :value="val ? 'on' : ''">
+        <button type="button" @click="val = !val"
+                :class="val ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none">
+          <span :class="val ? 'translate-x-5' : 'translate-x-0'"
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% for label, name, value, hint in json_fields %}
+    <div class="grid grid-cols-3 gap-4 items-start">
+      <label for="id_{{ name }}" class="text-sm font-medium text-gray-700 dark:text-gray-300 pt-2 col-span-1">
+        {{ label }}
+        {% if hint %}<p class="text-xs text-gray-400 font-normal mt-0.5">{{ hint }}</p>{% endif %}
+      </label>
+      <div class="col-span-2">
+        <textarea name="{{ name }}" id="id_{{ name }}" rows="2"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700
+                         bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">{{ value }}</textarea>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% for label, name, value, hint, choices in select_fields %}
+    <div class="grid grid-cols-3 gap-4 items-start">
+      <label for="id_{{ name }}" class="text-sm font-medium text-gray-700 dark:text-gray-300 pt-2 col-span-1">
+        {{ label }}
+        {% if hint %}<p class="text-xs text-gray-400 font-normal mt-0.5">{{ hint }}</p>{% endif %}
+      </label>
+      <div class="col-span-2">
+        <select name="{{ name }}" id="id_{{ name }}"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700
+                       bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                       focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {% for choice_val, choice_label in choices %}
+          <option value="{{ choice_val }}" {% if value == choice_val %}selected{% endif %}>{{ choice_label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+</div>

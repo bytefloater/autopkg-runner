@@ -1,0 +1,84 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.CONFIG_VIEW.TAB_GARBAGE_COLLECTOR }} — {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.CONFIG_VIEW.TAB_GARBAGE_COLLECTOR }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="config-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="config-form"
+      x-data="{
+        cleanRepo: {{ s|lookup:'gc.clean_repo'|yesno:'true,false' }},
+        clearTemp: {{ s|lookup:'gc.clear_temp'|yesno:'true,false' }}
+      }">
+  {% csrf_token %}
+
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.TAB_GARBAGE_COLLECTOR }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    {# Keep versions #}
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">Keep Versions</span>
+      <input type="number" name="gc.keep_versions" value="{{ s|lookup:'gc.keep_versions' }}"
+             min="1" max="99"
+             class="w-16 text-center text-[16px] font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-[#2c2c2e] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    </div>
+
+    {# Clear temporary files #}
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">Clear Temporary Files</span>
+      <input type="hidden" name="gc.clear_temp" :value="clearTemp ? 'on' : ''">
+      <button type="button" @click="clearTemp = !clearTemp"
+              :class="clearTemp ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="clearTemp ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+    {# Clean repo #}
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">Clean Repo</span>
+      <input type="hidden" name="gc.clean_repo" :value="cleanRepo ? 'on' : ''">
+      <button type="button" @click="cleanRepo = !cleanRepo"
+              :class="cleanRepo ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="cleanRepo ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+  </div>
+
+  {# RepoClean binary — only shown when Clean Repo is enabled #}
+  <div x-show="cleanRepo" x-transition>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">RepoClean</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">RepoClean Binary</label>
+        <input type="text" name="gc.repoclean_bin_path" value="{{ s|lookup:'gc.repoclean_bin_path' }}"
+               placeholder="/usr/local/munki/repoclean"
+               class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+      </div>
+    </div>
+  </div>
+
+  <div class="h-8"></div>
+</form>
+{% endblock %}

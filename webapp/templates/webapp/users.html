@@ -1,0 +1,352 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}Users — AutoPkg Runner{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6" x-data="usersPage()">
+
+  {# Credential reveal banner (new user or password reset) #}
+  {% if new_user_creds or reset_creds %}
+  {% with creds=new_user_creds|default:reset_creds %}
+  <div class="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-xl p-4">
+    <p class="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">
+      {% if new_user_creds %}Account created — save these credentials now.{% else %}Password reset — save the new password now.{% endif %}
+    </p>
+    <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm font-mono mb-3">
+      <span class="text-green-700 dark:text-green-400 font-sans font-medium">Username</span>
+      <span class="text-gray-900 dark:text-white select-all">{{ creds.username }}</span>
+      <span class="text-green-700 dark:text-green-400 font-sans font-medium">Password</span>
+      <span class="text-gray-900 dark:text-white select-all break-all">{{ creds.password }}</span>
+      {% if creds.role %}
+      <span class="text-green-700 dark:text-green-400 font-sans font-medium">Role</span>
+      <span class="text-gray-900 dark:text-white">{{ creds.role }}</span>
+      {% endif %}
+    </div>
+    <p class="text-xs text-green-700 dark:text-green-400">These credentials are not stored in plain text and will not be shown again.</p>
+  </div>
+  {% endwith %}
+  {% endif %}
+
+  {# Hidden reset-password form — submitted programmatically from the confirm modal #}
+  <form id="reset-pw-form" method="post" x-ref="resetForm" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="reset_password">
+    <input type="hidden" name="user_id" :value="resetUserId">
+  </form>
+
+  {# ── User list ── #}
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
+      <h1 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Users</h1>
+      <button @click="showCreate = true"
+              class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm">
+        {% lucide "plus" "w-3.5 h-3.5" %}
+        Add User
+      </button>
+    </div>
+
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100 dark:border-slate-800">
+          <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Username</th>
+          <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden sm:table-cell">Email</th>
+          <th class="text-center px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Active</th>
+          <th class="text-center px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Role</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+        {% for u in users %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
+          <td class="px-5 py-3">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-full bg-blue-600/15 border border-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 flex-shrink-0 uppercase select-none">{{ u.username|first }}</span>
+              <span class="font-medium text-gray-900 dark:text-gray-100">{{ u.username }}</span>
+              {% if u.is_self %}<span class="text-xs text-gray-400 dark:text-gray-500">(you)</span>{% endif %}
+            </div>
+          </td>
+          <td class="px-5 py-3 text-gray-500 dark:text-gray-400 text-sm hidden sm:table-cell">{{ u.email|default:"—" }}</td>
+          <td class="px-4 py-3 text-center">
+            {% if u.is_active %}<span class="inline-block w-2 h-2 rounded-full bg-green-500"></span>{% else %}<span class="inline-block w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>{% endif %}
+          </td>
+          <td class="px-4 py-3 text-center">
+            {% if u.is_superuser %}
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Administrator</span>
+            {% else %}
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-400">User</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3">
+            <div class="flex items-center justify-end gap-2">
+              {# Edit button — opens edit modal (visible for all users, including self) #}
+              <button @click="openEdit({{ u.pk }}, '{{ u.username|escapejs }}', '{{ u.email|escapejs }}', {{ u.is_active|yesno:'true,false' }}, {{ u.is_superuser|yesno:'true,false' }}, {{ u.is_self|yesno:'true,false' }})"
+                      class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 transition-colors">
+                Edit
+              </button>
+              {# Reset password — hidden for the current user (they use Change Password in the nav menu) #}
+              {% if not u.is_self %}
+              <button type="button" @click="openResetConfirm({{ u.pk }}, '{{ u.username|escapejs }}')"
+                      class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 transition-colors">
+                Reset PW
+              </button>
+              {% endif %}
+              {# Delete #}
+              {% if not u.is_self %}
+              <form method="post" onsubmit="return confirm('Delete user {{ u.username|escapejs }}? This cannot be undone.')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="user_id" value="{{ u.pk }}">
+                <button type="submit"
+                        class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/70 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 transition-colors">
+                  {% lucide "trash-2" "w-3.5 h-3.5" %}
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="px-5 py-10 text-center text-sm text-gray-400 dark:text-gray-500">No users found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ══════════════ CREATE USER MODAL ══════════════ #}
+  <template x-teleport="body">
+  <div x-show="showCreate" x-cloak
+       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+       x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="absolute inset-0 bg-black/60" @click="showCreate=false"></div>
+    <div class="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 p-6"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Add User</h3>
+        <button @click="showCreate=false" class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          {% lucide "x" "w-4 h-4" %}
+        </button>
+      </div>
+      <form method="post" @submit="showCreate=false" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Username <span class="text-red-500">*</span></label>
+          <input type="text" name="username" required autofocus
+                 class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email <span class="text-gray-400 font-normal">(optional)</span></label>
+          <input type="email" name="email"
+                 class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+        </div>
+        <div class="flex items-center justify-between py-2">
+          <div>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Administrator</p>
+            <p class="text-xs text-gray-400 mt-0.5">Full access to all settings and users</p>
+          </div>
+          <div x-data="{ val: false }">
+            <input type="hidden" name="is_superuser" :value="val ? 'on' : ''">
+            <button type="button" @click="val=!val"
+                    :class="val ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+              <span :class="val ? 'translate-x-5' : 'translate-x-0'"
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+            </button>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500">A secure password will be generated and shown once after creation.</p>
+        <div class="flex gap-3 pt-1">
+          <button type="button" @click="showCreate=false"
+                  class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+            Create User
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  </template>
+
+  {# ══════════════ EDIT USER MODAL ══════════════ #}
+  <template x-teleport="body">
+  <div x-show="showEdit" x-cloak
+       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+       x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="absolute inset-0 bg-black/60" @click="showEdit=false"></div>
+    <div class="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 p-6"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Edit <span x-text="editUsername"></span></h3>
+        <button @click="showEdit=false" class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          {% lucide "x" "w-4 h-4" %}
+        </button>
+      </div>
+      <form method="post" @submit="showEdit=false" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update">
+        <input type="hidden" name="user_id" :value="editId">
+
+        {# Email field #}
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email <span class="text-gray-400 font-normal">(optional)</span></label>
+          <input type="email" name="email" x-model="editEmail"
+                 class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                 placeholder="user@example.com">
+        </div>
+
+        {# Active / Admin toggles — hidden when editing your own account #}
+        <template x-if="!editIsSelf">
+          <div class="space-y-0">
+            <div class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-slate-800">
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Active</p>
+                <p class="text-xs text-gray-400 mt-0.5">Allow this user to sign in</p>
+              </div>
+              <div x-data="{ val: editActive }" x-init="$watch('editActive', v => val = v)">
+                <input type="hidden" name="is_active" :value="val ? 'on' : ''">
+                <button type="button" @click="val=!val"
+                        :class="val ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+                  <span :class="val ? 'translate-x-5' : 'translate-x-0'"
+                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-slate-800">
+              <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Administrator</p>
+                <p class="text-xs text-gray-400 mt-0.5">Full access to all settings and users</p>
+              </div>
+              <div x-data="{ val: editAdmin }" x-init="$watch('editAdmin', v => val = v)">
+                <input type="hidden" name="is_superuser" :value="val ? 'on' : ''">
+                <button type="button" @click="val=!val"
+                        :class="val ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+                  <span :class="val ? 'translate-x-5' : 'translate-x-0'"
+                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+        <template x-if="editIsSelf">
+          <p class="text-xs text-gray-400 dark:text-gray-500 pt-1 border-t border-gray-100 dark:border-slate-800">
+            You cannot change your own role or active status.
+          </p>
+        </template>
+
+        <div class="flex gap-3 pt-1">
+          <button type="button" @click="showEdit=false"
+                  class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  </template>
+
+  {# ══════════════ RESET PASSWORD CONFIRM MODAL ══════════════ #}
+  <template x-teleport="body">
+  <div x-show="showReset" x-cloak
+       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+       x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="absolute inset-0 bg-black/60" @click="showReset=false"></div>
+    <div class="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 p-6"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+            {% lucide "key" "w-4 h-4 text-amber-600 dark:text-amber-400" %}
+          </div>
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">Reset Password</h3>
+        </div>
+        <button @click="showReset=false" class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          {% lucide "x" "w-4 h-4" %}
+        </button>
+      </div>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">
+        Generate a new random password for
+      </p>
+      <p class="text-sm font-semibold text-gray-900 dark:text-white mb-5" x-text="resetUsername"></p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-5">
+        The new password will be shown once immediately after resetting. The user will need to sign in again with the new password.
+      </p>
+      <div class="flex gap-3">
+        <button type="button" @click="showReset=false"
+                class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+          Cancel
+        </button>
+        <button type="button" @click="$refs.resetForm.submit()"
+                class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors">
+          Reset Password
+        </button>
+      </div>
+    </div>
+  </div>
+  </template>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function usersPage() {
+  return {
+    showCreate: false,
+    showEdit:   false,
+    showReset:  false,
+
+    editId:       null,
+    editUsername: '',
+    editEmail:    '',
+    editActive:   true,
+    editAdmin:    false,
+    editIsSelf:   false,
+
+    resetUserId:   null,
+    resetUsername: '',
+
+    get anyModalOpen() {
+      return this.showCreate || this.showEdit || this.showReset;
+    },
+
+    init() {
+      this.$watch('anyModalOpen', open => {
+        document.querySelectorAll('header, main').forEach(el => {
+          el.style.transition = 'filter 0.2s ease';
+          el.style.filter = open ? 'blur(4px)' : '';
+        });
+      });
+    },
+
+    openEdit(id, username, email, isActive, isAdmin, isSelf) {
+      this.editId       = id;
+      this.editUsername = username;
+      this.editEmail    = email;
+      this.editActive   = isActive;
+      this.editAdmin    = isAdmin;
+      this.editIsSelf   = isSelf;
+      this.showEdit     = true;
+    },
+
+    openResetConfirm(id, username) {
+      this.resetUserId   = id;
+      this.resetUsername = username;
+      this.showReset     = true;
+    },
+  }
+}
+</script>
+{% endblock %}

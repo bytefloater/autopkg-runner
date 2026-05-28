@@ -1,0 +1,80 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}Runs — AutoPkg Runner{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Runs</h1>
+    <form method="post" action="{% url 'trigger-run' %}">
+      {% csrf_token %}
+      <button type="submit"
+              hx-post="{% url 'trigger-run' %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-on::after-request="if(event.detail.successful){ window.location = '/runs/' + JSON.parse(event.detail.xhr.responseText).run_id + '/' }"
+              class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+        {% lucide "play" "w-4 h-4" %}
+        Trigger Run
+      </button>
+    </form>
+  </div>
+
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+    {% if page_obj %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <th class="px-4 py-3 text-left">Status</th>
+          <th class="px-4 py-3 text-left">Started</th>
+          <th class="px-4 py-3 text-left">Duration</th>
+          <th class="px-4 py-3 text-left">Triggered by</th>
+          <th class="px-4 py-3 text-left"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
+        {% for run in page_obj %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ run.status|status_color }}">
+              <span class="w-1.5 h-1.5 rounded-full {{ run.status|status_dot }}"></span>
+              {{ run.get_status_display }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ run.started_at|date:"d M Y, H:i:s" }}</td>
+          <td class="px-4 py-3 text-gray-500 dark:text-gray-400 tabular-nums">
+            {{ run.started_at|duration:run.completed_at }}
+          </td>
+          <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ run.triggered_by }}</td>
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'run-detail' run.id %}"
+               class="text-xs text-blue-600 dark:text-blue-400 hover:underline">View →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">← Prev</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="py-16 text-center text-sm text-gray-400 dark:text-gray-500">
+      No runs yet. Trigger one to get started.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

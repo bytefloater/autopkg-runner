@@ -1,0 +1,85 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}Runs — AutoPkg Runner{% endblock %}
+{% block nav_title %}Runs{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<div id="run-list-section"
+     hx-get="{% url 'run-list' %}{% if request.GET.page %}?page={{ request.GET.page }}{% endif %}"
+     hx-trigger="every 10s"
+     hx-select="#run-list-section"
+     hx-target="#run-list-section"
+     hx-swap="outerHTML">
+
+<p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+  {{ page_obj.paginator.count }} Run{{ page_obj.paginator.count|pluralize }}
+</p>
+
+{% if page_obj.object_list %}
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  {% for run in page_obj %}
+  <a href="{% url 'run-detail' run.id %}"
+     class="flex items-center gap-3 px-4 py-3 active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 {{ run.status|status_dot }}"></span>
+    <div class="flex-1 min-w-0">
+      <p class="text-[16px] font-medium text-gray-900 dark:text-white tabular-nums">
+        {{ run.started_at|date:"d M Y, H:i" }}
+      </p>
+      <p class="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">
+        {{ run.triggered_by|capfirst }}{% if run.completed_at %} · {{ run.started_at|duration:run.completed_at }}{% endif %}
+      </p>
+    </div>
+    <span class="text-[13px] flex-shrink-0
+      {% if run.status == 'success' %}text-green-500
+      {% elif run.status == 'running' %}text-blue-500
+      {% elif run.status == 'failed' %}text-red-500
+      {% elif run.status == 'cancelled' %}text-amber-500
+      {% else %}text-gray-500{% endif %}">
+      {{ run.get_status_display }}
+    </span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+  {% endfor %}
+</div>
+
+{# Pagination #}
+{% if page_obj.has_other_pages %}
+<div class="h-4"></div>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    {% lucide "chevron-left" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Previous Page</span>
+    <span class="text-[13px] text-gray-400 flex-shrink-0">{{ page_obj.previous_page_number }}</span>
+  </a>
+  {% endif %}
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}"
+     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Next Page</span>
+    <span class="text-[13px] text-gray-400 flex-shrink-0">{{ page_obj.next_page_number }}</span>
+    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+  </a>
+  {% endif %}
+</div>
+<p class="text-center text-[12px] text-gray-400 dark:text-gray-500 mt-2">
+  Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+</p>
+{% endif %}
+
+{% else %}
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+  <div class="flex flex-col items-center justify-center py-20">
+    {% lucide "list" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
+    <p class="text-[15px] text-gray-400 dark:text-gray-500">No runs yet.</p>
+  </div>
+</div>
+{% endif %}
+
+</div>{# /run-list-section #}
+<div class="h-4"></div>
+{% endblock %}

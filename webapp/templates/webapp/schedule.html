@@ -1,0 +1,69 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}Schedule — AutoPkg Runner{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-6">
+  <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Schedule</h1>
+
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"
+       x-data="{ enabled: {{ schedule.enabled|yesno:'true,false' }} }">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        Configure when the AutoPkg pipeline runs automatically. Uses standard cron syntax.
+      </p>
+    </div>
+
+    <form method="post" class="px-6 py-5 space-y-5">
+      {% csrf_token %}
+
+      <!-- Enabled toggle -->
+      <div class="flex items-center justify-between">
+        <div>
+          <label for="enabled" class="text-sm font-medium text-gray-800 dark:text-gray-200">Enable scheduled runs</label>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">When off, the pipeline only runs when triggered manually or via API.</p>
+        </div>
+        <button type="button" @click="enabled = !enabled"
+                :class="enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none">
+          <input type="checkbox" name="enabled" id="enabled" :checked="enabled" class="sr-only">
+          <span :class="enabled ? 'translate-x-5' : 'translate-x-0'"
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+        </button>
+      </div>
+
+      <!-- Cron fields -->
+      <div x-show="enabled" x-transition class="space-y-4">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {% for label, name, value, hint in cron_fields %}
+          <div>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ label }}</label>
+            <input type="text" name="{{ name }}" value="{{ value }}"
+                   placeholder="{{ hint }}"
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700
+                          bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                          focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <p class="text-xs text-gray-400 mt-0.5">{{ hint }}</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3">
+          <p class="text-xs text-blue-700 dark:text-blue-300">
+            <strong>Format:</strong> minute hour day-of-week day-of-month month &nbsp;·&nbsp;
+            Use <code>*</code> for every value, e.g. <code>0 2 * * *</code> runs daily at 02:00 UTC.
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button type="submit"
+                class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
+          Save Schedule
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
