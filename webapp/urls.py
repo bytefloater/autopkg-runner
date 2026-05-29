@@ -51,6 +51,7 @@ urlpatterns = [
     path('api-tokens/', api_tokens.ApiTokensView.as_view(), name='api-tokens'),
     path('users/',      users.UsersView.as_view(),          name='users'),
     path('account/change-password/', account.ChangePasswordView.as_view(), name='change-password'),
+    path('favicon.ico',   RedirectView.as_view(url='/static/webapp/icons/favicon.ico', permanent=True), name='favicon'),
     path('manifest.json', pwa.ManifestView.as_view(),        name='manifest'),
     path('sw.js',         pwa.ServiceWorkerView.as_view(),   name='service-worker'),
     path('login/',  LoginView.as_view(template_name='webapp/login.html'), name='login'),

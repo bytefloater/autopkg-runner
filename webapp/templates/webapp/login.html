@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign in — AutoPkg Runner</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'webapp/icons/favicon.ico' %}">
 
   {# Anti-FOUC: apply saved theme before first paint #}
   <script>
@@ -18,9 +20,9 @@
   <script>tailwind.config = { darkMode: 'class' }</script>
 </head>
 <body class="h-full bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
-  <div class="w-full max-w-sm px-4">
-    <div class="text-center mb-8">
-      <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 text-white text-lg font-bold mb-4 shadow-lg">AP</span>
+  <div class="w-full max-w-sm px-4 mt-6">
+    <div class="flex flex-col items-center mb-8">
+      <img src="{% static 'webapp/icons/icon-192.png' %}" alt="AutoPkg Runner" class="w-12 h-12 rounded-xl mb-4 shadow-lg block">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">AutoPkg Runner</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to continue</p>
     </div>
@@ -33,7 +35,6 @@
       {% endif %}
 
       <form method="post" class="space-y-4">
-        {% csrf_token %}
         <div>
           <label for="id_username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Username</label>
           <input type="text" name="username" id="id_username" autocomplete="username" required autofocus
@@ -50,11 +51,12 @@
                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                         placeholder-gray-400 transition-colors">
         </div>
-        <input type="hidden" name="next" value="{{ next }}">
         <button type="submit"
                 class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
           Sign in
         </button>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
       </form>
     </div>
   </div>
