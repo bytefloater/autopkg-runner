@@ -1,8 +1,19 @@
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.shortcuts import redirect
 from django.views import View
+
+
+class MobileAwareLoginView(DjangoLoginView):
+    """Django's LoginView extended to serve a native-feeling mobile template
+    when the request comes from a mobile device."""
+
+    def get_template_names(self):
+        if getattr(self.request, 'is_mobile', False):
+            return ['webapp/mobile/login.html']
+        return ['webapp/login.html']
 
 _MIN_PASSWORD_LENGTH = 8
 

@@ -1,4 +1,4 @@
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LogoutView
 from django.urls import path
 from django.views.generic import RedirectView
 
@@ -54,6 +54,6 @@ urlpatterns = [
     path('favicon.ico',   RedirectView.as_view(url='/static/webapp/icons/favicon.ico', permanent=True), name='favicon'),
     path('manifest.json', pwa.ManifestView.as_view(),        name='manifest'),
     path('sw.js',         pwa.ServiceWorkerView.as_view(),   name='service-worker'),
-    path('login/',  LoginView.as_view(template_name='webapp/login.html'), name='login'),
+    path('login/',  account.MobileAwareLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]

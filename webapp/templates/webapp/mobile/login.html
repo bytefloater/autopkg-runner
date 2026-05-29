@@ -1,0 +1,263 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  {# viewport-fit=cover: content extends into notch/home-indicator area        #}
+  {# user-scalable=no: prevent pinch-zoom to preserve native app illusion      #}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="AutoPkg">
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000"  media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="{% static 'webapp/icons/icon-192.png' %}">
+  <link rel="icon" type="image/x-icon" href="{% static 'webapp/icons/favicon.ico' %}">
+  <title>Sign in — AutoPkg Runner</title>
+
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Design tokens (light) ── */
+    :root {
+      --bg:              #f2f2f7;
+      --card-bg:         #ffffff;
+      --divider:         rgba(60, 60, 67, 0.29);
+      --label:           #000000;
+      --sublabel:        rgba(60, 60, 67, 0.60);
+      --placeholder:     rgba(60, 60, 67, 0.30);
+      --input-text:      #000000;
+      --btn-bg:          #007aff;
+      --btn-text:        #ffffff;
+      --btn-active-bg:   #0062cc;
+      --error-bg:        rgba(255, 59, 48, 0.08);
+      --error-border:    rgba(255, 59, 48, 0.30);
+      --error-text:      #d70015;
+    }
+
+    /* ── Design tokens (dark) ── */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:              #000000;
+        --card-bg:         #1c1c1e;
+        --divider:         rgba(84, 84, 88, 0.65);
+        --label:           #ffffff;
+        --sublabel:        rgba(235, 235, 245, 0.60);
+        --placeholder:     rgba(235, 235, 245, 0.30);
+        --input-text:      #ffffff;
+        --btn-bg:          #0a84ff;
+        --btn-text:        #ffffff;
+        --btn-active-bg:   #0870d8;
+        --error-bg:        rgba(255, 69, 58, 0.15);
+        --error-border:    rgba(255, 69, 58, 0.40);
+        --error-text:      #ff6961;
+      }
+    }
+
+    /* ── Layout ── */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                   Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--label);
+      min-height: 100vh;
+      min-height: 100dvh;   /* accounts for collapsing browser chrome on mobile */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      /* respect notch / home indicator */
+      padding: max(env(safe-area-inset-top, 0px), 24px)
+               max(env(safe-area-inset-right, 0px), 24px)
+               max(env(safe-area-inset-bottom, 0px), 24px)
+               max(env(safe-area-inset-left, 0px), 24px);
+    }
+
+    /* ── Content wrapper ── */
+    .login-wrap {
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeUp 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ── App identity ── */
+    .app-icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .app-name {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--label);
+      margin-bottom: 6px;
+    }
+
+    .app-tagline {
+      font-size: 15px;
+      color: var(--sublabel);
+      margin-bottom: 36px;
+    }
+
+    /* ── Error banner ── */
+    .error-banner {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      border-radius: 10px;
+      color: var(--error-text);
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    /* ── Form ── */
+    form { width: 100%; }
+
+    /* iOS Settings-style grouped input rows */
+    .field-group {
+      background: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      min-height: 50px;
+      padding: 0 16px;
+      gap: 12px;
+      position: relative;
+    }
+
+    /* hairline separator between rows */
+    .field-row + .field-row::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 16px;
+      right: 0;
+      height: 0.5px;
+      background: var(--divider);
+    }
+
+    .field-input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 16px;   /* ← key: prevents iOS Safari from zooming on focus */
+      font-family: inherit;
+      color: var(--input-text);
+      padding: 0;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .field-input::placeholder {
+      color: var(--sublabel);   /* match the faint label style the user chose */
+    }
+
+    /* suppress yellow autofill background on Chrome/WebKit */
+    .field-input:-webkit-autofill,
+    .field-input:-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--input-text);
+      -webkit-box-shadow: 0 0 0 1000px var(--card-bg) inset;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
+    /* ── Sign In button ── */
+    .btn-signin {
+      width: 100%;
+      min-height: 50px;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      font-size: 17px;
+      font-family: inherit;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: opacity 0.08s ease;
+      touch-action: manipulation;   /* prevents 300ms tap delay */
+    }
+
+    .btn-signin:active {
+      opacity: 0.72;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-wrap">
+
+    <img src="{% static 'webapp/icons/icon-192.png' %}" alt="AutoPkg Runner" class="app-icon">
+    <h1 class="app-name">AutoPkg Runner</h1>
+    <p class="app-tagline">Sign in to continue</p>
+
+    {% if form.errors %}
+    <div class="error-banner">Incorrect username or password.</div>
+    {% endif %}
+
+    <form method="post">
+      <div class="field-group">
+        <div class="field-row">
+          <input class="field-input"
+                 type="text"
+                 name="username"
+                 id="id_username"
+                 placeholder="Username"
+                 autocomplete="username"
+                 autocapitalize="none"
+                 autocorrect="off"
+                 spellcheck="false"
+                 required
+                 autofocus>
+        </div>
+        <div class="field-row">
+          <input class="field-input"
+                 type="password"
+                 name="password"
+                 id="id_password"
+                 placeholder="Password"
+                 autocomplete="current-password"
+                 required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-signin">Sign In</button>
+
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+    </form>
+
+  </div>
+</body>
+</html>
