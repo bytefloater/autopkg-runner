@@ -33,6 +33,10 @@
   <style>
     [x-cloak] { display: none !important; }
 
+    /* ── Chrome separator — matches divide-gray-200/70 / divide-[#38383a] ── */
+    :root        { --chrome-sep: rgba(229,231,235,0.70); }
+    .dark        { --chrome-sep: #38383a; }
+
     /* ── Native-feel resets ── */
     *, *::before, *::after { -webkit-tap-highlight-color: transparent; }
     body { overscroll-behavior: none; }
@@ -71,7 +75,7 @@
   {# safe area. Fixed (not sticky) means it is outside the scroll chain, so    #}
   {# the header never moves during rubber-band overscroll.                     #}
   <header class="fixed top-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-xl"
-          style="padding-top:env(safe-area-inset-top,0px); box-shadow:0 0.5px 0 rgba(0,0,0,0.12);">
+          style="padding-top:env(safe-area-inset-top,0px); box-shadow:0 1px 0 var(--chrome-sep);">
     <div class="relative flex items-center h-[44px] px-4">
       <div id="nav-left-slot" class="relative z-10 flex-shrink-0">
         {% block nav_left %}<div class="w-8"></div>{% endblock %}
@@ -121,7 +125,7 @@
   {# 5 base tabs max so the bar never overflows a 375 pt iPhone viewport.      #}
   {# box-shadow replaces border-t — avoids the 3-device-pixel line on 3× DPR. #}
   <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-xl"
-       style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 6px); box-shadow:0 -0.5px 0 rgba(0,0,0,0.12);">
+       style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 6px); box-shadow:0 -1px 0 var(--chrome-sep);">
     <div id="tab-bar" class="flex items-center justify-around pt-2 px-2">
       {% for tab in mobile_nav_tabs %}
       <a href="{% url tab.url_name %}"
