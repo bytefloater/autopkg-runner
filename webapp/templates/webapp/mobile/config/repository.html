@@ -25,7 +25,8 @@
 <form method="post" id="config-form"
       x-data="{
         repoType: '{{ s|lookup:'repository.type'|default:'remote' }}',
-        connType: '{{ s|lookup:'repository.connection_type'|default:'smb' }}'
+        connType: '{{ s|lookup:'repository.connection_type'|default:'smb' }}',
+        sftpAvailable: {{ sftp_available|yesno:'true,false' }}
       }">
   {% csrf_token %}
 
@@ -72,6 +73,22 @@
         <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.CONNECTION_TYPE_SSH }}</span>
         <input type="radio" name="repository.connection_type" value="sftp" x-model="connType" class="w-5 h-5 accent-blue-600">
       </label>
+    </div>
+
+    {# ── SFTP dependency warning ────────────────────────────────────────────── #}
+    <div x-show="connType === 'sftp' && !sftpAvailable" x-transition x-cloak>
+      <div class="mx-4 mt-3 flex items-start gap-3 px-4 py-3.5 rounded-xl
+                  bg-amber-50 dark:bg-amber-950/40
+                  border border-amber-200 dark:border-amber-800">
+        {% lucide "triangle-alert" "w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" %}
+        <div>
+          <p class="text-[14px] font-medium text-amber-800 dark:text-amber-300">SFTP dependencies not installed</p>
+          <p class="text-[12px] text-amber-700 dark:text-amber-400 mt-0.5">
+            Run <code class="font-mono bg-amber-100 dark:bg-amber-900/50 px-1 rounded">python manage.py install_sftp_deps</code>
+            to install macFUSE and sshfs, then restart the server.
+          </p>
+        </div>
+      </div>
     </div>
 
     {# Credentials — shown for all remote types #}

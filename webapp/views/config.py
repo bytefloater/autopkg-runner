@@ -1,3 +1,5 @@
+import shutil
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
@@ -61,6 +63,10 @@ class ConfigSectionView(LoginRequiredMixin, TemplateView):
         ctx['s']          = Setting.get_all()   # full settings dict
         ctx['log_levels'] = _LOG_LEVELS
         ctx['sections']   = CONFIG_SECTIONS     # for desktop sidebar nav
+
+        if self.section == 'repository':
+            ctx['sftp_available'] = shutil.which('sshfs') is not None
+
         return ctx
 
     def post(self, request, **kwargs):
