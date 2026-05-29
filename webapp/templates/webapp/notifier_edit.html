@@ -4,10 +4,10 @@
 {% block title %}{{ notifier.name }} — {{ t.APP.NAME }}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl">
+<div>
 
   {# Breadcrumb #}
-  <nav class="flex items-center gap-1.5 text-sm mb-6">
+  <nav class="flex items-center gap-1.5 text-sm mb-2">
     <a href="{% url 'config' %}"
        class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ t.APP.VIEWS_CONFIG }}</a>
     {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
@@ -16,6 +16,9 @@
     {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
     <span class="text-gray-600 dark:text-gray-400 truncate">{{ notifier.name }}</span>
   </nav>
+  <div class="flex items-center justify-between min-h-9 mb-6">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ notifier.name }}</h1>
+  </div>
 
   <form method="post"
         x-data="{ enabled: {% if notifier.enabled %}true{% else %}false{% endif %} }"

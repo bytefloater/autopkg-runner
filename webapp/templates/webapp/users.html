@@ -4,7 +4,17 @@
 {% block title %}Users — AutoPkg Runner{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl space-y-6" x-data="usersPage()">
+<div class="space-y-6" x-data="usersPage()">
+
+  {# ── Page header — consistent with Dashboard / Runs #}
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Users</h1>
+    <button @click="showCreate = true"
+            class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+      {% lucide "plus" "w-4 h-4" %}
+      Add User
+    </button>
+  </div>
 
   {# Credential reveal banner (new user or password reset) #}
   {% if new_user_creds or reset_creds %}
@@ -37,14 +47,6 @@
 
   {# ── User list ── #}
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
-      <h1 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Users</h1>
-      <button @click="showCreate = true"
-              class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm">
-        {% lucide "plus" "w-3.5 h-3.5" %}
-        Add User
-      </button>
-    </div>
 
     <table class="w-full text-sm">
       <thead>

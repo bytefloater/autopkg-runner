@@ -81,6 +81,14 @@
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center h-14 gap-2">
 
+        {# Hamburger — LEFT of logo, visible below lg #}
+        <button @click="open=true"
+                class="lg:hidden p-1.5 rounded-lg flex-shrink-0
+                       text-gray-500 hover:text-gray-900 dark:hover:text-white
+                       hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          {% lucide "menu" "w-5 h-5" %}
+        </button>
+
         {# Logo #}
         <div class="flex items-center gap-2.5 flex-shrink-0 mr-2">
           <span class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center
@@ -90,8 +98,8 @@
           </span>
         </div>
 
-        {# Horizontal nav — md and above #}
-        <nav class="hidden md:flex items-center gap-0.5 flex-1">
+        {# Horizontal nav — lg and above #}
+        <nav class="hidden lg:flex items-center gap-0.5 flex-1">
           {% for tab in nav_tabs %}
           <a href="{% url tab.url_name %}"
              class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
@@ -112,8 +120,8 @@
         {# Right-side controls #}
         <div class="flex items-center gap-1.5 ml-auto">
 
-          {# 3-way theme toggle — icon trio, hidden on xs #}
-          <div class="hidden sm:flex items-center rounded-lg
+          {# 3-way theme toggle — icon trio, hidden below lg (lives in drawer on small screens) #}
+          <div class="hidden lg:flex items-center rounded-lg
                       bg-gray-100 dark:bg-slate-800
                       border border-gray-200 dark:border-slate-700
                       p-0.5 gap-0.5">
@@ -194,14 +202,6 @@
             </div>
           </div>
 
-          {# Hamburger — below md only #}
-          <button @click="open=true"
-                  class="md:hidden p-1.5 rounded-lg
-                         text-gray-500 hover:text-gray-900 dark:hover:text-white
-                         hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
-            {% lucide "menu" "w-5 h-5" %}
-          </button>
-
         </div>
       </div>
     </div>
@@ -215,27 +215,27 @@
        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
        x-transition:leave="transition-opacity duration-200"
        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-       class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"></div>
+       class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"></div>
 
   {# Drawer panel #}
   <div :class="open ? 'translate-x-0' : '-translate-x-full'"
        class="fixed inset-y-0 left-0 z-50 w-72 flex flex-col
               bg-white dark:bg-slate-900
               border-r border-gray-100 dark:border-slate-800
-              shadow-2xl transition-transform duration-200 ease-in-out md:hidden">
+              shadow-2xl transition-transform duration-200 ease-in-out lg:hidden">
 
-    {# Drawer header #}
+    {# Drawer header — close button LEFT of logo, matching hamburger position in topbar #}
     <div class="flex items-center gap-3 h-14 px-4 flex-shrink-0
                 border-b border-gray-100 dark:border-slate-800">
-      <span class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center
-                   text-white text-xs font-bold select-none">AP</span>
-      <span class="font-semibold text-gray-900 dark:text-white text-sm">AutoPkg Runner</span>
       <button @click="open=false"
-              class="ml-auto p-1.5 rounded-lg
+              class="p-1.5 rounded-lg flex-shrink-0
                      text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
                      hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
         {% lucide "x" "w-4 h-4" %}
       </button>
+      <span class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center
+                   text-white text-xs font-bold select-none">AP</span>
+      <span class="font-semibold text-gray-900 dark:text-white text-sm">AutoPkg Runner</span>
     </div>
 
     {# Drawer nav #}

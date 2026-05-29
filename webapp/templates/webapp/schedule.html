@@ -4,16 +4,16 @@
 {% block title %}Schedule — AutoPkg Runner{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl space-y-6">
-  <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Schedule</h1>
+<div class="space-y-6">
+  <div>
+    <div class="flex items-center justify-between min-h-9">
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Schedule</h1>
+    </div>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Configure when the AutoPkg pipeline runs automatically. Uses standard cron syntax.</p>
+  </div>
 
   <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"
        x-data="{ enabled: {{ schedule.enabled|yesno:'true,false' }} }">
-    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-      <p class="text-sm text-gray-600 dark:text-gray-400">
-        Configure when the AutoPkg pipeline runs automatically. Uses standard cron syntax.
-      </p>
-    </div>
 
     <form method="post" class="px-6 py-5 space-y-5">
       {% csrf_token %}
@@ -64,6 +64,6 @@
         </button>
       </div>
     </form>
-  </div>
+  </div>{# /card #}
 </div>
 {% endblock %}
