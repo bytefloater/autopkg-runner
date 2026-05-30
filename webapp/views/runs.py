@@ -48,9 +48,13 @@ class RunDetailView(LoginRequiredMixin, TemplateView):
         # Group log entries by stage for the accordion view.
         # Entries with no stage_name go under the '__general__' key.
         logs_by_stage: dict[str, list] = defaultdict(list)
+        last_log_id = 0
         for entry in run.log_entries.order_by('timestamp'):
             logs_by_stage[entry.stage_name or '__general__'].append(entry)
+            if entry.id > last_log_id:
+                last_log_id = entry.id
         ctx['logs_by_stage'] = dict(logs_by_stage)
+        ctx['last_log_id'] = last_log_id
 
         ctx['results'] = run.recipe_results.all()
 

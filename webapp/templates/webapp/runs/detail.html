@@ -4,7 +4,7 @@
 {% block title %}Run {{ run.id|truncatechars:8 }} — AutoPkg Runner{% endblock %}
 
 {% block content %}
-<div class="space-y-4" x-data="runDetail('{{ run.id }}', '{{ run.status }}')" x-init="init()">
+<div class="space-y-4" x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})">
 
   {# ── Breadcrumb + run header ── #}
   <div class="flex items-center gap-3 flex-wrap">
@@ -239,7 +239,7 @@
 
 {% block scripts %}
 <script>
-function runDetail(runId, initialStatus) {
+function runDetail(runId, initialStatus, lastLogId = 0) {
   return {
     currentStatus: initialStatus,
     openStage:     null,
@@ -263,7 +263,7 @@ function runDetail(runId, initialStatus) {
 
     startSSE(runId) {
       this.liveStatus = '● Live';
-      this.eventSource = new EventSource(`/runs/${runId}/stream/?from=0`);
+      this.eventSource = new EventSource(`/runs/${runId}/stream/?from=${lastLogId}`);
 
       this.eventSource.onmessage = (e) => {
         const data = JSON.parse(e.data);

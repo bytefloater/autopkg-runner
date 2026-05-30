@@ -47,48 +47,56 @@ def trigger_db_cleanup() -> _uuid.UUID:
 
 def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
     import django.db
+    # Import models first — these are always available once Django is set up.
+    # All other imports (orchestrator, stages, logbook) happen inside the
+    # try/finally so that an ImportError or SyntaxError in any stage module
+    # still lets the finally block mark the run as failed instead of leaving
+    # it stuck in 'pending' forever.
     from webapp.models import Run, Task, StageExecution
-    from webapp.db_logger import DBLogHandler, set_run_id, set_current_stage
-    from libs.config import config_from_settings
-    from libs.orchestrator import Orchestrator
-    from logbook import Logger
-
-    set_run_id(run_id)
-    db_handler = DBLogHandler()
-    db_handler.push_thread()
-
-    Run.objects.filter(id=run_id).update(
-        status='running',
-        started_at=datetime.now(timezone.utc),
-    )
-    Task.objects.filter(id=task_id).update(status='running')
 
     final_status = 'failed'
-    stage_order_counter = [0]
+    db_handler = None
 
-    def stage_callback(stage_name: str, status: str, timestamp: datetime):
-        if status == 'running':
-            # Tag this thread so every log record emitted by DBLogHandler
-            # gets the correct stage_name while this stage is executing.
-            set_current_stage(stage_name)
-            order = stage_order_counter[0]
-            stage_order_counter[0] += 1
-            StageExecution.objects.update_or_create(
-                run_id=run_id,
-                name=stage_name,
-                defaults={'status': status, 'order': order, 'started_at': timestamp},
-            )
-        else:
-            # Stage finished (success or failed) — clear the thread-local so
-            # any inter-stage log lines don't get attributed to the last stage.
-            set_current_stage('')
-            StageExecution.objects.filter(run_id=run_id, name=stage_name).update(
-                status=status,
-                completed_at=timestamp,
-            )
-
-    logger = Logger('autopkg_runner')
     try:
+        from webapp.db_logger import DBLogHandler, set_run_id, set_current_stage
+        from libs.config import config_from_settings
+        from libs.orchestrator import Orchestrator
+        from logbook import Logger
+
+        set_run_id(run_id)
+        db_handler = DBLogHandler()
+        db_handler.push_thread()
+
+        Run.objects.filter(id=run_id).update(
+            status='running',
+            started_at=datetime.now(timezone.utc),
+        )
+        Task.objects.filter(id=task_id).update(status='running')
+
+        stage_order_counter = [0]
+
+        def stage_callback(stage_name: str, status: str, timestamp: datetime):
+            if status == 'running':
+                # Tag this thread so every log record emitted by DBLogHandler
+                # gets the correct stage_name while this stage is executing.
+                set_current_stage(stage_name)
+                order = stage_order_counter[0]
+                stage_order_counter[0] += 1
+                StageExecution.objects.update_or_create(
+                    run_id=run_id,
+                    name=stage_name,
+                    defaults={'status': status, 'order': order, 'started_at': timestamp},
+                )
+            else:
+                # Stage finished (success or failed) — clear the thread-local so
+                # any inter-stage log lines don't get attributed to the last stage.
+                set_current_stage('')
+                StageExecution.objects.filter(run_id=run_id, name=stage_name).update(
+                    status=status,
+                    completed_at=timestamp,
+                )
+
+        logger = Logger('autopkg_runner')
         config = config_from_settings()
         ctx = {'run_id': run_id}
 
@@ -102,7 +110,13 @@ def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
         success = orchestrator.execute()
         final_status = 'success' if success else 'failed'
     except Exception:
-        logger.exception('Pipeline failed during setup or execution')
+        # Log if we got far enough to have a logger/handler; otherwise the
+        # traceback will already have been printed to stderr by Python.
+        try:
+            from logbook import Logger
+            Logger('autopkg_runner').exception('Pipeline failed during setup or execution')
+        except Exception:
+            pass
         final_status = 'failed'
     finally:
         completed_at = datetime.now(timezone.utc)
@@ -114,7 +128,8 @@ def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
             status=final_status,
             completed_at=completed_at,
         )
-        db_handler.pop_thread()
+        if db_handler is not None:
+            db_handler.pop_thread()
         django.db.connection.close()
 
 
