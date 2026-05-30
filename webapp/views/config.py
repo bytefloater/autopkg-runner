@@ -67,6 +67,15 @@ class ConfigSectionView(LoginRequiredMixin, TemplateView):
         if self.section == 'repository':
             ctx['sftp_available'] = shutil.which('sshfs') is not None
 
+        if self.section == 'logging':
+            # Allow the log-level subpage to communicate back via ?level=DEBUG
+            level_param = self.request.GET.get('level', '').upper().strip()
+            valid = {v for v, _ in _LOG_LEVELS}
+            if level_param in valid:
+                s = dict(ctx['s'])
+                s['logging.level'] = level_param
+                ctx['s'] = s
+
         return ctx
 
     def post(self, request, **kwargs):
@@ -99,6 +108,26 @@ class ConfigSectionView(LoginRequiredMixin, TemplateView):
 
         messages.success(request, 'Settings saved.')
         return redirect(f'config-{section}')
+
+
+class LogLevelPickerView(LoginRequiredMixin, TemplateView):
+    """
+    Mobile-only sub-page: show available log levels with checkmarks.
+    Selecting one redirects to /config/logging/?level=<LEVEL>.
+    """
+
+    template_name = 'webapp/mobile/config/logging_level.html'
+
+    def get_context_data(self, **kwargs):
+        from webapp.models import Setting
+        ctx = super().get_context_data(**kwargs)
+        ctx['active_tab']     = 'config'
+        ctx['log_levels']     = _LOG_LEVELS
+        ctx['current_level']  = (
+            self.request.GET.get('current', '').upper().strip()
+            or Setting.get('logging.level', 'INFO')
+        )
+        return ctx
 
 
 def _section_keys(section: str) -> tuple:

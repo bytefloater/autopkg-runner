@@ -29,16 +29,16 @@
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.TAB_LOGGING }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
-    {# Log level #}
-    <div class="px-4 py-3">
-      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_LOG_LEVEL }}</label>
-      <select name="logging.level"
-              class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none">
-        {% for val, label in log_levels %}
-        <option value="{{ val }}" {% if s|lookup:'logging.level' == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
+    {# Log level — iOS-style navigation row; selection subpage at /config/logging/level/ #}
+    <input type="hidden" name="logging.level" value="{{ s|lookup:'logging.level' }}">
+    <a href="{% url 'config-logging-level' %}?current={{ s|lookup:'logging.level' }}"
+       class="flex items-center justify-between px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_LOG_LEVEL }}</span>
+      <div class="flex items-center gap-1">
+        <span class="text-[15px] text-gray-500 dark:text-gray-400">{{ s|lookup:'logging.level' }}</span>
+        {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600" %}
+      </div>
+    </a>
 
     {# Write logs to file toggle #}
     <div class="flex items-center justify-between px-4 py-3">
