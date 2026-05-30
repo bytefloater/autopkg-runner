@@ -4,8 +4,9 @@ from django.views.generic import RedirectView
 
 from webapp.views import (
     dashboard, runs, schedule, config, api_tokens, users, pwa, account,
-    notifications,
+    notifications, share,
 )
+from webapp.views.config import LogLevelPickerView
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/dashboard/'), name='home'),
@@ -46,14 +47,31 @@ urlpatterns = [
          notifications.NotifierDeleteView.as_view(), name='notifier-delete'),
     path('config/notifications/<uuid:pk>/toggle/',
          notifications.NotifierToggleView.as_view(), name='notifier-toggle'),
+    path('config/notifications/<uuid:pk>/test/',
+         notifications.NotifierTestView.as_view(), name='notifier-test'),
+    path('config/notifications/settings/',
+         notifications.NotificationSettingsView.as_view(), name='notification-settings'),
+    path('config/notifications/vapid-key/',
+         notifications.WebPushVapidKeyView.as_view(), name='webpush-vapid-key'),
+    path('config/notifications/<uuid:pk>/subscribe/',
+         notifications.WebPushSubscribeView.as_view(), name='webpush-subscribe'),
+    path('config/notifications/<uuid:pk>/unsubscribe/<int:sub_id>/',
+         notifications.WebPushUnsubscribeView.as_view(), name='webpush-unsubscribe'),
+    path('config/logging/level/',
+         LogLevelPickerView.as_view(), name='config-logging-level'),
 
     # ── Other ─────────────────────────────────────────────────────────────────
     path('api-tokens/', api_tokens.ApiTokensView.as_view(), name='api-tokens'),
     path('users/',      users.UsersView.as_view(),          name='users'),
+    path('users/<int:pk>/', users.UserEditView.as_view(),   name='user-edit'),
     path('account/change-password/', account.ChangePasswordView.as_view(), name='change-password'),
-    path('favicon.ico',   RedirectView.as_view(url='/static/webapp/icons/favicon.ico', permanent=True), name='favicon'),
+    # ── Share links (unauthenticated) ─────────────────────────────────────────
+    path('share/<str:token>/', share.RunShareView.as_view(), name='run-share'),
+
+    path('favicon.ico',   RedirectView.as_view(url='/static/logos/favicon.ico', permanent=True), name='favicon'),
     path('manifest.json', pwa.ManifestView.as_view(),        name='manifest'),
     path('sw.js',         pwa.ServiceWorkerView.as_view(),   name='service-worker'),
+    path('offline/',      pwa.OfflineView.as_view(),         name='offline'),
     path('login/',  account.MobileAwareLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
