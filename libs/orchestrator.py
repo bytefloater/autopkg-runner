@@ -55,12 +55,19 @@ class Orchestrator:
             self.logger.error('Stages not configured')
             return False
 
+        # Separate the notification stage so it always runs even when earlier
+        # stages fail — otherwise a pipeline error skips the notification entirely.
+        notify_stage = next(
+            (s for s in self.stages if isinstance(s, NotifyOnCompletion)), None
+        )
+        pipeline_stages = [s for s in self.stages if not isinstance(s, NotifyOnCompletion)]
+
         completed = []
         current_stage = None
         success = True
 
         try:
-            for stage in self.stages:
+            for stage in pipeline_stages:
                 current_stage = stage
                 self._notify(stage.name, 'running')
                 stage()
@@ -77,6 +84,16 @@ class Orchestrator:
                     s.cleanup()
                 except Exception:
                     self.logger.exception(f'Cleanup error in {s.name}')
+
+            # Always dispatch notifications — success or failure.
+            if notify_stage is not None:
+                try:
+                    self._notify(notify_stage.name, 'running')
+                    notify_stage()
+                    self._notify(notify_stage.name, 'success')
+                except Exception:
+                    self._notify(notify_stage.name, 'failed')
+                    self.logger.exception('Notification stage failed')
 
         return success
 
