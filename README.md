@@ -1,185 +1,204 @@
 # AutoPkg Runner
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)  
-![Version 2.0.0](https://img.shields.io/badge/version-2.0.0-green)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge)](LICENSE)<br>
+![Version 3.0.0](https://img.shields.io/badge/version-3.0.0-green?style=for-the-badge)
 
-A modular, pipeline‑driven wrapper around [AutoPkg](https://github.com/autopkg/autopkg) that automates:
+A web-based management interface for [AutoPkg](https://github.com/autopkg/autopkg) — the macOS software packaging automation tool. AutoPkg Runner wraps your AutoPkg workflows in a Django web application with real-time run monitoring, a REST API, a mobile PWA, and scheduled execution, replacing fragile cron scripts and log trawling with a proper operations dashboard.
 
-- Verification and (re‑)generation of trust information  
-- Mounting and validating an SMB‑hosted Munki repository  
-- Batch execution of AutoPkg recipes  
-- Generation of a timestamped HTML report via Django templates  
-- Garbage collection of old AutoPkg cache, temporary files, and reports  
-
-## Table of Contents
-- [Features](#features)  
-- [Requirements](#requirements)  
-- [Installation](#installation)  
-- [Configuration](#configuration)  
-- [Usage](#usage)  
-- [Pipeline Stages](#pipeline-stages)  
-- [Contributing](#contributing)  
-- [License](#license)  
+---
 
 ## Features
 
-- **Environment Check**  
-  Confirms AutoPkg binary and recipe list exist and there are no mounting conflicts before running.  
-- **Trust Verification**  
-  Verifies each recipe’s trust info; auto‑updates recipes that fail.  
-- **SMB‑Hosted Munki Support**  
-  Mounts a remote SMB share, validates repository structure, and unmounts on completion.  
-- **Batch Recipe Execution**  
-  Runs all recipes in sequence with `--report-plist` output.  
-- **HTML Reporting**  
-  Uses Django’s templating engine to render a customizable HTML report saved into the repo.  
-- **Garbage Collection**  
-  Cleans AutoPkg’s cache, temporary Munki files, and prunes old HTML reports based on retention settings.  
-- **Notifications on completion**  
-  Will push notification using the configured providers.
+### Web UI
+
+- **Dashboard** — last run summary, 30-day success rate, next scheduled run, and a one-click manual trigger
+- **Run detail** — GitHub Actions-style stage timeline with live log streaming; stage status icons and the log panel update in real time without a page refresh
+- **Run history** — paginated list of all pipeline executions with status badges and duration
+- **Schedule** — cron-based scheduling with an enable/disable toggle; changes apply immediately without a server restart
+- **Configuration** — full pipeline configuration through the browser; no config files to edit
+- **API tokens** — create and revoke per-user tokens for REST API access
+
+### Mobile PWA
+
+- Installable progressive web app with an iOS-native look and feel
+- Bottom tab bar navigation with SPA-style page transitions
+- Real-time stage status updates and live log streaming on run detail
+- Install directly from Safari — no App Store required
+
+<img src="docs/images/sc_mobile_dashboard.png" alt="Mobile dashboard" width="300">
+
+### Notifications
+
+Three notification providers are supported. Multiple notifiers can be configured and each can have its own custom title and message template.
+
+| Provider | Notes |
+|----------|-------|
+| **Pushover** | Push notification to iPhone/iPad/Mac via the Pushover app |
+| **Discord** | Message to a Discord channel via an incoming webhook |
+| **WebPush** | Native browser push notification — works with the installed PWA or any subscribed browser session |
+
+Notifications are always dispatched at the end of a run regardless of whether earlier pipeline stages succeeded or failed.
+
+### REST API
+
+All endpoints support both JSON (`Accept: application/json`) and XML (`Accept: application/xml`) responses. Token authentication is required for all endpoints except `get_token`.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/get_token/` | Exchange username + password for an API token |
+| `GET` | `/api/auth/check_token/` | Validate a token |
+| `POST` | `/api/tasks/trigger_run/` | Start a pipeline run — returns a task UUID |
+| `POST` | `/api/tasks/trigger_db_cleanup/` | Start a DB cleanup task — returns a task UUID |
+| `GET` | `/api/tasks/get_task_status/?uuid=` | Poll the status of a task |
+| `GET` | `/api/history/get_run_data/?uuid=` | Full run detail including stages, logs, and recipe results |
+| `GET` | `/api/history/list_runs/` | List runs; optional `start_date` / `end_date` query filters |
+
+### Pipeline
+
+The pipeline runs these stages in order:
+
+1. **Environment Check** — validates the AutoPkg binary and recipe list exist and are readable
+2. **Update Repos** — runs `autopkg repo-update all` to pull the latest recipe repos (optional, can be disabled per run)
+3. **Trust Verification** — runs `autopkg verify-trust-info` on all recipes and updates trust as needed
+4. **Mount Repository** — connects to the Munki repository over SMB or SFTP
+5. **Run AutoPkg** — batch executes all configured recipes and writes a report plist
+6. **Generate Report** — renders a timestamped HTML report from a Django template
+7. **Garbage Collector** — prunes old cache files, temp files, and stale HTML reports using `repoclean`
+8. **Send Notifications** — dispatches alerts to all configured notifiers
+
+---
 
 ## Requirements
 
-- **macOS** with `mount_smbfs` and `umount` utilities  
-- **AutoPkg** installed on your system
-- **Python 3.8+**  
-- **Python packages**:
-  - `django==4.2.20`
-  - `dnspython==2.7.0`
-  - `logbook==1.8.1`
-  - `psutil==7.0.0`
-  - `zeroconf==0.146.5`
+- macOS (AutoPkg is macOS-only)
+- Python 3.9+
+- [AutoPkg](https://github.com/autopkg/autopkg) installed
+
+---
 
 ## Installation
+
 ```bash
-git clone https://github.com/bytefloater/autopkg-runner.git
+git clone https://github.com/yourorg/autopkg-runner.git
 cd autopkg-runner
-pip3 install --user -r requirements.txt
+pip3 install -r requirements.txt
+python3 manage.py setup
+python3 manage.py serve
 ```
+
+`manage.py setup` runs all database migrations, creates the default schedule row, and generates an admin account with a random password printed to the terminal.
+
+Open `http://127.0.0.1:8000` and log in with the credentials shown. All configuration is done through the web UI.
+
+---
+
+## Management commands
+
+| Command | Description |
+|---------|-------------|
+| `manage.py setup` | One-shot initialisation: migrate, create defaults, generate admin account |
+| `manage.py serve` | Start the development server (`--network` to bind to all interfaces, `--port` to change port) |
+| `manage.py resetpassword` | Generate and set a new random password for the admin account |
+| `manage.py generate_vapid_keys` | Generate VAPID keys for WebPush notifications and store them in the database |
+| `manage.py install_sftp_deps` | Install macFUSE and sshfs via Homebrew (required for SFTP repository connections) |
+
+---
 
 ## Configuration
-Example configuration: (`config.json`)
+
+All settings are stored in the database and managed through the **Configuration** page in the web UI.
+
+| Group | Key settings |
+|-------|-------------|
+| **AutoPkg** | Binary path, cache path, recipe list path, report plist path |
+| **Repository** | Connection type (SMB or SFTP), host, share name, mount path, public URL, credentials, directories to validate |
+| **Garbage Collector** | `repoclean` binary path, retention period (e.g. `2w`), versions to keep, what to clean |
+| **Notifications** | Configured notifiers with per-notifier credentials and message templates |
+| **Logging** | Log level, optional file logging with path |
+| **Report** | HTML report template filename |
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DJANGO_SECRET_KEY` | (auto-generated) | Django secret key — set a stable value in production |
+| `DJANGO_DEBUG` | `true` | Set to `false` in production |
+| `DJANGO_ALLOWED_HOSTS` | `localhost 127.0.0.1` | Space-separated list of allowed hostnames |
+
+---
+
+## Scheduling
+
+Scheduled runs are configured on the **Schedule** page. Enable the toggle and set the cron fields (minute, hour, day of week, day of month, month). Changes apply immediately — no server restart required.
+
+---
+
+## REST API usage
+
+### Get a token
+
+```bash
+curl -X POST http://localhost:8000/api/auth/get_token/ \
+  -d "username=admin&password=yourpassword"
+```
+
 ```json
-{
-    "autopkg": {
-        "bin_path": "/usr/local/bin/autopkg",
-        "cache_path": "~/Library/AutoPkg/Cache",
-        "recipe_list": "~/Library/Application Support/AutoPkgr/recipe_list.txt",
-        "report_plist": "~/Documents/autopkg_report.plist"
-    },
-    "repository": {
-        "server": {
-            "host": "<< ipv4_or_zeroconf_name>>",
-            "share": "<< munki_repo_share_name >>",
-            "mount_path": "/tmp/Munki",
-            "public_url": "https://<< public_domain >>"
-        },
-        "authentication":{
-            "username": "<< username >>",
-            "password": "<< password >>"
-        },
-        "directories": {
-            "check": [
-                "catalogs",
-                "client_resources",
-                "icons",
-                "manifests",
-                "pkgs",
-                "pkgsinfo",
-                "reports"
-            ],
-            "report_dir": "reports"
-        }
-    },
-    "module_settings": {
-        "core.garbage_collector": {
-            "repoclean_bin_path": "/usr/local/munki/repoclean",
-            "retention": {
-                "period": "1w",
-                "keep_versions": 3
-            },
-            "targets": {
-                "autopkg_cache": true,
-                "temp_files": true,
-                "old_reports": true,
-                "repository_index": true
-            }
-        },
-        "core.generate_report": {
-            "template": "bootstrap_template.html"
-        },
-        "core.notify": {
-            "providers": [
-                "pushover"
-            ],
-            "notifiers.pushover": {
-                "app_token": "",
-                "user_token": "",
-                "supports_html": true
-            },
-            "notifiers.discord": {
-                "webhook_id": "",
-                "webhook_token": ""
-            }
-        }
-    },
-    "log_level": "debug",
-    "flags": []
-}
-
+{ "token": "abc123..." }
 ```
-> <b>`autopkg`</b>  
-> Paths to the AutoPkg binary, its cache directory, your recipe list, and the output plist.
->
-> <b>`repository`</b>  
-> SMB mount point, server address/share, credentials, required subdirectories, and report output folder.
->
-> <b>`module_settings`</b>  
-> `core.garbage_collector`: retention string (7d, 12h, 1w) and toggles.  
-> `core.generate_report`: name of the HTML template in /report_templates.  
-> `core.notify`: configuration of notification providers and provider-specific settings  
->
-> <b>`log_level`</b>  
-> One of DEBUG, INFO, WARNING, ERROR.
->
-> <b>`flags`</b>  
-> Reserved for future feature flags.
 
-## Usage
-### Running the application:
+### Trigger a run
+
 ```bash
-python3 main.py
+curl -X POST http://localhost:8000/api/tasks/trigger_run/ \
+  -H "Authorization: Token abc123..."
 ```
-| Option           | Description                                                            |
-|------------------|------------------------------------------------------------------------|
-| `-c`, `--config` | Specify the path to your configuration file (defaults to: config.json) |
-| `-s`, `--stage`  | Specify a single stage to run for testing                              |
 
-### Running a module (like a notifier):
+```json
+{ "task_uuid": "d4e5f6..." }
+```
+
+### Poll task status
+
 ```bash
-python3 -m notifiers.pushover
+curl "http://localhost:8000/api/tasks/get_task_status/?uuid=d4e5f6..." \
+  -H "Authorization: Token abc123..."
 ```
 
-## Pipeline Stages
-- Environment Check
-- Trust Verification
-- Mount Remote Repository
-- Run AutoPkg
-- Generate HTML Report
-- Garbage Collector
-- Notify (using providers) on completion
+### Get XML output
 
-Each stage implements:
-- `pre_check() → bool`
-- `run()`
-- `post_check() → bool`
-- `cleanup()` (on failure)
+Add `-H "Accept: application/xml"` to any request to receive an XML response instead of JSON.
 
-## Contributing
-- Fork the repository
-- Create a feature branch (`git checkout -b feature/YourFeature`)
-- Implement your changes, adhering to PEP8 and adding tests where appropriate
-- Submit a pull request with a clear description
+---
+
+## SFTP repository support
+
+SFTP connections require macFUSE and sshfs. Install them with:
+
+```bash
+python3 manage.py install_sftp_deps
+```
+
+This installs macFUSE and sshfs via Homebrew. macFUSE requires a system reboot and kernel extension approval in **System Settings → Privacy & Security** after installation.
+
+---
+
+## Production deployment
+
+The Django development server is single-threaded and will block on SSE connections. For production, use a multi-threaded WSGI server:
+
+```bash
+pip3 install gunicorn
+gunicorn autopkgrunner.wsgi:application --workers 1 --threads 8 --bind 0.0.0.0:8000
+```
+
+Set `DJANGO_DEBUG=false` and `DJANGO_ALLOWED_HOSTS` to your server's hostname. Restrict permissions on the database file since it contains API tokens and repository credentials:
+
+```bash
+chmod 600 db.sqlite3
+```
+
+---
 
 ## License
-This project is licensed under the Apache License 2.0 – see the [LICENSE](/LICENSE) file for details.
+
+Apache 2.0 — see [LICENSE](LICENSE).
