@@ -98,6 +98,11 @@ class NotifyOnCompletion(Stage):
             raw_msg = getattr(notifier, 'message_template', '') or ''
             if raw_msg.strip():
                 message = _render(raw_msg, tpl_ctx)
+                # If the template rendered to nothing (e.g. {share_url} when
+                # pwa_base_url is not configured) fall back to the auto-generated
+                # message so we never call send() with an empty body.
+                if not message.strip():
+                    message = self._gen_html_msg(summary) if supports_html else self._gen_plain_msg(summary)
             else:
                 message = self._gen_html_msg(summary) if supports_html else self._gen_plain_msg(summary)
 
