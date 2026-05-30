@@ -33,8 +33,7 @@
 {% block content %}
 <div class="h-4"></div>
 
-<div x-data="runDetail('{{ run.id }}', '{{ run.status }}')"
-     x-init="init()">
+<div x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})" >
 
   {# ── Stages ──────────────────────────────────────────────────────────────── #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Stages</p>
@@ -188,7 +187,7 @@
 
 {% block scripts %}
 <script>
-function runDetail(runId, initialStatus) {
+function runDetail(runId, initialStatus, lastLogId = 0) {
   return {
     currentStatus: initialStatus,
     runComplete:   ['success', 'failed', 'cancelled'].includes(initialStatus),
@@ -207,7 +206,7 @@ function runDetail(runId, initialStatus) {
     },
 
     startSSE(runId) {
-      this.eventSource = new EventSource(`/runs/${runId}/stream/?from=0`);
+      this.eventSource = new EventSource(`/runs/${runId}/stream/?from=${lastLogId}`);
 
       this.eventSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
@@ -306,6 +305,14 @@ function runDetail(runId, initialStatus) {
       }
 
       if (status === 'running') {
+        // First stage starting means the run is now running — update the badge.
+        if (this.currentStatus === 'pending') {
+          this.currentStatus = 'running';
+          const dot  = document.getElementById('run-status-dot');
+          const text = document.getElementById('run-status-text');
+          if (dot)  dot.className  = 'w-2 h-2 rounded-full flex-shrink-0 bg-blue-500';
+          if (text) { text.className = 'text-[17px] font-semibold text-blue-500'; text.textContent = 'Running'; }
+        }
         const row = document.getElementById(`stage-row-${order}`);
         if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
