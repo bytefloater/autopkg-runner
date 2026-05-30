@@ -28,6 +28,13 @@ NOTIFIER_TYPES: dict[str, dict] = {
             {'key': 'webhook_token', 'label': 'Webhook Token', 'type': 'password', 'required': True},
         ],
     },
+    'webpush': {
+        'label': 'Web Push',
+        # No configuration fields — subscriptions are managed per-device via
+        # the browser's Push API.  The notifier edit page shows a dedicated
+        # subscription-management UI when this type is selected.
+        'fields': [],
+    },
 }
 
 

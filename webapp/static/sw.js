@@ -1,4 +1,4 @@
-const CACHE_NAME = 'autopkg-runner-v1';
+const CACHE_NAME = 'autopkg-runner-v3';
 
 const STATIC_ASSETS = [
   '/dashboard/',
@@ -8,12 +8,12 @@ const STATIC_ASSETS = [
   '/api-tokens/',
 ];
 
-// Install: pre-cache shell pages
+// Install: pre-cache the offline fallback page (and manifest)
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(['/manifest.json'])
+      cache.addAll(['/manifest.json', '/offline/'])
     )
   );
 });
@@ -40,6 +40,9 @@ self.addEventListener('fetch', (event) => {
 
   // API: always network
   if (url.pathname.startsWith('/api/')) return;
+
+  // Splash screens are large and only used by iOS at launch — skip caching.
+  if (url.pathname.startsWith('/static/splash_screens/')) return;
 
   // Static assets: cache-first
   if (url.pathname.startsWith('/static/') || url.hostname.includes('cdn.')) {
@@ -84,8 +87,8 @@ self.addEventListener('push', (event) => {
   const title   = data.title || 'AutoPkg Runner';
   const options = {
     body:  data.body  || '',
-    icon:  '/static/webapp/icons/icon-192.png',
-    badge: '/static/webapp/icons/icon-192.png',
+    icon:  '/static/logos/icon-192.png',
+    badge: '/static/logos/icon-192.png',
     data:  { url: data.url || '/dashboard/' },
     vibrate: [200, 100, 200],
   };

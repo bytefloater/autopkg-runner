@@ -24,6 +24,7 @@ class Setting(models.Model):
     # Keys whose values are encrypted before being written to the database.
     SENSITIVE_KEYS: frozenset[str] = frozenset({
         'repository.password',
+        'webpush.vapid_private_key',
     })
 
     DEFAULTS: dict[str, str] = {
@@ -52,6 +53,12 @@ class Setting(models.Model):
         'logging.level':     'INFO',
         'logging.to_file':   'false',
         'logging.file_path': '~/logs/autopkg-runner',
+        # Notifications
+        'notify.pwa_base_url': '',   # Base URL for share links (e.g. https://autopkg.example.com)
+        # WebPush
+        'webpush.vapid_private_key': '',
+        'webpush.vapid_public_key':  '',
+        'webpush.vapid_contact':     '',
         # User Interface
         'ui.language': 'en-US',
     }
@@ -130,13 +137,23 @@ class Notifier(models.Model):
     is intentionally kept internal.
     """
 
-    id            = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name          = models.CharField(max_length=100)
-    notifier_type = models.CharField(max_length=50)
-    enabled       = models.BooleanField(default=True)
-    config        = models.JSONField(default=dict,
-                                     help_text='Type-specific key/value settings (passwords encrypted)')
-    created_at    = models.DateTimeField(auto_now_add=True)
+    id               = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name             = models.CharField(max_length=100)
+    notifier_type    = models.CharField(max_length=50)
+    enabled          = models.BooleanField(default=True)
+    config           = models.JSONField(default=dict,
+                                        help_text='Type-specific key/value settings (passwords encrypted)')
+    title_template   = models.TextField(blank=True, default='',
+                                        help_text='Custom notification title. Leave blank for default.')
+    message_template = models.TextField(blank=True, default='',
+                                        help_text=(
+                                            'Custom message body. Available variables: '
+                                            '{status}, {status_emoji}, {imports}, {failures}, '
+                                            '{downloads}, {duration}, {share_url}, {run_id}, '
+                                            '{triggered_by}, {date}, {time}. '
+                                            'Leave blank to use the auto-generated message.'
+                                        ))
+    created_at       = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['name']
@@ -309,6 +326,65 @@ class RecipeResult(models.Model):
 
     def __str__(self):
         return f'{self.result_type} for run {self.run_id}'
+
+
+class RunShareToken(models.Model):
+    """
+    Obscure, unauthenticated-access token for a completed run's share report.
+
+    The token is a cryptographically random URL-safe string.  It is generated
+    on first use (at notification dispatch time) and deleted automatically when
+    its parent Run is deleted.  The share report intentionally omits log entries
+    and stack traces — it shows only stage statuses and AutoPkg output.
+    """
+
+    token      = models.CharField(max_length=86, unique=True, db_index=True)
+    run        = models.OneToOneField(Run, on_delete=models.CASCADE, related_name='share_token')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Run Share Token'
+
+    def __str__(self):
+        return f'ShareToken({self.token[:12]}…) → Run {self.run_id}'
+
+    @classmethod
+    def get_or_create_for_run(cls, run: 'Run') -> 'RunShareToken':
+        """Return the existing share token for *run*, or create one."""
+        import secrets
+        try:
+            return cls.objects.get(run=run)
+        except cls.DoesNotExist:
+            return cls.objects.create(
+                run=run,
+                token=secrets.token_urlsafe(48),  # 48 bytes → 64 URL-safe chars
+            )
+
+
+class WebPushSubscription(models.Model):
+    """
+    A single browser push subscription for a WebPush-type notifier.
+
+    Each browser/device that subscribes to push notifications for a given
+    notifier gets its own row.  The endpoint, p256dh, and auth fields come
+    directly from the browser's PushSubscription object.
+    """
+
+    notifier     = models.ForeignKey('Notifier', on_delete=models.CASCADE, related_name='webpush_subscriptions')
+    endpoint     = models.TextField(unique=True)
+    p256dh       = models.CharField(max_length=300)
+    auth         = models.CharField(max_length=100)
+    device_label = models.CharField(max_length=100, blank=True,
+                                    help_text='Human-readable label, e.g. "iPhone 15 Pro — Safari"')
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'WebPush Subscription'
+
+    def __str__(self):
+        label = self.device_label or self.endpoint[:60]
+        return f'WebPush({label}) → {self.notifier.name}'
 
 
 class Task(models.Model):

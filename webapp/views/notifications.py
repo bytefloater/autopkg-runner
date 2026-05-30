@@ -1,7 +1,9 @@
+import importlib
 import json
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView, View
 
@@ -19,16 +21,24 @@ class NotificationsView(LoginRequiredMixin, TemplateView):
         return [self.template_name]
 
     def get_context_data(self, **kwargs):
-        from webapp.models import Notifier
+        from webapp.models import Notifier, Setting
         ctx = super().get_context_data(**kwargs)
-        ctx['active_tab']   = 'config'
-        ctx['notifiers']    = Notifier.objects.all()
-        ctx['type_choices'] = type_choices()
-        ctx['type_schemas'] = json.dumps(NOTIFIER_TYPES)
+        ctx['active_tab']    = 'config'
+        ctx['notifiers']     = Notifier.objects.all()
+        ctx['type_choices']  = type_choices()
+        ctx['type_schemas']  = json.dumps(NOTIFIER_TYPES)
+        ctx['pwa_base_url']  = Setting.get('notify.pwa_base_url', '')
         return ctx
 
     def post(self, request):
-        """Quick-create a new notifier (name + type only; user edits details next)."""
+        # ── Settings save (pwa_base_url form) ─────────────────────────────────
+        if request.POST.get('_action') == 'save_settings':
+            from webapp.models import Setting
+            Setting.set('notify.pwa_base_url', request.POST.get('notify.pwa_base_url', '').strip())
+            messages.success(request, 'Notification settings saved.')
+            return redirect('config-notifications')
+
+        # ── Quick-create a new notifier (name + type only) ─────────────────────
         from webapp.models import Notifier
         name  = request.POST.get('name', '').strip()
         ntype = request.POST.get('notifier_type', '')
@@ -49,8 +59,23 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
             return ['webapp/mobile/notifier_edit.html']
         return [self.template_name]
 
+    # Variables available in message / title templates — shown in the UI reference.
+    TEMPLATE_VARIABLES = [
+        ('status',       '"succeeded" or "failed"'),
+        ('status_emoji', '✅ or ❌'),
+        ('imports',      'Count of Munki imports'),
+        ('failures',     'Count of recipe failures'),
+        ('downloads',    'Count of downloads'),
+        ('duration',     'Run duration, e.g. "2m 34s"'),
+        ('share_url',    'Obscure share-link URL'),
+        ('run_id',       'Run UUID'),
+        ('triggered_by', '"manual", "scheduler", or "api"'),
+        ('date',         'Run date, e.g. "2025-01-15"'),
+        ('time',         'Run start time, e.g. "14:30"'),
+    ]
+
     def get_context_data(self, **kwargs):
-        from webapp.models import Notifier
+        from webapp.models import Notifier, Setting, WebPushSubscription
         ctx = super().get_context_data(**kwargs)
         notifier = get_object_or_404(Notifier, pk=kwargs['pk'])
         schema   = NOTIFIER_TYPES.get(notifier.notifier_type, {})
@@ -58,6 +83,13 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
         ctx['notifier']   = notifier
         ctx['schema']     = schema
         ctx['fields']     = schema.get('fields', [])
+        ctx['variables']  = self.TEMPLATE_VARIABLES
+
+        if notifier.notifier_type == 'webpush':
+            ctx['webpush_subscriptions'] = WebPushSubscription.objects.filter(notifier=notifier)
+            ctx['vapid_public_key']       = Setting.get('webpush.vapid_public_key', '')
+            ctx['vapid_configured']       = bool(ctx['vapid_public_key'])
+
         return ctx
 
     def post(self, request, pk):
@@ -66,8 +98,10 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
         schema   = NOTIFIER_TYPES.get(notifier.notifier_type, {})
         fields   = schema.get('fields', [])
 
-        notifier.name    = request.POST.get('name', notifier.name).strip()
-        notifier.enabled = bool(request.POST.get('enabled'))
+        notifier.name             = request.POST.get('name', notifier.name).strip()
+        notifier.enabled          = bool(request.POST.get('enabled'))
+        notifier.title_template   = request.POST.get('title_template', '').strip()
+        notifier.message_template = request.POST.get('message_template', '').strip()
 
         cfg = {}
         for field in fields:
@@ -112,3 +146,139 @@ class NotifierToggleView(LoginRequiredMixin, View):
         notifier.enabled = not notifier.enabled
         notifier.save(update_fields=['enabled'])
         return redirect('config-notifications')
+
+
+class NotifierTestView(LoginRequiredMixin, View):
+    """
+    POST-only endpoint: send a test notification via a saved notifier.
+
+    Uses the credentials currently saved in the database.  Returns JSON so
+    the UI can show inline success / failure feedback without a page reload.
+
+    Response:
+        {"success": true,  "message": "Test sent successfully."}
+        {"success": false, "message": "<error description>"}
+    """
+
+    def post(self, request, pk):
+        from webapp.models import Notifier
+        notifier = get_object_or_404(Notifier, pk=pk)
+
+        module_path = f"notifiers.{notifier.notifier_type}"
+        try:
+            provider_mod = importlib.import_module(module_path)
+        except ModuleNotFoundError:
+            return JsonResponse(
+                {'success': False, 'message': f"Notifier module '{module_path}' not found."},
+                status=400,
+            )
+
+        _send = getattr(provider_mod, 'send', None)
+        if _send is None:
+            return JsonResponse(
+                {'success': False, 'message': f"Module '{module_path}' has no send() function."},
+                status=400,
+            )
+
+        cfg = notifier.decrypted_config
+
+        try:
+            _send(
+                configuration=cfg,
+                message=(
+                    "This is a test notification from AutoPkg Runner. "
+                    "If you received this, your notifier is configured correctly. ✅"
+                ),
+                title="AutoPkg Runner — Test",
+            )
+        except Exception as exc:
+            return JsonResponse(
+                {'success': False, 'message': str(exc) or 'An unknown error occurred.'},
+                status=500,
+            )
+
+        return JsonResponse({'success': True, 'message': 'Test notification sent.'})
+
+
+class NotificationSettingsView(LoginRequiredMixin, TemplateView):
+    """
+    Mobile-only page: edit global notification settings (App URL for share links).
+    Desktop users access these settings from the main notifications page.
+    """
+
+    template_name = 'webapp/mobile/notification_settings.html'
+
+    def get_context_data(self, **kwargs):
+        from webapp.models import Setting
+        ctx = super().get_context_data(**kwargs)
+        ctx['active_tab']   = 'config'
+        ctx['pwa_base_url'] = Setting.get('notify.pwa_base_url', '')
+        return ctx
+
+    def post(self, request):
+        from webapp.models import Setting
+        Setting.set('notify.pwa_base_url', request.POST.get('notify.pwa_base_url', '').strip())
+        messages.success(request, 'Settings saved.')
+        return redirect('notification-settings')
+
+
+class WebPushVapidKeyView(LoginRequiredMixin, View):
+    """Return the VAPID public key so the browser can subscribe."""
+
+    def get(self, request):
+        from webapp.models import Setting
+        key = Setting.get('webpush.vapid_public_key', '').strip()
+        if not key:
+            return JsonResponse({'error': 'VAPID keys not configured.'}, status=503)
+        return JsonResponse({'public_key': key})
+
+
+class WebPushSubscribeView(LoginRequiredMixin, View):
+    """Register a new browser push subscription for a WebPush notifier."""
+
+    def post(self, request, pk):
+        from webapp.models import Notifier, WebPushSubscription
+        notifier = get_object_or_404(Notifier, pk=pk)
+
+        try:
+            body = json.loads(request.body)
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+
+        endpoint = body.get('endpoint', '').strip()
+        p256dh   = body.get('p256dh',   '').strip()
+        auth     = body.get('auth',     '').strip()
+        label    = body.get('label',    '').strip()
+
+        if not endpoint or not p256dh or not auth:
+            return JsonResponse({'error': 'endpoint, p256dh, and auth are required.'}, status=400)
+
+        sub, created = WebPushSubscription.objects.get_or_create(
+            endpoint=endpoint,
+            defaults={
+                'notifier':     notifier,
+                'p256dh':       p256dh,
+                'auth':         auth,
+                'device_label': label,
+            },
+        )
+        if not created:
+            # Update keys in case they rotated.
+            sub.notifier     = notifier
+            sub.p256dh       = p256dh
+            sub.auth         = auth
+            if label:
+                sub.device_label = label
+            sub.save()
+
+        return JsonResponse({'status': 'subscribed', 'id': sub.pk, 'created': created})
+
+
+class WebPushUnsubscribeView(LoginRequiredMixin, View):
+    """Remove a specific push subscription."""
+
+    def post(self, request, pk, sub_id):
+        from webapp.models import WebPushSubscription
+        sub = get_object_or_404(WebPushSubscription, pk=sub_id, notifier_id=pk)
+        sub.delete()
+        return JsonResponse({'status': 'unsubscribed'})

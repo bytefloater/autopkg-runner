@@ -6,35 +6,43 @@ from typing import Optional
 from urllib.parse import urlencode
 
 
-def send(configuration: dict, message: str, title: Optional[str]=None):
-    """Send a pushover notification
+def send(
+    configuration: dict,
+    message: str,
+    title: Optional[str] = None,
+    url: Optional[str] = None,
+    url_title: Optional[str] = None,
+):
+    """Send a Pushover notification.
 
     Parameters:
-        configuration (dict): {
-            app_token (str): Application-specific token
-            user_user (str): User token for the Pushover API
-        }
-        message (str): Body content of notification
-        title (str): Notification title [OPTIONAL]"""
+        configuration: {'app_token': str, 'user_token': str}
+        message:   Body content of notification.
+        title:     Notification title (optional).
+        url:       Supplementary URL shown below the message (optional).
+                   Pushover opens this URL when the notification is tapped —
+                   use a share link so the in-app browser opens the report.
+        url_title: Display label for *url* (optional; defaults to "View report").
+    """
     conn = http.client.HTTPSConnection("api.pushover.net", 443)
     parameters = {
-        "token": configuration["app_token"],
-        "user": configuration["user_token"],
-        "title": title,
-        "message": message,
-        "html": 1,
-        "ttl": 2592000    # 30 days
+        "token":     configuration["app_token"],
+        "user":      configuration["user_token"],
+        "title":     title,
+        "message":   message,
+        "html":      1,
+        "ttl":       2592000,   # 30 days
+        "url":       url,
+        "url_title": url_title or ("View report" if url else None),
     }
 
-    # Remove the None values from the sent parameters
-    for key, value in dict(parameters).items():
-        if value is None:
-            del parameters[key]
+    # Strip None values before sending
+    parameters = {k: v for k, v in parameters.items() if v is not None}
 
     conn.request(
         "POST", "/1/messages.json",
-        urlencode(dict(parameters)),
-        {"Content-type": "application/x-www-form-urlencoded"}
+        urlencode(parameters),
+        {"Content-type": "application/x-www-form-urlencoded"},
     )
     conn.getresponse()
 

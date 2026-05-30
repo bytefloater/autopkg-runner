@@ -2,35 +2,44 @@
 A helper module for sending notifications to Discord
 """
 import http.client
+import json
 from typing import Optional
-from urllib.parse import urlencode
 
 
-def send(configuration: dict, message: str, title: Optional[str]=None):
-    """Send a pushover notification
+def send(
+    configuration: dict,
+    message: str,
+    title: Optional[str] = None,
+    url: Optional[str] = None,
+    url_title: Optional[str] = None,
+):
+    """Send a Discord webhook notification.
 
     Parameters:
-        configuration (dict): {
-            webhook_id (str): Webhook ID
-            webhook_token (str): Webhook Token
-        }
-        message (str): Body content of notification
-        title (str): Override the message username [OPTIONAL]"""
-    conn = http.client.HTTPSConnection("discord.com", 443)
-    parameters = {
-        "username": title,
-        "content": message,
+        configuration: {'webhook_id': str, 'webhook_token': str}
+        message:   Body content of notification.
+        title:     Override the webhook bot username (optional).
+        url:       Share link URL appended to the message (optional).
+                   Discord auto-embeds the URL as a preview card.
+        url_title: Ignored for Discord (URL is included inline).
+    """
+    content = message
+    if url:
+        label = url_title or "View report"
+        content = f"{message}\n**[{label}]({url})**" if message else url
+
+    payload = {
+        "username": title or "AutoPkg Runner",
+        "content":  content,
     }
 
-    # Remove the None values from the sent parameters
-    for key, value in dict(parameters).items():
-        if value is None:
-            del parameters[key]
-
+    body = json.dumps(payload).encode()
+    conn = http.client.HTTPSConnection("discord.com", 443)
     conn.request(
-        "POST", f"/api/webhooks/{configuration['webhook_id']}/{configuration['webhook_token']}",
-        urlencode(dict(parameters)),
-        {"Content-type": "application/x-www-form-urlencoded"}
+        "POST",
+        f"/api/webhooks/{configuration['webhook_id']}/{configuration['webhook_token']}",
+        body,
+        {"Content-type": "application/json"},
     )
     conn.getresponse()
 
