@@ -1,0 +1,150 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ edit_user.username }} — {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ edit_user.username }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'users' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="user-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="user-form"
+      x-data="{
+        isActive: {% if edit_user.is_active %}true{% else %}false{% endif %},
+        isAdmin:  {% if edit_user.is_superuser %}true{% else %}false{% endif %}
+      }">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="update">
+
+  {# ── Password reset banner ──────────────────────────────────────────────── #}
+  {% if reset_creds %}
+  <div class="mx-4 mb-4 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-xl p-4">
+    <p class="text-[13px] font-semibold text-green-800 dark:text-green-300 mb-2">Password reset — save the new password.</p>
+    <div class="space-y-1 mb-3">
+      <div class="flex items-baseline gap-2">
+        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">Username</span>
+        <span class="text-[13px] font-mono text-gray-900 dark:text-white select-all break-all">{{ reset_creds.username }}</span>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">Password</span>
+        <span class="text-[13px] font-mono text-gray-900 dark:text-white select-all break-all">{{ reset_creds.password }}</span>
+      </div>
+    </div>
+    <p class="text-[11px] text-green-700 dark:text-green-400">These credentials will not be shown again.</p>
+  </div>
+  {% endif %}
+
+  {# ── Identity ───────────────────────────────────────────────────────────── #}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Account</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+
+    <div class="flex items-center gap-3 px-4 py-3">
+      <span class="w-9 h-9 rounded-full bg-blue-600/15 border border-blue-500/20 flex items-center justify-center text-[14px] font-bold text-blue-600 dark:text-blue-400 uppercase select-none flex-shrink-0">
+        {{ edit_user.username|first }}
+      </span>
+      <div>
+        <p class="text-[16px] font-medium text-gray-900 dark:text-white">
+          {{ edit_user.username }}{% if is_self %}&thinsp;<span class="text-[13px] text-gray-400 font-normal">(you)</span>{% endif %}
+        </p>
+        <p class="text-[13px] text-gray-400 dark:text-gray-500">
+          {% if edit_user.is_superuser %}Administrator{% else %}User{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
+      <input type="email" name="email" value="{{ edit_user.email }}"
+             class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600"
+             placeholder="user@example.com">
+    </div>
+
+  </div>
+
+  {# ── Role & status (hidden for self-edit) ──────────────────────────────── #}
+  {% if not is_self %}
+  <input type="hidden" name="is_active" :value="isActive ? 'on' : ''">
+  <input type="hidden" name="is_superuser" :value="isAdmin ? 'on' : ''">
+
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Role &amp; Status</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">Active</span>
+      <button type="button" @click="isActive = !isActive"
+              :class="isActive ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="isActive ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-3">
+      <div>
+        <p class="text-[16px] text-gray-900 dark:text-white">Administrator</p>
+        <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">Full access to all settings</p>
+      </div>
+      <button type="button" @click="isAdmin = !isAdmin"
+              :class="isAdmin ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="isAdmin ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+  </div>
+  {% else %}
+  <p class="mx-4 mb-6 text-[13px] text-gray-400 dark:text-gray-500">
+    You cannot change your own role or active status. Use the account menu to change your password.
+  </p>
+  {% endif %}
+
+</form>
+
+{# ── Danger zone (non-self only) ──────────────────────────────────────────── #}
+{% if not is_self %}
+<p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</p>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+
+  {# Reset password #}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="reset_password">
+    <button type="submit"
+            class="w-full flex items-center justify-between px-4 py-[13px] text-left active:bg-gray-50 dark:active:bg-[#2c2c2e] transition-colors duration-75">
+      <span class="text-[16px] text-amber-600 dark:text-amber-400">Reset Password</span>
+      {% lucide "chevron-right" "w-5 h-5 text-gray-300 dark:text-gray-600" %}
+    </button>
+  </form>
+
+  {# Delete #}
+  <form method="post" x-data="{}"
+        @submit.prevent="if(confirm('Delete {{ edit_user.username|escapejs }}? This cannot be undone.')) $el.submit()">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <button type="submit"
+            class="w-full flex items-center justify-between px-4 py-[13px] text-left active:bg-gray-50 dark:active:bg-[#2c2c2e] transition-colors duration-75">
+      <span class="text-[16px] text-red-500 dark:text-red-400">Delete User</span>
+      {% lucide "chevron-right" "w-5 h-5 text-gray-300 dark:text-gray-600" %}
+    </button>
+  </form>
+
+</div>
+{% endif %}
+
+<div class="h-8"></div>
+{% endblock %}

@@ -71,3 +71,46 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(event.request))
   );
 });
+
+// ── Web Push ──────────────────────────────────────────────────────────────────
+
+// Receive a push message from the server and display a notification.
+self.addEventListener('push', (event) => {
+  let data = { title: 'AutoPkg Runner', body: 'A run has completed.' };
+  if (event.data) {
+    try { data = JSON.parse(event.data.text()); } catch (_) {}
+  }
+
+  const title   = data.title || 'AutoPkg Runner';
+  const options = {
+    body:  data.body  || '',
+    icon:  '/static/webapp/icons/icon-192.png',
+    badge: '/static/webapp/icons/icon-192.png',
+    data:  { url: data.url || '/dashboard/' },
+    vibrate: [200, 100, 200],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// When the user taps the notification, open/focus the relevant page.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url)
+    ? event.notification.data.url
+    : '/dashboard/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // If there's already an open window at the same origin, focus it.
+      for (const client of windowClients) {
+        if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      // Otherwise open a new window.
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
+  );
+});
