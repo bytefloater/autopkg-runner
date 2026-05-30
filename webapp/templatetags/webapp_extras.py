@@ -13,7 +13,7 @@ def _read_svg(name: str) -> str:
     """Read a Lucide SVG from staticfiles; cache the raw content in-process."""
     if name not in _SVG_CACHE:
         from django.contrib.staticfiles import finders
-        path = finders.find(f'webapp/icons/{name}.svg')
+        path = finders.find(f'ui_symbols/{name}.svg')
         if path:
             with open(path, 'r', encoding='utf-8') as fh:
                 _SVG_CACHE[name] = fh.read().strip()
