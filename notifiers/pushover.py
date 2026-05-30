@@ -44,7 +44,10 @@ def send(
         urlencode(parameters),
         {"Content-type": "application/x-www-form-urlencoded"},
     )
-    conn.getresponse()
+    resp = conn.getresponse()
+    if resp.status not in (200, 201):
+        body = resp.read().decode(errors='replace')
+        raise RuntimeError(f"Pushover returned HTTP {resp.status}: {body}")
 
 if __name__ == "__main__":
     import json
