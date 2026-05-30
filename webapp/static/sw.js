@@ -1,4 +1,4 @@
-const CACHE_NAME = 'autopkg-runner-v3';
+const CACHE_NAME = 'autopkg-runner-v4';
 
 const STATIC_ASSETS = [
   '/dashboard/',
@@ -8,12 +8,12 @@ const STATIC_ASSETS = [
   '/api-tokens/',
 ];
 
-// Install: pre-cache the offline fallback page (and manifest)
+// Install: pre-cache the manifest
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(['/manifest.json', '/offline/'])
+      cache.addAll(['/manifest.json'])
     )
   );
 });
