@@ -118,30 +118,79 @@
 {# ── Danger zone (non-self only) ──────────────────────────────────────────── #}
 {% if not is_self %}
 <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</p>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6"
+     x-data="{ showDelete: false }">
 
-  {# Reset password #}
+  {# Reset password — direct submit, no confirmation needed (result shown on next page) #}
   <form method="post">
     {% csrf_token %}
     <input type="hidden" name="action" value="reset_password">
     <button type="submit"
-            class="w-full flex items-center justify-between px-4 py-[13px] text-left active:bg-gray-50 dark:active:bg-[#2c2c2e] transition-colors duration-75">
+            class="w-full px-4 py-[13px] text-left active:bg-gray-50 dark:active:bg-[#2c2c2e] transition-colors duration-75">
       <span class="text-[16px] text-amber-600 dark:text-amber-400">Reset Password</span>
-      {% lucide "chevron-right" "w-5 h-5 text-gray-300 dark:text-gray-600" %}
     </button>
   </form>
 
-  {# Delete #}
-  <form method="post" x-data="{}"
-        @submit.prevent="if(confirm('Delete {{ edit_user.username|escapejs }}? This cannot be undone.')) $el.submit()">
+  {# Delete — opens confirmation sheet #}
+  <form method="post" x-ref="deleteForm">
     {% csrf_token %}
     <input type="hidden" name="action" value="delete">
-    <button type="submit"
-            class="w-full flex items-center justify-between px-4 py-[13px] text-left active:bg-gray-50 dark:active:bg-[#2c2c2e] transition-colors duration-75">
+    <button type="button" @click="showDelete = true"
+            class="w-full px-4 py-[13px] text-left active:bg-gray-50 dark:active:bg-[#2c2c2e] transition-colors duration-75">
       <span class="text-[16px] text-red-500 dark:text-red-400">Delete User</span>
-      {% lucide "chevron-right" "w-5 h-5 text-gray-300 dark:text-gray-600" %}
     </button>
   </form>
+
+  {# ── Delete confirmation bottom sheet ────────────────────────────────── #}
+  <template x-teleport="body">
+    <div x-show="showDelete" x-cloak class="fixed inset-0 z-[100]"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+      <div class="absolute inset-0 bg-black/50" @click="showDelete = false"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[#f2f2f7] dark:bg-[#1c1c1e] rounded-t-3xl shadow-2xl"
+           style="padding-bottom: calc(env(safe-area-inset-bottom,0px) + 8px);"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="translate-y-full"
+           x-transition:enter-end="translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="translate-y-0"
+           x-transition:leave-end="translate-y-full">
+        <div class="flex justify-center pt-3 pb-2">
+          <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
+        </div>
+        <div class="px-4 pt-2 pb-4">
+          <div class="flex justify-center mb-4">
+            <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-950/50 flex items-center justify-center">
+              {% lucide "trash-2" "w-6 h-6 text-red-600 dark:text-red-400" %}
+            </div>
+          </div>
+          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-1">
+            Delete "{{ edit_user.username }}"?
+          </h3>
+          <p class="text-[14px] text-gray-500 dark:text-gray-400 text-center mt-2 mb-6">
+            This user will be permanently removed and cannot be recovered.
+          </p>
+          <div class="flex gap-3">
+            <button type="button" @click="showDelete = false"
+                    class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                           bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400
+                           active:opacity-70 transition-opacity duration-75">
+              Cancel
+            </button>
+            <button type="button" @click="$refs.deleteForm.submit()"
+                    class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                           bg-red-600 active:bg-red-700 text-white transition-colors duration-75">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
 
 </div>
 {% endif %}
