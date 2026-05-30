@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from libs.stage import Stage
 from libs.hosts import BaseHost, SmbHost, SftpHost, RemoteRepositoryMounter
@@ -6,26 +7,26 @@ from libs.hosts import BaseHost, SmbHost, SftpHost, RemoteRepositoryMounter
 
 def _build_host(repo) -> BaseHost:
     """Factory: return the correct BaseHost for the configured connection type."""
-    match repo.connection_type:
-        case 'smb':
-            return SmbHost(
-                host=repo.host,
-                share=repo.server_share,
-                username=repo.username,
-                password=repo.password,
-            )
-        case 'sftp':
-            return SftpHost(
-                host=repo.host,
-                share=repo.server_share,
-                username=repo.username,
-                password=repo.password,
-            )
-        case _:
-            raise ValueError(
-                f"Unsupported connection_type: {repo.connection_type!r}. "
-                f"Expected 'smb' or 'sftp'."
-            )
+    ct = repo.connection_type
+    if ct == 'smb':
+        return SmbHost(
+            host=repo.host,
+            share=repo.server_share,
+            username=repo.username,
+            password=repo.password,
+        )
+    elif ct == 'sftp':
+        return SftpHost(
+            host=repo.host,
+            share=repo.server_share,
+            username=repo.username,
+            password=repo.password,
+        )
+    else:
+        raise ValueError(
+            f"Unsupported connection_type: {repo.connection_type!r}. "
+            f"Expected 'smb' or 'sftp'."
+        )
 
 
 class MountRepository(Stage):
@@ -37,7 +38,7 @@ class MountRepository(Stage):
         repo = config.repository
         self.repo_type  = repo.repo_type      # 'local' | 'remote'
         self.local_path = repo.local_path     # used when repo_type == 'local'
-        self.mounter: RemoteRepositoryMounter | None = None
+        self.mounter: Optional[RemoteRepositoryMounter] = None
 
         if not self._is_local():
             self.mounter = RemoteRepositoryMounter(
