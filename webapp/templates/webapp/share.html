@@ -1,0 +1,226 @@
+{% load webapp_extras %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Run report — AutoPkg Runner</title>
+
+  {# Tailwind CDN — no build step needed for this standalone page #}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'media',
+      theme: { extend: {} },
+    };
+  </script>
+
+  <style>
+    /* Safe-area insets for notched devices */
+    body {
+      padding-top:    env(safe-area-inset-top,    0px);
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    /* Result tables — allow horizontal scroll on narrow screens */
+    .result-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-black min-h-screen text-gray-900 dark:text-white">
+
+  {# ── Top bar — branding only, no navigation ────────────────────────────── #}
+  <header class="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-[#38383a]">
+    <div class="max-w-2xl mx-auto px-4 h-12 flex items-center gap-2.5">
+      <svg class="w-5 h-5 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      </svg>
+      <span class="text-sm font-semibold text-gray-800 dark:text-gray-100 tracking-tight">AutoPkg Runner</span>
+      <span class="ml-auto text-xs text-gray-400 dark:text-gray-500">Run report</span>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-5 space-y-5">
+
+    {# ── Run header ──────────────────────────────────────────────────────── #}
+    <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] px-5 py-4">
+
+      {# Status badge #}
+      <div class="flex items-center gap-3 mb-3">
+        {% if run.status == 'success' %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
+          Success
+        </span>
+        {% elif run.status == 'failed' %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+          Failed
+        </span>
+        {% elif run.status == 'running' %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse flex-shrink-0"></span>
+          In Progress
+        </span>
+        {% else %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 dark:bg-[#2c2c2e] dark:text-gray-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0"></span>
+          {{ run.status|capfirst }}
+        </span>
+        {% endif %}
+      </div>
+
+      {# Run meta #}
+      <dl class="space-y-1.5 text-sm">
+        <div class="flex gap-2">
+          <dt class="w-28 flex-shrink-0 text-gray-400 dark:text-gray-500">Started</dt>
+          <dd class="text-gray-800 dark:text-gray-200 font-medium">{{ run.started_at|date:"d M Y, H:i:s" }}</dd>
+        </div>
+        {% if run.completed_at %}
+        <div class="flex gap-2">
+          <dt class="w-28 flex-shrink-0 text-gray-400 dark:text-gray-500">Duration</dt>
+          <dd class="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{{ run.started_at|duration:run.completed_at }}</dd>
+        </div>
+        {% endif %}
+        <div class="flex gap-2">
+          <dt class="w-28 flex-shrink-0 text-gray-400 dark:text-gray-500">Triggered by</dt>
+          <dd class="text-gray-800 dark:text-gray-200 font-medium capitalize">{{ run.triggered_by }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    {# ── Stages ──────────────────────────────────────────────────────────── #}
+    {% if stages %}
+    <section>
+      <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Stages</h2>
+      <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e]
+                  divide-y divide-gray-100 dark:divide-[#38383a] overflow-hidden">
+        {% for stage in stages %}
+        <div class="flex items-center gap-3 px-4 py-3.5">
+
+          {# Status icon #}
+          <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+            {% if stage.status == 'success' %}
+            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            {% elif stage.status == 'failed' %}
+            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+            {% elif stage.status == 'running' %}
+            <svg class="w-4 h-4 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+            {% elif stage.status == 'skipped' %}
+            <svg class="w-4 h-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+            {% else %}
+            <span class="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+            {% endif %}
+          </span>
+
+          {# Stage name #}
+          <span class="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ stage.name }}</span>
+
+          {# Duration #}
+          {% if stage.started_at and stage.completed_at %}
+          <span class="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+            {{ stage.started_at|duration:stage.completed_at }}
+          </span>
+          {% endif %}
+
+          {# Status badge #}
+          <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold
+            {% if stage.status == 'success' %}bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300
+            {% elif stage.status == 'failed' %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300
+            {% elif stage.status == 'running' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
+            {% elif stage.status == 'skipped' %}bg-gray-100 text-gray-400 dark:bg-[#2c2c2e] dark:text-gray-500
+            {% else %}bg-gray-100 text-gray-500 dark:bg-[#2c2c2e] dark:text-gray-400{% endif %}">
+            {{ stage.status|capfirst }}
+          </span>
+
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── Recipe results ──────────────────────────────────────────────────── #}
+    {% if results %}
+    <section>
+      <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">AutoPkg Output</h2>
+      <div class="space-y-3">
+        {% for result in results %}
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] overflow-hidden">
+
+          {# Section header #}
+          <div class="px-4 py-3 border-b border-gray-100 dark:border-[#38383a] flex items-center gap-2.5">
+            {# Result-type icon #}
+            {% if result.result_type == 'munki_import' %}
+            <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            {% elif result.result_type == 'failure' %}
+            <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            {% elif result.result_type == 'url_downloaded' or result.result_type == 'pkg_copied' %}
+            <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            {% elif result.result_type == 'trust_updated' %}
+            <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            {% elif result.result_type == 'deprecation' %}
+            <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            {% else %}
+            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01"/></svg>
+            {% endif %}
+
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              {% if result.result_type == 'munki_import' %}Imported Packages
+              {% elif result.result_type == 'failure' %}Failures
+              {% elif result.result_type == 'url_downloaded' %}Downloaded Packages
+              {% elif result.result_type == 'pkg_copied' %}Copied Packages
+              {% elif result.result_type == 'trust_updated' %}Trust Info Updated
+              {% elif result.result_type == 'deprecation' %}Deprecation Warnings
+              {% else %}{{ result.result_type|title }}
+              {% endif %}
+            </h3>
+
+            <span class="ml-auto text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ result.data|length }}</span>
+          </div>
+
+          {# Data table #}
+          {% if result.data %}
+          <div class="result-table-wrap px-4 py-3">
+            <table class="text-xs w-full min-w-max">
+              <thead>
+                <tr class="text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-[#38383a]">
+                  {% for key in result.data.0.keys %}
+                  <th class="text-left pb-2 pr-5 font-semibold">{{ key|title }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-50 dark:divide-[#38383a]">
+                {% for row in result.data %}
+                <tr>
+                  {% for val in row.values %}
+                  <td class="py-2 pr-5 text-gray-700 dark:text-gray-300 max-w-xs">{{ val }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="px-4 py-3 text-xs text-gray-400 dark:text-gray-500">No data available.</p>
+          {% endif %}
+
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {# ── Empty state (no results and no stages) ──────────────────────────── #}
+    {% if not stages and not results %}
+    <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] p-10 text-center">
+      <p class="text-sm text-gray-400 dark:text-gray-500">No data available for this run yet.</p>
+    </div>
+    {% endif %}
+
+    {# ── Footer ──────────────────────────────────────────────────────────── #}
+    <p class="text-center text-xs text-gray-300 dark:text-gray-600 pb-2">
+      Shared via AutoPkg Runner
+    </p>
+
+  </main>
+</body>
+</html>
