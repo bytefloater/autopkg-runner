@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.http import JsonResponse, FileResponse
-from django.shortcuts import render
 from django.views import View
 
 
@@ -33,14 +32,6 @@ class ManifestView(View):
         }
         response = JsonResponse(manifest)
         response['Content-Type'] = 'application/manifest+json'
-        response['Cache-Control'] = 'no-cache'
-        return response
-
-
-class OfflineView(View):
-    """Served when the app cannot reach the server — no auth required."""
-    def get(self, request):
-        response = render(request, 'webapp/mobile/offline.html')
         response['Cache-Control'] = 'no-cache'
         return response
 

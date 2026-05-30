@@ -330,8 +330,8 @@
       try {
         const res = await fetch(url, { credentials: 'same-origin' });
         if (!res.ok) {
-          // Server error — pass the status code so the offline page can explain it
-          location.href = `/offline/?reason=server_error&code=${res.status}&retry=${encodeURIComponent(url)}`;
+          // Server error — fall back to full navigation so the browser shows its own error
+          location.href = url;
           return;
         }
         if (!res.headers.get('content-type')?.includes('text/html')) {
@@ -382,8 +382,8 @@
         document.title = doc.title;
         if (push) history.pushState({}, '', url);
       } catch {
-        // Network failure — navigate to the offline error screen with retry target
-        location.href = `/offline/?retry=${encodeURIComponent(url)}`;
+        // Network failure — fall back to full navigation
+        if (push) location.href = url;
       }
     }
 

@@ -71,7 +71,6 @@ urlpatterns = [
     path('favicon.ico',   RedirectView.as_view(url='/static/logos/favicon.ico', permanent=True), name='favicon'),
     path('manifest.json', pwa.ManifestView.as_view(),        name='manifest'),
     path('sw.js',         pwa.ServiceWorkerView.as_view(),   name='service-worker'),
-    path('offline/',      pwa.OfflineView.as_view(),         name='offline'),
     path('login/',  account.MobileAwareLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
