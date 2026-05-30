@@ -3,7 +3,7 @@ import secrets
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
 
 User = get_user_model()
@@ -15,6 +15,11 @@ def _generate_password() -> str:
 
 class UsersView(LoginRequiredMixin, TemplateView):
     template_name = 'webapp/users.html'
+
+    def get_template_names(self):
+        if getattr(self.request, 'is_mobile', False):
+            return ['webapp/mobile/users.html']
+        return [self.template_name]
 
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
@@ -134,5 +139,92 @@ class UsersView(LoginRequiredMixin, TemplateView):
             username = user.username
             user.delete()
             messages.success(request, f'User "{username}" deleted.')
+
+        return redirect('users')
+
+
+class UserEditView(LoginRequiredMixin, TemplateView):
+    """Mobile-only subpage for editing a single user (mirrors NotifierEditView pattern)."""
+    template_name = 'webapp/mobile/user_edit.html'
+
+    def _superuser_check(self, request):
+        if request.user.is_authenticated and not request.user.is_superuser:
+            messages.error(request, 'Administrator access required.')
+            return redirect('dashboard')
+        return None
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        edit_user = get_object_or_404(User, pk=kwargs['pk'])
+        ctx['active_tab']  = 'users'
+        ctx['edit_user']   = edit_user
+        ctx['is_self']     = (edit_user.pk == self.request.user.pk)
+        ctx['reset_creds'] = self.request.session.pop('reset_creds', None)
+        return ctx
+
+    def get(self, request, pk):
+        redir = self._superuser_check(request)
+        if redir:
+            return redir
+        return super().get(request, pk=pk)
+
+    def post(self, request, pk):
+        redir = self._superuser_check(request)
+        if redir:
+            return redir
+
+        edit_user = get_object_or_404(User, pk=pk)
+        action    = request.POST.get('action', 'update')
+
+        if action == 'update':
+            email     = request.POST.get('email', '').strip()
+            is_active = request.POST.get('is_active') == 'on'
+            is_admin  = request.POST.get('is_superuser') == 'on'
+
+            if edit_user == request.user:
+                edit_user.email = email
+                edit_user.save(update_fields=['email'])
+                messages.success(request, 'Your email address has been updated.')
+            else:
+                if edit_user.is_superuser and not is_admin:
+                    remaining = User.objects.filter(is_superuser=True).exclude(pk=edit_user.pk).count()
+                    if remaining == 0:
+                        messages.error(request, 'Cannot remove the last administrator account.')
+                        return redirect('user-edit', pk=pk)
+
+                edit_user.is_active    = is_active
+                edit_user.is_superuser = is_admin
+                edit_user.is_staff     = is_admin
+                edit_user.email        = email
+                edit_user.save(update_fields=['is_active', 'is_superuser', 'is_staff', 'email'])
+                messages.success(request, f'User "{edit_user.username}" updated.')
+            return redirect('user-edit', pk=pk)
+
+        elif action == 'reset_password':
+            if edit_user == request.user:
+                messages.error(request, 'Use "Change Password" in the user menu to change your own password.')
+                return redirect('user-edit', pk=pk)
+            password = _generate_password()
+            edit_user.set_password(password)
+            edit_user.save(update_fields=['password'])
+            request.session['reset_creds'] = {
+                'username': edit_user.username,
+                'password': password,
+            }
+            return redirect('user-edit', pk=pk)
+
+        elif action == 'delete':
+            if edit_user == request.user:
+                messages.error(request, 'You cannot delete your own account.')
+                return redirect('user-edit', pk=pk)
+            if edit_user.is_superuser:
+                remaining = User.objects.filter(is_superuser=True).exclude(pk=edit_user.pk).count()
+                if remaining == 0:
+                    messages.error(request, 'Cannot delete the last administrator account.')
+                    return redirect('user-edit', pk=pk)
+            username = edit_user.username
+            edit_user.delete()
+            messages.success(request, f'User "{username}" deleted.')
+            return redirect('users')
 
         return redirect('users')
