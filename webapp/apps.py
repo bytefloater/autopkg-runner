@@ -32,10 +32,15 @@ class WebappConfig(AppConfig):
             # Any management command other than runserver → do nothing.
             if sys.argv[1] != 'runserver':
                 return
-            # runserver: the parent watcher process re-execs itself as a child
-            # with RUN_MAIN=true.  Only start services in the child so that the
-            # scheduler and stale-run cleanup are not registered twice.
-            if os.environ.get('RUN_MAIN') != 'true':
+            # runserver with auto-reload (default): Django forks a watcher
+            # parent and a child reloader.  RUN_MAIN=true is set only in the
+            # child, which is the process that actually serves requests.
+            # Only start services there to avoid double-scheduling.
+            #
+            # runserver --noreload: there is a single process with no
+            # RUN_MAIN set.  We must start services here.
+            noreload = '--noreload' in sys.argv or '--no-reload' in sys.argv
+            if not noreload and os.environ.get('RUN_MAIN') != 'true':
                 return
 
         from webapp.scheduler import start_scheduler

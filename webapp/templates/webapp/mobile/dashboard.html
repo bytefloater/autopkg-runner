@@ -32,7 +32,7 @@
   <div class="flex items-center justify-between px-4 py-3">
     <span class="text-[16px] text-gray-900 dark:text-white">Next Run</span>
     <span class="text-[16px] text-gray-500 dark:text-gray-400">
-      {% if next_run %}{{ next_run|date:"D, d M H:i" }}{% else %}Not scheduled{% endif %}
+      {% if next_run_formatted %}{{ next_run_formatted }}{% else %}Not scheduled{% endif %}
     </span>
   </div>
 

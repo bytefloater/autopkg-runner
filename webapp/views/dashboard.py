@@ -30,8 +30,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             from webapp.models import Schedule
             from webapp.views.schedule import _next_run_time
             s = Schedule.objects.get(pk=1)
-            ctx['next_run'] = _next_run_time(s) if s.enabled else None
+            next_run = _next_run_time(s) if s.enabled else None
+            ctx['next_run'] = next_run
+            ctx['next_run_formatted'] = (
+                next_run.strftime('%a, %d %b at %H:%M %Z') if next_run else None
+            )
         except Exception:
             ctx['next_run'] = None
+            ctx['next_run_formatted'] = None
 
         return ctx

@@ -53,7 +53,8 @@
         <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3">
           <p class="text-xs text-blue-700 dark:text-blue-300">
             <strong>Format:</strong> minute hour day-of-week day-of-month month &nbsp;·&nbsp;
-            Use <code>*</code> for every value, e.g. <code>0 2 * * *</code> runs daily at 02:00 UTC.
+            Use <code>*</code> for every value, e.g. <code>0 2 * * *</code> runs daily at 02:00.
+            Times are interpreted in <strong>{{ system_tz_name }}</strong> (currently {{ system_tz_abbr }}).
           </p>
         </div>
 
@@ -62,9 +63,9 @@
           {% lucide "calendar-check" "w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" %}
           <div>
             <p class="text-sm text-green-700 dark:text-green-300">{{ cron_description }}</p>
-            {% if next_run %}
+            {% if next_run_formatted %}
             <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">
-              Next run: {{ next_run|date:"D, d M Y \a\t H:i" }} UTC
+              Next run: {{ next_run_formatted }}
             </p>
             {% endif %}
           </div>

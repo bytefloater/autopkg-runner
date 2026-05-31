@@ -38,7 +38,7 @@
     <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
       <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Next Scheduled Run</p>
       <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-        {% if next_run %}{{ next_run|date:"D, d M Y H:i" }}{% else %}<span class="text-gray-400">Not scheduled</span>{% endif %}
+        {% if next_run_formatted %}{{ next_run_formatted }}{% else %}<span class="text-gray-400">Not scheduled</span>{% endif %}
       </p>
     </div>
   </div>

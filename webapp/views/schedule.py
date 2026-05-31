@@ -1,3 +1,5 @@
+from datetime import datetime, timezone as dt_timezone
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
@@ -19,23 +21,25 @@ _MONTH_NAMES = {
 }
 
 
-def _describe_cron(s) -> str:
+def _describe_cron(s, tz_abbr: str = '') -> str:
     """Return a plain-English description of when the cron schedule fires."""
-    minute      = s.minute.strip()
-    hour        = s.hour.strip()
-    day_of_week = s.day_of_week.strip()
+    minute       = s.minute.strip()
+    hour         = s.hour.strip()
+    day_of_week  = s.day_of_week.strip()
     day_of_month = s.day_of_month.strip()
-    month       = s.month.strip()
+    month        = s.month.strip()
+
+    tz_suffix = f' {tz_abbr}' if tz_abbr else ''
 
     # Time part
     if minute == '*' and hour == '*':
         time_str = 'every minute'
     elif minute == '*':
-        time_str = f'every minute past {_fmt_hour(hour)}'
+        time_str = f'every minute past {_fmt_hour(hour)}{tz_suffix}'
     elif hour == '*':
-        time_str = f'every hour at :{minute.zfill(2)}'
+        time_str = f'every hour at :{minute.zfill(2)}{tz_suffix}'
     else:
-        time_str = f'at {_fmt_time(hour, minute)} UTC'
+        time_str = f'at {_fmt_time(hour, minute)}{tz_suffix}'
 
     # Day/month part
     parts = []
@@ -76,22 +80,37 @@ def _fmt_time(h: str, m: str) -> str:
 
 
 def _next_run_time(s):
-    """Compute the next fire time for the schedule directly from its cron fields."""
+    """Compute the next fire time using the host system's timezone (DST-aware)."""
     try:
         from apscheduler.triggers.cron import CronTrigger
-        from datetime import datetime, timezone as dt_timezone
+        from webapp.scheduler import get_system_timezone
+        tz = get_system_timezone()
         trigger = CronTrigger(
             minute=s.minute,
             hour=s.hour,
             day_of_week=s.day_of_week,
             day=s.day_of_month,
             month=s.month,
-            timezone='UTC',
+            timezone=tz,
         )
         now = datetime.now(tz=dt_timezone.utc)
         return trigger.get_next_fire_time(None, now)
     except Exception:
         return None
+
+
+def _system_tz_context() -> dict:
+    """Return system timezone info for use in template context."""
+    try:
+        from webapp.scheduler import get_system_timezone
+        tz = get_system_timezone()
+        now_local = datetime.now(tz=tz)
+        return {
+            'system_tz_name': tz.key,
+            'system_tz_abbr': now_local.strftime('%Z'),
+        }
+    except Exception:
+        return {'system_tz_name': 'UTC', 'system_tz_abbr': 'UTC'}
 
 
 class ScheduleView(LoginRequiredMixin, TemplateView):
@@ -115,8 +134,23 @@ class ScheduleView(LoginRequiredMixin, TemplateView):
             ('Day of Month', 'day_of_month', s.day_of_month, '1-31 or *'),
             ('Month',        'month',        s.month,        '1-12 or *'),
         ]
-        ctx['cron_description'] = _describe_cron(s) if s.enabled else None
-        ctx['next_run'] = _next_run_time(s) if s.enabled else None
+
+        tz_ctx = _system_tz_context()
+        ctx.update(tz_ctx)
+
+        if s.enabled:
+            ctx['cron_description'] = _describe_cron(s, tz_abbr=tz_ctx['system_tz_abbr'])
+            next_run = _next_run_time(s)
+            ctx['next_run'] = next_run
+            # Pre-format so templates don't rely on Django's TIME_ZONE setting
+            ctx['next_run_formatted'] = (
+                next_run.strftime('%a, %d %b %Y at %H:%M %Z') if next_run else None
+            )
+        else:
+            ctx['cron_description'] = None
+            ctx['next_run'] = None
+            ctx['next_run_formatted'] = None
+
         return ctx
 
     def post(self, request):
