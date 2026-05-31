@@ -19,8 +19,6 @@ def nav_tabs(request):
         tabs += _ADMIN_TABS
     return {
         'nav_tabs': tabs,
-        # Mobile bottom bar always uses the base 5 tabs — 6+ tabs overflow a phone viewport.
-        # Admins access Users management via the desktop UI.
         'mobile_nav_tabs': list(_BASE_TABS),
     }
 
