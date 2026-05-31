@@ -36,6 +36,19 @@
         The public base URL of this server. Used to build share links in notifications. Leave blank to omit links.
       </p>
     </div>
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Share Link Expiry</label>
+      <div class="flex items-center gap-2 mt-1">
+        <input type="number" name="notify.share_link_expiry_days" value="{{ share_link_expiry_days }}"
+               placeholder="Never"
+               min="1" max="3650"
+               class="w-28 text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        <span class="text-[15px] text-gray-500 dark:text-gray-400">days</span>
+      </div>
+      <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-2">
+        Days before share links expire. Leave blank for links that never expire.
+      </p>
+    </div>
   </div>
 
   <div class="h-8"></div>
