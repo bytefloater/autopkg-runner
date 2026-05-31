@@ -4,6 +4,66 @@ from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
 
+# ── Human-readable cron description ──────────────────────────────────────────
+
+_DOW_NAMES = {
+    '0': 'Sunday', '1': 'Monday', '2': 'Tuesday', '3': 'Wednesday',
+    '4': 'Thursday', '5': 'Friday', '6': 'Saturday',
+    # APScheduler also accepts sun/mon/… — handle numeric only here
+}
+
+_MONTH_NAMES = {
+    '1': 'January',   '2': 'February', '3': 'March',    '4': 'April',
+    '5': 'May',       '6': 'June',     '7': 'July',     '8': 'August',
+    '9': 'September', '10': 'October', '11': 'November','12': 'December',
+}
+
+
+def _describe_cron(s) -> str:
+    """Return a plain-English description of when the cron schedule fires."""
+    minute      = s.minute.strip()
+    hour        = s.hour.strip()
+    day_of_week = s.day_of_week.strip()
+    day_of_month = s.day_of_month.strip()
+    month       = s.month.strip()
+
+    # Time part
+    if minute == '*' and hour == '*':
+        time_str = 'every minute'
+    elif minute == '*':
+        hour_label = hour if hour != '*' else 'every hour'
+        time_str = f'every minute past {_fmt_hour(hour_label)}'
+    elif hour == '*':
+        time_str = f'every hour at minute {minute}'
+    else:
+        time_str = f'at {_fmt_hour(hour)}:{minute.zfill(2)} UTC'
+
+    # Day/month part
+    parts = []
+    if day_of_week != '*':
+        days = [_DOW_NAMES.get(d.strip(), d.strip()) for d in day_of_week.split(',')]
+        parts.append('on ' + ', '.join(days))
+    if day_of_month != '*':
+        parts.append(f'on day {day_of_month} of the month')
+    if month != '*':
+        months = [_MONTH_NAMES.get(m.strip(), m.strip()) for m in month.split(',')]
+        parts.append('in ' + ', '.join(months))
+
+    when = ', '.join(parts) if parts else 'every day'
+    return f'Runs {time_str}, {when}.'
+
+
+def _fmt_hour(h: str) -> str:
+    """Format a 24-hour value as a readable time label."""
+    try:
+        n = int(h)
+        suffix = 'AM' if n < 12 else 'PM'
+        n12 = n % 12 or 12
+        return f'{n12}:00 {suffix}'
+    except ValueError:
+        return h
+
+
 class ScheduleView(LoginRequiredMixin, TemplateView):
     template_name = 'webapp/schedule.html'
 
@@ -25,6 +85,7 @@ class ScheduleView(LoginRequiredMixin, TemplateView):
             ('Day of Month', 'day_of_month', s.day_of_month, '1-31 or *'),
             ('Month',        'month',        s.month,        '1-12 or *'),
         ]
+        ctx['cron_description'] = _describe_cron(s) if s.enabled else None
         return ctx
 
     def post(self, request):

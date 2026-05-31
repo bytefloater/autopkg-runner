@@ -22,8 +22,8 @@
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
     {# Enable / disable toggle #}
-    <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">Scheduled Runs</span>
+    <div class="flex items-center justify-between px-4 py-[13px]">
+      <span class="text-[16px] text-gray-900 dark:text-white">Enable Scheduled Runs</span>
       <input type="hidden" name="enabled" :value="enabled ? 'on' : ''">
       <button type="button" @click="enabled = !enabled"
               :class="enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
@@ -53,6 +53,14 @@
   </div>
 
 </form>
+
+{% if cron_description %}
+<div class="h-4"></div>
+<div class="mx-4 flex items-start gap-2.5 px-4 py-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800">
+  {% lucide "calendar-check" "w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" %}
+  <p class="text-[14px] text-green-700 dark:text-green-300">{{ cron_description }}</p>
+</div>
+{% endif %}
 
 <div class="h-8"></div>
 {% endblock %}

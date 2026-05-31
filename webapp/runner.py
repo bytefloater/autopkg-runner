@@ -4,9 +4,20 @@ import uuid as _uuid
 from datetime import datetime, timezone
 
 
+class RunAlreadyRunningError(Exception):
+    """Raised when a run is already in progress and a new trigger is attempted."""
+
+
 def trigger_manual_run(triggered_by: str = 'manual') -> _uuid.UUID:
     from webapp.models import Run, Task
     from libs.config import config_from_settings, pipeline_config_to_dict
+
+    # Guard against concurrent runs. The underlying pipeline is not thread-safe
+    # (mounts a filesystem, writes files) so only one run may be active at a time.
+    if Run.objects.filter(status__in=('pending', 'running')).exists():
+        raise RunAlreadyRunningError(
+            'A run is already in progress. Please wait for it to complete before starting another.'
+        )
 
     config = config_from_settings()
 

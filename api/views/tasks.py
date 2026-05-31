@@ -4,8 +4,11 @@ from rest_framework.views import APIView
 
 class TriggerRunView(APIView):
     def post(self, request):
-        from webapp.runner import trigger_manual_run
-        task_id = trigger_manual_run(triggered_by='api')
+        from webapp.runner import trigger_manual_run, RunAlreadyRunningError
+        try:
+            task_id = trigger_manual_run(triggered_by='api')
+        except RunAlreadyRunningError as exc:
+            return Response({'error': str(exc)}, status=409)
         return Response({'task_uuid': str(task_id)}, status=202)
 
 
