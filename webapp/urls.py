@@ -13,8 +13,9 @@ urlpatterns = [
 
     # ── Core views ────────────────────────────────────────────────────────────
     path('dashboard/', dashboard.DashboardView.as_view(), name='dashboard'),
-    path('runs/',      runs.RunListView.as_view(),        name='run-list'),
-    path('runs/trigger/', runs.TriggerRunView.as_view(),  name='trigger-run'),
+    path('runs/',         runs.RunListView.as_view(),   name='run-list'),
+    path('runs/trigger/', runs.TriggerRunView.as_view(), name='trigger-run'),
+    path('runs/delete/',  runs.RunDeleteView.as_view(),  name='run-delete'),
     path('runs/<uuid:run_id>/',        runs.RunDetailView.as_view(), name='run-detail'),
     path('runs/<uuid:run_id>/stream/', runs.run_stream,               name='run-stream'),
     path('schedule/', schedule.ScheduleView.as_view(), name='schedule'),

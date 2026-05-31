@@ -4,82 +4,164 @@
 {% block title %}Runs — AutoPkg Runner{% endblock %}
 {% block nav_title %}Runs{% endblock %}
 
+{# ── Left nav slot: Delete button (manage mode only) ──────────────────────── #}
+{% block nav_left %}
+<div x-data="{ managing: false, selCount: 0 }"
+     @toggle-manage-runs.window="managing = !managing; selCount = 0"
+     @runs-selected.window="selCount = $event.detail.count">
+
+  {# type="submit" + form="runs-delete-form" submits the form in the content block #}
+  <button type="submit"
+          form="runs-delete-form"
+          x-show="managing" x-cloak
+          :disabled="selCount === 0"
+          class="text-[17px] font-semibold pl-1 transition-opacity duration-75 active:opacity-60"
+          :class="selCount > 0
+            ? 'text-red-500 dark:text-red-400'
+            : 'text-red-300 dark:text-red-800 pointer-events-none'">
+    Delete<span x-show="selCount > 0">&nbsp;(<span x-text="selCount"></span>)</span>
+  </button>
+</div>
+{% endblock %}
+
+{# ── Right nav slot: Manage / Done toggle ─────────────────────────────────── #}
+{% block nav_right %}
+<button type="button"
+        x-data
+        @click="$dispatch('toggle-manage-runs')"
+        class="text-[17px] font-normal text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  <span x-data="{ managing: false }"
+        @toggle-manage-runs.window="managing = !managing"
+        x-text="managing ? 'Done' : 'Manage'">Manage</span>
+</button>
+{% endblock %}
+
 {% block content %}
 <div class="h-4"></div>
 
-<div id="run-list-section"
-     hx-get="{% url 'run-list' %}{% if request.GET.page %}?page={{ request.GET.page }}{% endif %}"
-     hx-trigger="every 10s"
-     hx-select="#run-list-section"
-     hx-target="#run-list-section"
-     hx-swap="outerHTML">
+<div x-data="{
+       managing: false,
+       selected: [],
+       toggle(id) {
+         const idx = this.selected.indexOf(id);
+         if (idx === -1) { this.selected.push(id); } else { this.selected.splice(idx, 1); }
+         this.$dispatch('runs-selected', { count: this.selected.length });
+       }
+     }"
+     @toggle-manage-runs.window="managing = !managing; selected = []; $dispatch('runs-selected', { count: 0 })">
 
-<p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-  {{ page_obj.paginator.count }} Run{{ page_obj.paginator.count|pluralize }}
-</p>
+  {# Hidden delete form — wired to the nav-bar button via form="runs-delete-form" #}
+  <form id="runs-delete-form" method="post" action="{% url 'run-delete' %}" class="hidden">
+    {% csrf_token %}
+    <template x-for="id in selected" :key="id">
+      <input type="hidden" name="run_ids" :value="id">
+    </template>
+  </form>
 
-{% if page_obj.object_list %}
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
-  {% for run in page_obj %}
-  <a href="{% url 'run-detail' run.id %}"
-     class="flex items-center gap-3 px-4 py-3 active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
-    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 {{ run.status|status_dot }}"></span>
-    <div class="flex-1 min-w-0">
-      <p class="text-[16px] font-medium text-gray-900 dark:text-white tabular-nums">
-        {{ run.started_at|date:"d M Y, H:i" }}
-      </p>
-      <p class="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">
-        {{ run.triggered_by|capfirst }}{% if run.completed_at %} · {{ run.started_at|duration:run.completed_at }}{% endif %}
-      </p>
+  <div id="run-list-section"
+       hx-get="{% url 'run-list' %}{% if request.GET.page %}?page={{ request.GET.page }}{% endif %}"
+       hx-trigger="every 10s"
+       hx-select="#run-list-section"
+       hx-target="#run-list-section"
+       hx-swap="outerHTML">
+
+    <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+      {{ page_obj.paginator.count }} Run{{ page_obj.paginator.count|pluralize }}
+    </p>
+
+    {% if page_obj.object_list %}
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      {% for run in page_obj %}
+      <div class="flex items-center gap-3 px-4 py-3 transition-colors duration-75 cursor-pointer select-none"
+           :class="selected.includes('{{ run.id }}')
+             ? 'bg-blue-50 dark:bg-blue-900/20'
+             : 'active:bg-black/5 dark:active:bg-white/5'"
+           @click="if (managing) {
+             {% if run.status != 'pending' and run.status != 'running' %}toggle('{{ run.id }}');{% endif %}
+           } else {
+             window.location = '{% url 'run-detail' run.id %}';
+           }">
+
+        {# Custom checkbox (manage mode) #}
+        <div x-show="managing" x-cloak class="flex-shrink-0">
+          {% if run.status != 'pending' and run.status != 'running' %}
+          <span class="w-[22px] h-[22px] rounded flex items-center justify-center border transition-colors pointer-events-none"
+                :class="selected.includes('{{ run.id }}')
+                  ? 'bg-blue-600 border-blue-600 text-white'
+                  : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'">
+            <span x-show="selected.includes('{{ run.id }}')">{% lucide "check" "w-3.5 h-3.5" %}</span>
+          </span>
+          {% else %}
+          <span class="w-[22px] h-[22px] block flex-shrink-0"></span>
+          {% endif %}
+        </div>
+
+        {# Status dot (normal mode only) #}
+        <span x-show="!managing" x-cloak
+              class="w-2.5 h-2.5 rounded-full flex-shrink-0 {{ run.status|status_dot }}"></span>
+
+        {# Row content — pointer-events-none so the parent div handles all taps #}
+        <div class="flex-1 min-w-0 flex items-center gap-3 pointer-events-none">
+          <div class="flex-1 min-w-0">
+            <p class="text-[16px] font-medium text-gray-900 dark:text-white tabular-nums">
+              {{ run.started_at|date:"d M Y, H:i" }}
+            </p>
+            <p class="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">
+              {{ run.triggered_by|capfirst }}{% if run.completed_at %} · {{ run.started_at|duration:run.completed_at }}{% endif %}
+            </p>
+          </div>
+          <span class="text-[13px] flex-shrink-0
+            {% if run.status == 'success' %}text-green-500
+            {% elif run.status == 'running' %}text-blue-500
+            {% elif run.status == 'failed' %}text-red-500
+            {% elif run.status == 'cancelled' %}text-amber-500
+            {% else %}text-gray-500{% endif %}">
+            {{ run.get_status_display }}
+          </span>
+          <span x-show="!managing">{% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}</span>
+        </div>
+      </div>
+      {% endfor %}
     </div>
-    <span class="text-[13px] flex-shrink-0
-      {% if run.status == 'success' %}text-green-500
-      {% elif run.status == 'running' %}text-blue-500
-      {% elif run.status == 'failed' %}text-red-500
-      {% elif run.status == 'cancelled' %}text-amber-500
-      {% else %}text-gray-500{% endif %}">
-      {{ run.get_status_display }}
-    </span>
-    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
-  </a>
-  {% endfor %}
-</div>
 
-{# Pagination #}
-{% if page_obj.has_other_pages %}
-<div class="h-4"></div>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
-  {% if page_obj.has_previous %}
-  <a href="?page={{ page_obj.previous_page_number }}"
-     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
-    {% lucide "chevron-left" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
-    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Previous Page</span>
-    <span class="text-[13px] text-gray-400 flex-shrink-0">{{ page_obj.previous_page_number }}</span>
-  </a>
-  {% endif %}
-  {% if page_obj.has_next %}
-  <a href="?page={{ page_obj.next_page_number }}"
-     class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
-    <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Next Page</span>
-    <span class="text-[13px] text-gray-400 flex-shrink-0">{{ page_obj.next_page_number }}</span>
-    {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
-  </a>
-  {% endif %}
-</div>
-<p class="text-center text-[12px] text-gray-400 dark:text-gray-500 mt-2">
-  Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-</p>
-{% endif %}
+    {# Pagination #}
+    {% if page_obj.has_other_pages %}
+    <div class="h-4"></div>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}"
+         class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+        {% lucide "chevron-left" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+        <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Previous Page</span>
+        <span class="text-[13px] text-gray-400 flex-shrink-0">{{ page_obj.previous_page_number }}</span>
+      </a>
+      {% endif %}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}"
+         class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+        <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Next Page</span>
+        <span class="text-[13px] text-gray-400 flex-shrink-0">{{ page_obj.next_page_number }}</span>
+        {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+      </a>
+      {% endif %}
+    </div>
+    <p class="text-center text-[12px] text-gray-400 dark:text-gray-500 mt-2">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </p>
+    {% endif %}
 
-{% else %}
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
-  <div class="flex flex-col items-center justify-center py-20">
-    {% lucide "list" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
-    <p class="text-[15px] text-gray-400 dark:text-gray-500">No runs yet.</p>
-  </div>
-</div>
-{% endif %}
+    {% else %}
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+      <div class="flex flex-col items-center justify-center py-20">
+        {% lucide "list" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
+        <p class="text-[15px] text-gray-400 dark:text-gray-500">No runs yet.</p>
+      </div>
+    </div>
+    {% endif %}
 
-</div>{# /run-list-section #}
+  </div>{# /run-list-section #}
+
+</div>{# /x-data #}
+
 <div class="h-4"></div>
 {% endblock %}

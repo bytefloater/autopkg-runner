@@ -63,8 +63,15 @@ class RunDetailView(LoginRequiredMixin, TemplateView):
 
 class TriggerRunView(LoginRequiredMixin, View):
     def post(self, request):
-        from webapp.runner import trigger_manual_run
-        task_id = trigger_manual_run(triggered_by='manual')
+        from webapp.runner import trigger_manual_run, RunAlreadyRunningError
+        try:
+            task_id = trigger_manual_run(triggered_by='manual')
+        except RunAlreadyRunningError as exc:
+            if request.headers.get('HX-Request'):
+                return JsonResponse({'status': 'error', 'message': str(exc)}, status=409)
+            from django.contrib import messages
+            messages.error(request, str(exc))
+            return redirect('run-list')
 
         from webapp.models import Task
         task = Task.objects.get(id=task_id)
@@ -73,6 +80,26 @@ class TriggerRunView(LoginRequiredMixin, View):
         if request.headers.get('HX-Request'):
             return JsonResponse({'status': 'ok', 'run_id': str(run_id)})
         return redirect('run-detail', run_id=run_id)
+
+
+class RunDeleteView(LoginRequiredMixin, View):
+    """POST — delete one or more completed runs by UUID.
+
+    Accepts ``run_ids`` as a multi-value POST field (one UUID per value).
+    Active runs (pending / running) are silently skipped.
+    Share tokens cascade-delete automatically via the FK relationship.
+    """
+
+    def post(self, request):
+        from webapp.models import Run
+        ids = request.POST.getlist('run_ids')
+        if ids:
+            Run.objects.filter(
+                id__in=ids,
+            ).exclude(
+                status__in=('pending', 'running'),
+            ).delete()
+        return redirect('run-list')
 
 
 def run_stream(request, run_id):
