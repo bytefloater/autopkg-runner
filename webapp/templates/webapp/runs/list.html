@@ -55,6 +55,7 @@
         <button type="submit"
                 hx-post="{% url 'trigger-run' %}"
                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-swap="none"
                 hx-on::after-request="if(event.detail.successful){ const d=JSON.parse(event.detail.xhr.responseText); if(d.run_id){ window.location='/runs/'+d.run_id+'/' } }"
                 class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
           {% lucide "play" "w-4 h-4" %}
