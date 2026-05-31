@@ -305,12 +305,10 @@
                 class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-700
                        text-sm font-medium text-gray-700 dark:text-gray-300
                        hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors">
-          <template x-if="!testing">
-            {% lucide "send" "w-4 h-4" %}
-          </template>
-          <template x-if="testing">
+          <span x-show="!testing">{% lucide "send" "w-4 h-4" %}</span>
+          <span x-show="testing" x-cloak>
             <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-          </template>
+          </span>
           <span x-text="testing ? 'Sending…' : 'Send Test'"></span>
         </button>
 
