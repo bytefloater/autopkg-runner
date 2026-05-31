@@ -27,10 +27,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ctx['success_rate_30d'] = round(success / ctx['total_runs_30d'] * 100) if ctx['total_runs_30d'] else 0
 
         try:
-            from webapp.scheduler import get_scheduler
-            scheduler = get_scheduler()
-            job = scheduler.get_job('autopkg_scheduled_run')
-            ctx['next_run'] = job.next_run_time if job else None
+            from webapp.models import Schedule
+            from webapp.views.schedule import _next_run_time
+            s = Schedule.objects.get(pk=1)
+            ctx['next_run'] = _next_run_time(s) if s.enabled else None
         except Exception:
             ctx['next_run'] = None
 

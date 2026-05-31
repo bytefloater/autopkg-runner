@@ -31,12 +31,11 @@ def _describe_cron(s) -> str:
     if minute == '*' and hour == '*':
         time_str = 'every minute'
     elif minute == '*':
-        hour_label = hour if hour != '*' else 'every hour'
-        time_str = f'every minute past {_fmt_hour(hour_label)}'
+        time_str = f'every minute past {_fmt_hour(hour)}'
     elif hour == '*':
-        time_str = f'every hour at minute {minute}'
+        time_str = f'every hour at :{minute.zfill(2)}'
     else:
-        time_str = f'at {_fmt_hour(hour)}:{minute.zfill(2)} UTC'
+        time_str = f'at {_fmt_time(hour, minute)} UTC'
 
     # Day/month part
     parts = []
@@ -54,14 +53,45 @@ def _describe_cron(s) -> str:
 
 
 def _fmt_hour(h: str) -> str:
-    """Format a 24-hour value as a readable time label."""
+    """Format a 24-hour value as a readable hour label (no minutes)."""
     try:
         n = int(h)
         suffix = 'AM' if n < 12 else 'PM'
         n12 = n % 12 or 12
-        return f'{n12}:00 {suffix}'
+        return f'{n12} {suffix}'
     except ValueError:
         return h
+
+
+def _fmt_time(h: str, m: str) -> str:
+    """Format hour + minute as a 12-hour clock string, e.g. '2:00 AM'."""
+    try:
+        hn = int(h)
+        mn = int(m)
+        suffix = 'AM' if hn < 12 else 'PM'
+        h12 = hn % 12 or 12
+        return f'{h12}:{mn:02d} {suffix}'
+    except ValueError:
+        return f'{h}:{m}'
+
+
+def _next_run_time(s):
+    """Compute the next fire time for the schedule directly from its cron fields."""
+    try:
+        from apscheduler.triggers.cron import CronTrigger
+        from datetime import datetime, timezone as dt_timezone
+        trigger = CronTrigger(
+            minute=s.minute,
+            hour=s.hour,
+            day_of_week=s.day_of_week,
+            day=s.day_of_month,
+            month=s.month,
+            timezone='UTC',
+        )
+        now = datetime.now(tz=dt_timezone.utc)
+        return trigger.get_next_fire_time(None, now)
+    except Exception:
+        return None
 
 
 class ScheduleView(LoginRequiredMixin, TemplateView):
@@ -86,6 +116,7 @@ class ScheduleView(LoginRequiredMixin, TemplateView):
             ('Month',        'month',        s.month,        '1-12 or *'),
         ]
         ctx['cron_description'] = _describe_cron(s) if s.enabled else None
+        ctx['next_run'] = _next_run_time(s) if s.enabled else None
         return ctx
 
     def post(self, request):
