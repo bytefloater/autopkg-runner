@@ -359,6 +359,12 @@
         // Reinitialise Alpine on the new subtree
         if (window.Alpine) Alpine.initTree(main);
 
+        // Re-register HTMX attributes (polling triggers, etc.) on the new content.
+        // Alpine.initTree re-wires Alpine — the equivalent for HTMX is htmx.process().
+        // Without this, elements like #run-list-section with hx-trigger="every 10s"
+        // are invisible to HTMX after an SPA navigation and never start polling.
+        if (window.htmx) htmx.process(main);
+
         // Replay page-enter animation
         main.classList.remove('page-enter');
         requestAnimationFrame(() => main.classList.add('page-enter'));

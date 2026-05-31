@@ -65,7 +65,13 @@
     </div>
   </div>
 
-  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+  <div id="run-list-section"
+       hx-get="{% url 'run-list' %}{% if request.GET.page %}?page={{ request.GET.page }}{% endif %}"
+       hx-trigger="every 10s"
+       hx-select="#run-list-section"
+       hx-target="#run-list-section"
+       hx-swap="outerHTML"
+       class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
     {% if page_obj %}
     <table class="w-full text-sm">
       <thead>
