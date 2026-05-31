@@ -4,7 +4,7 @@ from django.views.generic import RedirectView
 
 from webapp.views import (
     dashboard, runs, schedule, config, api_tokens, users, pwa, account,
-    notifications, share,
+    notifications, share, about,
 )
 from webapp.views.config import LogLevelPickerView
 
@@ -18,6 +18,7 @@ urlpatterns = [
     path('runs/<uuid:run_id>/',        runs.RunDetailView.as_view(), name='run-detail'),
     path('runs/<uuid:run_id>/stream/', runs.run_stream,               name='run-stream'),
     path('schedule/', schedule.ScheduleView.as_view(), name='schedule'),
+    path('about/',    about.AboutView.as_view(),        name='about'),
 
     # ── Configuration root ────────────────────────────────────────────────────
     path('config/', config.ConfigRootView.as_view(), name='config'),
