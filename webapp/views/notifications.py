@@ -23,11 +23,12 @@ class NotificationsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         from webapp.models import Notifier, Setting
         ctx = super().get_context_data(**kwargs)
-        ctx['active_tab']    = 'config'
-        ctx['notifiers']     = Notifier.objects.all()
-        ctx['type_choices']  = type_choices()
-        ctx['type_schemas']  = json.dumps(NOTIFIER_TYPES)
-        ctx['pwa_base_url']  = Setting.get('notify.pwa_base_url', '')
+        ctx['active_tab']              = 'config'
+        ctx['notifiers']               = Notifier.objects.all()
+        ctx['type_choices']            = type_choices()
+        ctx['type_schemas']            = json.dumps(NOTIFIER_TYPES)
+        ctx['pwa_base_url']            = Setting.get('notify.pwa_base_url', '')
+        ctx['share_link_expiry_days']  = Setting.get('notify.share_link_expiry_days', '')
         return ctx
 
     def post(self, request):
@@ -35,6 +36,8 @@ class NotificationsView(LoginRequiredMixin, TemplateView):
         if request.POST.get('_action') == 'save_settings':
             from webapp.models import Setting
             Setting.set('notify.pwa_base_url', request.POST.get('notify.pwa_base_url', '').strip())
+            expiry = request.POST.get('notify.share_link_expiry_days', '').strip()
+            Setting.set('notify.share_link_expiry_days', expiry)
             messages.success(request, 'Notification settings saved.')
             return redirect('config-notifications')
 
@@ -211,13 +214,16 @@ class NotificationSettingsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         from webapp.models import Setting
         ctx = super().get_context_data(**kwargs)
-        ctx['active_tab']   = 'config'
-        ctx['pwa_base_url'] = Setting.get('notify.pwa_base_url', '')
+        ctx['active_tab']             = 'config'
+        ctx['pwa_base_url']           = Setting.get('notify.pwa_base_url', '')
+        ctx['share_link_expiry_days'] = Setting.get('notify.share_link_expiry_days', '')
         return ctx
 
     def post(self, request):
         from webapp.models import Setting
         Setting.set('notify.pwa_base_url', request.POST.get('notify.pwa_base_url', '').strip())
+        expiry = request.POST.get('notify.share_link_expiry_days', '').strip()
+        Setting.set('notify.share_link_expiry_days', expiry)
         messages.success(request, 'Settings saved.')
         return redirect('notification-settings')
 

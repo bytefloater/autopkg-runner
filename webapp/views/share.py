@@ -12,7 +12,11 @@ The rendered page intentionally omits:
   - Application navigation (no tab bar / back button)
 """
 
+from datetime import timedelta
+
+from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 # Keys that must never appear in the share report for security.
@@ -45,11 +49,24 @@ class RunShareView(TemplateView):
     template_name = 'webapp/share.html'
 
     def get_context_data(self, **kwargs):
-        from webapp.models import RunShareToken
+        from webapp.models import RunShareToken, Setting
         ctx = super().get_context_data(**kwargs)
 
         token_obj = get_object_or_404(RunShareToken, token=self.kwargs['token'])
-        run       = token_obj.run
+
+        # Enforce share-link expiry if configured.
+        expiry_days_str = Setting.get('notify.share_link_expiry_days', '').strip()
+        if expiry_days_str:
+            try:
+                expiry_days = int(expiry_days_str)
+                if expiry_days > 0:
+                    age = timezone.now() - token_obj.created_at
+                    if age > timedelta(days=expiry_days):
+                        raise Http404('This share link has expired.')
+            except ValueError:
+                pass  # invalid setting value — treat as no expiry
+
+        run = token_obj.run
 
         # Stages — status + duration only, no log content.
         stages = list(run.stage_executions.order_by('order'))

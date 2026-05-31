@@ -54,7 +54,8 @@ class Setting(models.Model):
         'logging.to_file':   'false',
         'logging.file_path': '~/logs/autopkg-runner',
         # Notifications
-        'notify.pwa_base_url': '',   # Base URL for share links (e.g. https://autopkg.example.com)
+        'notify.pwa_base_url': '',          # Base URL for share links (e.g. https://autopkg.example.com)
+        'notify.share_link_expiry_days': '', # Days after which share links expire; blank = never
         # WebPush
         'webpush.vapid_private_key': '',
         'webpush.vapid_public_key':  '',
