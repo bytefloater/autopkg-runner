@@ -121,7 +121,15 @@ def lucide(name, classes='w-5 h-5'):
 
 @register.filter
 def lookup(d, key):
-    """Look up a key in a dict (for use in templates)."""
+    """Look up a key in a dict (for use in templates).
+
+    Uses ``d[key]`` rather than ``d.get(key)`` so that subclasses such as
+    TranslationProxy can handle missing keys via ``__missing__`` (returning
+    the dotted key path) rather than silently producing ``None``.
+    """
     if isinstance(d, dict):
-        return d.get(key)
+        try:
+            return d[key]
+        except KeyError:
+            return None
     return None

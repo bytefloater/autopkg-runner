@@ -41,10 +41,10 @@ class TranslationProxy(dict):
         self._path = _path
         for k, v in data.items():
             child_path = f'{_path}.{k}' if _path else k
-            super().__setitem__(
-                k,
-                TranslationProxy(v, child_path) if isinstance(v, dict) else v,
-            )
+            if isinstance(v, dict):
+                super().__setitem__(k, TranslationProxy(v, child_path))
+            elif v != '':   # empty string → omit so __missing__ returns the key path
+                super().__setitem__(k, v)
 
     def __missing__(self, key: str) -> 'TranslationProxy':
         child_path = f'{self._path}.{key}' if self._path else key
@@ -82,7 +82,7 @@ def _resolve_all(data: dict, root: dict) -> dict:
 
 
 @lru_cache(maxsize=None)
-def load(lang: str) -> dict:
+def load(lang: str) -> TranslationProxy:
     """
     Load, resolve, and cache the translation for *lang* (e.g. 'en-US').
     Falls back to FALLBACK_LANG if the requested file is not found.
