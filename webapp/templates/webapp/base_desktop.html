@@ -125,21 +125,21 @@
                       bg-gray-100 dark:bg-slate-800
                       border border-gray-200 dark:border-slate-700
                       p-0.5 gap-0.5">
-            <button @click="setTheme('light')" title="Light mode"
+            <button @click="setTheme('light')" title="{{ t.APP.DARKMODE_STATE_LIGHT }}"
                     :class="theme==='light'
                       ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-900 dark:text-white'
                       : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
                     class="p-1.5 rounded-md transition-all duration-150">
               {% lucide "sun" "w-3.5 h-3.5" %}
             </button>
-            <button @click="setTheme('auto')" title="Follow system"
+            <button @click="setTheme('auto')" title="{{ t.APP.DARKMODE_STATE_SYSTEM }}"
                     :class="theme==='auto'
                       ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-900 dark:text-white'
                       : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
                     class="p-1.5 rounded-md transition-all duration-150">
               {% lucide "monitor" "w-3.5 h-3.5" %}
             </button>
-            <button @click="setTheme('dark')" title="Dark mode"
+            <button @click="setTheme('dark')" title="{{ t.APP.DARKMODE_STATE_DARK }}"
                     :class="theme==='dark'
                       ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-900 dark:text-white'
                       : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
@@ -172,7 +172,7 @@
                  x-transition:enter="transition ease-out duration-150"
                  x-transition:enter-start="opacity-0 -translate-y-1"
                  x-transition:enter-end="opacity-100 translate-y-0"
-                 class="absolute right-0 top-full mt-1.5 w-44 rounded-xl shadow-lg
+                 class="absolute right-0 top-full mt-1.5 min-w-44 w-max rounded-xl shadow-lg
                         border border-gray-200 dark:border-slate-700
                         bg-white dark:bg-slate-800 py-1 z-50">
               <div class="px-3 py-2 border-b border-gray-100 dark:border-slate-700">
