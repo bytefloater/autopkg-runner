@@ -5,6 +5,8 @@ import http.client
 import json
 from typing import Optional
 
+from notifiers._ssl import ssl_context
+
 
 def send(
     configuration: dict,
@@ -35,6 +37,7 @@ def send(
 
     body = json.dumps(payload).encode()
     conn = http.client.HTTPSConnection("discord.com", 443)
+    conn = http.client.HTTPSConnection("discord.com", 443, context=ssl_context())
     conn.request(
         "POST",
         f"/api/webhooks/{configuration['webhook_id']}/{configuration['webhook_token']}",

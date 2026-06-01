@@ -5,6 +5,8 @@ import http.client
 from typing import Optional
 from urllib.parse import urlencode
 
+from notifiers._ssl import ssl_context
+
 
 def send(
     configuration: dict,
@@ -25,6 +27,7 @@ def send(
         url_title: Display label for *url* (optional; defaults to "View report").
     """
     conn = http.client.HTTPSConnection("api.pushover.net", 443)
+    conn = http.client.HTTPSConnection("api.pushover.net", 443, context=ssl_context())
     parameters = {
         "token":     configuration["app_token"],
         "user":      configuration["user_token"],
