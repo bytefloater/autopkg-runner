@@ -240,14 +240,17 @@
         </button>
       </div>
       <div class="mx-4 mb-2 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
-        <a href="{% url 'logout' %}" data-no-spa
-           class="flex items-center gap-3 px-4 py-[13px]
-                  active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
-          <span class="w-[29px] h-[29px] rounded-[7px] bg-red-500 flex items-center justify-center flex-shrink-0">
-            {% lucide "log-out" "w-4 h-4 text-white" %}
-          </span>
-          <span class="flex-1 text-[16px] text-red-500 dark:text-red-400">{{ t.APP.ACTION_LOGOUT }}</span>
-        </a>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit"
+                  class="flex items-center gap-3 px-4 py-[13px] w-full
+                         active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+            <span class="w-[29px] h-[29px] rounded-[7px] bg-red-500 flex items-center justify-center flex-shrink-0">
+              {% lucide "log-out" "w-4 h-4 text-white" %}
+            </span>
+            <span class="flex-1 text-[16px] text-red-500 dark:text-red-400">{{ t.APP.ACTION_LOGOUT }}</span>
+          </button>
+        </form>
       </div>
     </div>
   </div>

@@ -190,15 +190,18 @@
                 {% lucide "key" "w-4 h-4 flex-shrink-0" %}
                 {{ t.APP.ACTION_CHANGE_PWD }}
               </button>
-              <a href="{% url 'logout' %}"
-                 class="flex items-center gap-2.5 px-3 py-2.5 text-sm
-                        text-red-600 dark:text-red-400
-                        hover:text-red-700 dark:hover:text-red-300
-                        hover:bg-red-50 dark:hover:bg-red-900/20
-                        transition-colors">
-                {% lucide "log-out" "w-4 h-4 flex-shrink-0" %}
-                {{ t.APP.ACTION_LOGOUT }}
-              </a>
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="flex items-center gap-2.5 px-3 py-2.5 text-sm w-full
+                               text-red-600 dark:text-red-400
+                               hover:text-red-700 dark:hover:text-red-300
+                               hover:bg-red-50 dark:hover:bg-red-900/20
+                               transition-colors">
+                  {% lucide "log-out" "w-4 h-4 flex-shrink-0" %}
+                  {{ t.APP.ACTION_LOGOUT }}
+                </button>
+              </form>
             </div>
           </div>
 
@@ -308,13 +311,16 @@
                 title="Change Password">
           {% lucide "key" "w-4 h-4" %}
         </button>
-        <a href="{% url 'logout' %}"
-           class="p-1.5 rounded-lg
-                  text-gray-400 hover:text-red-500 dark:hover:text-red-400
-                  hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-           title="Sign out">
-          {% lucide "log-out" "w-4 h-4" %}
-        </a>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit"
+                  class="p-1.5 rounded-lg
+                         text-gray-400 hover:text-red-500 dark:hover:text-red-400
+                         hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                  title="Sign out">
+            {% lucide "log-out" "w-4 h-4" %}
+          </button>
+        </form>
       </div>
     </div>
   </div>
