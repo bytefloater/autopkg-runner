@@ -2,7 +2,7 @@
 {% load webapp_extras %}
 
 {% block title %}Users — {{ t.APP.NAME }}{% endblock %}
-{% block nav_title %}Users{% endblock %}
+{% block nav_title %}{{ t.APP.VIEWS_USERS }}{% endblock %}
 
 {% block nav_left %}
 <a href="{% url 'config' %}"
@@ -16,7 +16,7 @@
 {# Dispatch a custom event — the button lives in the header, outside the x-data scope #}
 <button @click="$dispatch('users:open-create')"
         class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
-  Add
+  {{ t.USER_VIEW.ACTION_ADD }}
 </button>
 {% endblock %}
 
@@ -29,30 +29,30 @@
   {% if new_user_creds %}
   <div class="mx-4 mb-4 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-xl p-4">
     <p class="text-[13px] font-semibold text-green-800 dark:text-green-300 mb-2">
-      Account created — save these credentials.
+      {{ t.USER_VIEW.CREDS_BANNER_CREATED }}
     </p>
     <div class="space-y-1 mb-3">
       <div class="flex items-baseline gap-2">
-        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">Username</span>
+        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">{{ t.APP.FIELDNAME_USERNAME }}</span>
         <span class="text-[13px] font-mono text-gray-900 dark:text-white select-all break-all">{{ new_user_creds.username }}</span>
       </div>
       <div class="flex items-baseline gap-2">
-        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">Password</span>
+        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">{{ t.APP.FIELDNANE_PASSWORD }}</span>
         <span class="text-[13px] font-mono text-gray-900 dark:text-white select-all break-all">{{ new_user_creds.password }}</span>
       </div>
       {% if new_user_creds.role %}
       <div class="flex items-baseline gap-2">
-        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">Role</span>
+        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">{{ t.USER_VIEW.TABLE_CAT_ROLE }}</span>
         <span class="text-[13px] text-gray-900 dark:text-white">{{ new_user_creds.role }}</span>
       </div>
       {% endif %}
     </div>
-    <p class="text-[11px] text-green-700 dark:text-green-400">These credentials will not be shown again.</p>
+    <p class="text-[11px] text-green-700 dark:text-green-400">{{ t.USER_VIEW.CREDS_BANNER_DISCLAIMER_SHORT }}</p>
   </div>
   {% endif %}
 
   {# ── User list ────────────────────────────────────────────────────────────── #}
-  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Users</p>
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.APP.VIEWS_USERS }}</p>
 
   {% if users %}
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
@@ -73,11 +73,11 @@
         <div class="flex items-center gap-1.5 mt-0.5">
           {% if not u.is_active %}
           <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span>
-          <span class="text-[13px] text-red-500">Inactive</span>
+          <span class="text-[13px] text-red-500">{{ t.USER_VIEW.STATUS_INACTIVE }}</span>
           {% elif u.is_superuser %}
-          <span class="text-[13px] text-gray-400 dark:text-gray-500">Administrator</span>
+          <span class="text-[13px] text-gray-400 dark:text-gray-500">{{ t.APP.ROLE_SUPERUSER }}</span>
           {% else %}
-          <span class="text-[13px] text-gray-400 dark:text-gray-500">User</span>
+          <span class="text-[13px] text-gray-400 dark:text-gray-500">{{ t.USER_VIEW.ROLE_USER }}</span>
           {% endif %}
         </div>
       </div>
@@ -92,7 +92,7 @@
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
     <div class="flex flex-col items-center justify-center py-12">
       {% lucide "users" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
-      <p class="text-[15px] text-gray-400 dark:text-gray-500">No users found.</p>
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.USER_VIEW.EMPTY_NO_USERS }}</p>
     </div>
   </div>
   {% endif %}
@@ -113,19 +113,19 @@
           <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
         </div>
         <div class="px-4 pt-2 pb-4">
-          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-5">Add User</h3>
+          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-5">{{ t.USER_VIEW.ACTION_ADD_USER }}</h3>
           <form method="post" @submit="showCreate = false">
             {% csrf_token %}
             <input type="hidden" name="action" value="create">
             <div class="bg-white dark:bg-[#2c2c2e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-4">
               <div class="px-4 py-3">
-                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Username <span class="text-red-500">*</span></label>
+                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNAME_USERNAME }} <span class="text-red-500">*</span></label>
                 <input type="text" name="username" required autofocus
                        class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600"
                        placeholder="username">
               </div>
               <div class="px-4 py-3">
-                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Email <span class="text-[12px] text-gray-400 font-normal">(optional)</span></label>
+                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.USER_VIEW.LABEL_EMAIL_OPTIONAL }}</label>
                 <input type="email" name="email"
                        class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600"
                        placeholder="user@example.com">
@@ -133,8 +133,8 @@
               <div class="flex items-center justify-between px-4 py-3"
                    x-data="{ adminVal: false }">
                 <div>
-                  <p class="text-[16px] text-gray-900 dark:text-white">Administrator</p>
-                  <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">Full access to all settings</p>
+                  <p class="text-[16px] text-gray-900 dark:text-white">{{ t.APP.ROLE_SUPERUSER }}</p>
+                  <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.ROLE_ADMIN_DESC_SHORT }}</p>
                 </div>
                 <input type="hidden" name="is_superuser" :value="adminVal ? 'on' : ''">
                 <button type="button" @click="adminVal = !adminVal"
@@ -145,15 +145,15 @@
                 </button>
               </div>
             </div>
-            <p class="text-[12px] text-gray-400 dark:text-gray-500 mb-4">A secure password will be generated and shown once.</p>
+            <p class="text-[12px] text-gray-400 dark:text-gray-500 mb-4">{{ t.USER_VIEW.HINT_PASSWORD_GENERATED_SHORT }}</p>
             <div class="flex gap-3">
               <button type="button" @click="showCreate = false"
                       class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400 active:opacity-70 transition-opacity duration-75">
-                Cancel
+                {{ t.APP.ACTION_CANCEL }}
               </button>
               <button type="submit"
                       class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold bg-blue-600 active:bg-blue-700 text-white transition-colors duration-75">
-                Create
+                {{ t.USER_VIEW.ACTION_CREATE }}
               </button>
             </div>
           </form>

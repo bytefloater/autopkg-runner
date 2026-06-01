@@ -17,7 +17,7 @@
      }">
 
   <div class="flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Runs</h1>
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_RUNS }}</h1>
     <div class="flex items-center gap-2">
 
       {# Manage / Done toggle #}
@@ -27,7 +27,7 @@
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'"
               class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors">
         {% lucide "list-checks" "w-4 h-4" %}
-        <span x-text="managing ? 'Done' : 'Manage'">Manage</span>
+        <span x-text="managing ? '{{ t.RUNS_VIEW.ACTION_DONE|escapejs }}' : '{{ t.RUNS_VIEW.ACTION_MANAGE|escapejs }}'">{{ t.RUNS_VIEW.ACTION_MANAGE }}</span>
       </button>
 
       {# Delete selected (manage mode only) #}
@@ -45,7 +45,7 @@
                 class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm
                        bg-red-600 hover:bg-red-700 text-white disabled:opacity-40 disabled:cursor-not-allowed">
           {% lucide "trash-2" "w-4 h-4" %}
-          <span>Delete (<span x-text="selected.length">0</span>)</span>
+          <span>{{ t.RUNS_VIEW.ACTION_DELETE }} (<span x-text="selected.length">0</span>)</span>
         </button>
       </form>
 
@@ -59,7 +59,7 @@
                 hx-on::after-request="if(event.detail.successful){ const d=JSON.parse(event.detail.xhr.responseText); if(d.run_id){ window.location='/runs/'+d.run_id+'/' } }"
                 class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
           {% lucide "play" "w-4 h-4" %}
-          Trigger Run
+          {{ t.APP.ACTION_TRIGGER_RUN }}
         </button>
       </form>
 
@@ -89,10 +89,10 @@
               </button>
             </div>
           </th>
-          <th class="px-4 py-3 text-left">Status</th>
-          <th class="px-4 py-3 text-left">Started</th>
-          <th class="px-4 py-3 text-left">Duration</th>
-          <th class="px-4 py-3 text-left">Triggered by</th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_STATUS }}</th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_STARTED }}</th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_DURATION }}</th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_TRIGGERED_BY }}</th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
@@ -140,7 +140,7 @@
           <td class="px-4 py-3 text-right">
             <a href="{% url 'run-detail' run.id %}"
                @click.stop
-               class="text-xs text-blue-600 dark:text-blue-400 hover:underline">View →</a>
+               class="text-xs text-blue-600 dark:text-blue-400 hover:underline">{{ t.RUNS_VIEW.ACTION_VIEW }}</a>
           </td>
         </tr>
         {% endfor %}
@@ -150,13 +150,13 @@
     <!-- Pagination -->
     {% if page_obj.has_other_pages %}
     <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <span>{{ t.RUNS_VIEW.PAGINATION_PAGE }} {{ page_obj.number }} {{ t.RUNS_VIEW.PAGINATION_OF }} {{ page_obj.paginator.num_pages }}</span>
       <div class="flex gap-2">
         {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">← Prev</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">{{ t.RUNS_VIEW.PAGINATION_PREV }}</a>
         {% endif %}
         {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">Next →</a>
+        <a href="?page={{ page_obj.next_page_number }}" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">{{ t.RUNS_VIEW.PAGINATION_NEXT }}</a>
         {% endif %}
       </div>
     </div>
@@ -164,7 +164,7 @@
 
     {% else %}
     <div class="py-16 text-center text-sm text-gray-400 dark:text-gray-500">
-      No runs yet. Trigger one to get started.
+      {{ t.RUNS_VIEW.EMPTY_NO_RUNS }}
     </div>
     {% endif %}
   </div>

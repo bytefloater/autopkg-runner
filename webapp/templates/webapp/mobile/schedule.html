@@ -2,7 +2,7 @@
 {% load webapp_extras %}
 
 {% block title %}Schedule — AutoPkg Runner{% endblock %}
-{% block nav_title %}Schedule{% endblock %}
+{% block nav_title %}{{ t.APP.VIEWS_SCHEDULES }}{% endblock %}
 
 {% block nav_right %}
 <button type="submit" form="schedule-form"
@@ -17,13 +17,13 @@
 <form method="post" id="schedule-form" x-data="{ enabled: {{ schedule.enabled|yesno:'true,false' }} }">
   {% csrf_token %}
 
-  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Schedule</p>
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.APP.VIEWS_SCHEDULES }}</p>
 
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
     {# Enable / disable toggle #}
     <div class="flex items-center justify-between px-4 py-[13px]">
-      <span class="text-[16px] text-gray-900 dark:text-white">Enable Scheduled Runs</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.SCHEDULE_VIEW.ENABLE_SCHEDULER_TOGGLE_HEADER }}</span>
       <input type="hidden" name="enabled" :value="enabled ? 'on' : ''">
       <button type="button" @click="enabled = !enabled"
               :class="enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
@@ -37,8 +37,8 @@
 
   {# Cron expression fields — visible only when enabled #}
   <div x-show="enabled" x-transition>
-    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cron Expression</p>
-    <p class="px-4 pb-2 text-[12px] text-gray-400 dark:text-gray-500">Times are in {{ system_tz_name }} ({{ system_tz_abbr }})</p>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.SCHEDULE_VIEW.SECTION_CRON_EXPRESSION }}</p>
+    <p class="px-4 pb-2 text-[12px] text-gray-400 dark:text-gray-500">{{ t.SCHEDULE_VIEW.CRON_TZ_PREFIX }} {{ system_tz_name }} ({{ system_tz_abbr }})</p>
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       {% for label, name, value, hint in cron_fields %}
       <div class="flex items-center justify-between px-4 py-3">
@@ -63,7 +63,7 @@
     <p class="text-[14px] text-green-700 dark:text-green-300">{{ cron_description }}</p>
     {% if next_run_formatted %}
     <p class="text-[12px] text-green-600 dark:text-green-400 mt-0.5">
-      Next run: {{ next_run_formatted }}
+      {{ t.SCHEDULE_VIEW.LABEL_NEXT_RUN }} {{ next_run_formatted }}
     </p>
     {% endif %}
   </div>

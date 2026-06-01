@@ -8,7 +8,7 @@
 
   <!-- Page header -->
   <div class="flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_DASHBOARD }}</h1>
     <form method="post" action="{% url 'trigger-run' %}" id="trigger-form">
       {% csrf_token %}
       <button type="submit"
@@ -18,7 +18,7 @@
               hx-on::after-request="if(event.detail.successful){ window.location = '/runs/' + JSON.parse(event.detail.xhr.responseText).run_id + '/' }"
               class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
         {% lucide "play" "w-4 h-4" %}
-        Trigger Run
+        {{ t.APP.ACTION_TRIGGER_RUN }}
       </button>
     </form>
   </div>
@@ -26,19 +26,19 @@
   <!-- Stats row -->
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Runs (30d)</p>
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_RUN_COUNT_30D }}</p>
       <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ total_runs_30d }}</p>
     </div>
     <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Success Rate (30d)</p>
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_SUCCESS_RATE_30D }}</p>
       <p class="mt-1 text-2xl font-bold {% if success_rate_30d >= 90 %}text-green-600 dark:text-green-400{% elif success_rate_30d >= 70 %}text-yellow-600 dark:text-yellow-400{% else %}text-red-600 dark:text-red-400{% endif %}">
         {{ success_rate_30d }}%
       </p>
     </div>
     <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Next Scheduled Run</p>
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_NEXT_RUN }}</p>
       <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-        {% if next_run_formatted %}{{ next_run_formatted }}{% else %}<span class="text-gray-400">Not scheduled</span>{% endif %}
+        {% if next_run_formatted %}{{ next_run_formatted }}{% else %}<span class="text-gray-400">{{ t.DASHBOARD_VIEW.STATE_NO_RUN_SCHEDULED }}</span>{% endif %}
       </p>
     </div>
   </div>
@@ -47,8 +47,8 @@
   {% if last_run %}
   <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
     <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-      <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Last Run</h2>
-      <a href="{% url 'run-list' %}" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">View all →</a>
+      <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t.DASHBOARD_VIEW.SECTION_LAST_RUN }}</h2>
+      <a href="{% url 'run-list' %}" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">{{ t.DASHBOARD_VIEW.ACTION_VIEW_ALL }}</a>
     </div>
     <div class="px-5 py-4 flex items-center gap-4">
       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ last_run.status|status_color }}">
@@ -56,7 +56,7 @@
         {{ last_run.get_status_display }}
       </span>
       <div class="text-sm text-gray-600 dark:text-gray-300">
-        Triggered by <strong>{{ last_run.triggered_by }}</strong>
+        {{ t.DASHBOARD_VIEW.META_TRIGGERED_BY }} <strong>{{ last_run.triggered_by }}</strong>
         &nbsp;·&nbsp; {{ last_run.started_at|date:"d M Y, H:i" }}
         {% if last_run.duration %}
           &nbsp;·&nbsp; {{ last_run.started_at|duration:last_run.completed_at }}
@@ -65,14 +65,14 @@
       <div class="ml-auto">
         <a href="{% url 'run-detail' last_run.id %}"
            class="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
-          View logs →
+          {{ t.APP.ACTION_VIEW_LOGS }}
         </a>
       </div>
     </div>
   </div>
   {% else %}
   <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center shadow-sm">
-    <p class="text-gray-400 dark:text-gray-500 text-sm">No runs yet. Click <strong>Trigger Run</strong> to start the pipeline.</p>
+    <p class="text-gray-400 dark:text-gray-500 text-sm">{{ t.DASHBOARD_VIEW.EMPTY_NO_RUNS }}</p>
   </div>
   {% endif %}
 

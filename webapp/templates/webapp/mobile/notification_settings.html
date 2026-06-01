@@ -2,7 +2,7 @@
 {% load webapp_extras %}
 
 {% block title %}Notification Settings — {{ t.APP.NAME }}{% endblock %}
-{% block nav_title %}Notification Settings{% endblock %}
+{% block nav_title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}{% endblock %}
 
 {% block nav_left %}
 <a href="{% url 'config-notifications' %}"
@@ -25,28 +25,28 @@
 <form method="post" id="notif-settings-form">
   {% csrf_token %}
 
-  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Sharing</p>
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SHARING }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     <div class="px-4 py-3">
-      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">App URL</label>
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_APP_URL }}</label>
       <input type="url" name="notify.pwa_base_url" value="{{ pwa_base_url }}"
              placeholder="https://autopkg.example.com"
              class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
       <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-2">
-        The public base URL of this server. Used to build share links in notifications. Leave blank to omit links.
+        {{ t.NOTIFICATIONS_VIEW.OPT_APP_URL_DESC_SHORT }}
       </p>
     </div>
     <div class="px-4 py-3">
-      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Share Link Expiry</label>
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_SHARE_LINK_EXPIRY }}</label>
       <div class="flex items-center gap-2 mt-1">
         <input type="number" name="notify.share_link_expiry_days" value="{{ share_link_expiry_days }}"
                placeholder="Never"
                min="1" max="3650"
                class="w-28 text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
-        <span class="text-[15px] text-gray-500 dark:text-gray-400">days</span>
+        <span class="text-[15px] text-gray-500 dark:text-gray-400">{{ t.NOTIFICATIONS_VIEW.UNIT_DAYS }}</span>
       </div>
       <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-2">
-        Days before share links expire. Leave blank for links that never expire.
+        {{ t.NOTIFICATIONS_VIEW.OPT_SHARE_LINK_EXPIRY_DESC_SHORT }}
       </p>
     </div>
   </div>

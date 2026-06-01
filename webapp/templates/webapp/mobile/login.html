@@ -220,10 +220,10 @@
 
     <img src="{% static 'logos/icon-192.png' %}" alt="AutoPkg Runner" class="app-icon">
     <h1 class="app-name">AutoPkg Runner</h1>
-    <p class="app-tagline">Sign in to continue</p>
+    <p class="app-tagline">{{ t.LOGIN_VIEW.TAGLINE }}</p>
 
     {% if form.errors %}
-    <div class="error-banner">Incorrect username or password.</div>
+    <div class="error-banner">{{ t.LOGIN_VIEW.ERROR_INVALID_CREDENTIALS }}</div>
     {% endif %}
 
     <form method="post">
@@ -233,7 +233,7 @@
                  type="text"
                  name="username"
                  id="id_username"
-                 placeholder="Username"
+                 placeholder="{{ t.APP.FIELDNAME_USERNAME }}"
                  autocomplete="username"
                  autocapitalize="none"
                  autocorrect="off"
@@ -246,13 +246,13 @@
                  type="password"
                  name="password"
                  id="id_password"
-                 placeholder="Password"
+                 placeholder="{{ t.APP.FIELDNANE_PASSWORD }}"
                  autocomplete="current-password"
                  required>
         </div>
       </div>
 
-      <button type="submit" class="btn-signin">Sign In</button>
+      <button type="submit" class="btn-signin">{{ t.APP.ACTION_LOGIN }}</button>
 
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ next }}">

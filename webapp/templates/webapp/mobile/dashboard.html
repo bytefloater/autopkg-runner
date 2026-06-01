@@ -11,11 +11,11 @@
 <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
   <div class="grid grid-cols-2 divide-x divide-gray-200/70 dark:divide-[#38383a]">
     <div class="px-4 py-4">
-      <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Runs (30d)</p>
+      <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_RUN_COUNT_30D }}</p>
       <p class="text-[28px] font-bold mt-1 text-gray-900 dark:text-white tabular-nums leading-tight">{{ total_runs_30d }}</p>
     </div>
     <div class="px-4 py-4">
-      <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Success Rate</p>
+      <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_SUCCESS_RATE }}</p>
       <p class="text-[28px] font-bold mt-1 tabular-nums leading-tight
                 {% if success_rate_30d >= 90 %}text-green-500
                 {% elif success_rate_30d >= 70 %}text-yellow-500
@@ -30,9 +30,9 @@
 <div class="h-4"></div>
 <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
   <div class="flex items-center justify-between px-4 py-3">
-    <span class="text-[16px] text-gray-900 dark:text-white">Next Run</span>
+    <span class="text-[16px] text-gray-900 dark:text-white">{{ t.DASHBOARD_VIEW.HEADER_NEXT_RUN_SHORT }}</span>
     <span class="text-[16px] text-gray-500 dark:text-gray-400">
-      {% if next_run_formatted %}{{ next_run_formatted }}{% else %}Not scheduled{% endif %}
+      {% if next_run_formatted %}{{ next_run_formatted }}{% else %}{{ t.DASHBOARD_VIEW.STATE_NO_RUN_SCHEDULED }}{% endif %}
     </span>
   </div>
 
@@ -66,7 +66,7 @@
         </template>
       </span>
       <span class="flex-1 text-[16px] text-left text-gray-900 dark:text-white"
-            x-text="loading ? 'Starting…' : 'Run Now'"></span>
+            x-text="loading ? '{{ t.DASHBOARD_VIEW.STATE_STARTING|escapejs }}' : '{{ t.DASHBOARD_VIEW.ACTION_RUN_NOW|escapejs }}'"></span>
     </button>
   </div>
 </div>
@@ -79,7 +79,7 @@
      hx-target="#recent-runs-section"
      hx-swap="outerHTML">
 
-<p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Recent Runs</p>
+<p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.SECTION_RECENT_RUNS }}</p>
 
 {% if recent_runs %}
 <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
@@ -108,14 +108,14 @@
 <div class="mt-3 text-center">
   <a href="{% url 'run-list' %}"
      class="text-[15px] text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
-    See all runs
+    {{ t.DASHBOARD_VIEW.ACTION_VIEW_ALL }}
   </a>
 </div>
 {% else %}
 <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
   <div class="flex flex-col items-center justify-center py-20">
     {% lucide "list" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
-    <p class="text-[15px] text-gray-400 dark:text-gray-500">No runs yet. Tap Run Now to start.</p>
+    <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.DASHBOARD_VIEW.EMPTY_NO_RUNS_MOBILE }}</p>
   </div>
 </div>
 {% endif %}

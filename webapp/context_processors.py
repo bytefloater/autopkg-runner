@@ -1,15 +1,15 @@
 from webapp import translations as _trans
 
 _BASE_TABS = [
-    {'name': 'dashboard', 'label': 'Dashboard', 'url_name': 'dashboard',  'icon': 'house'},
-    {'name': 'runs',      'label': 'Runs',      'url_name': 'run-list',   'icon': 'list'},
-    {'name': 'schedule',  'label': 'Schedule',  'url_name': 'schedule',   'icon': 'calendar'},
-    {'name': 'config',    'label': 'Config',    'url_name': 'config',     'icon': 'settings'},
-    {'name': 'tokens',    'label': 'Tokens',    'url_name': 'api-tokens', 'icon': 'key'},
+    {'name': 'dashboard', 't_key': 'VIEWS_DASHBOARD', 'label': 'Dashboard', 'url_name': 'dashboard',  'icon': 'house'},
+    {'name': 'runs',      't_key': 'VIEWS_RUNS',      'label': 'Runs',      'url_name': 'run-list',   'icon': 'list'},
+    {'name': 'schedule',  't_key': 'VIEWS_SCHEDULES', 'label': 'Schedule',  'url_name': 'schedule',   'icon': 'calendar'},
+    {'name': 'config',    't_key': 'VIEWS_CONFIG',    'label': 'Config',    'url_name': 'config',     'icon': 'settings'},
+    {'name': 'tokens',    't_key': 'VIEWS_TOKENS',    'label': 'Tokens',    'url_name': 'api-tokens', 'icon': 'key'},
 ]
 
 _ADMIN_TABS = [
-    {'name': 'users', 'label': 'Users', 'url_name': 'users', 'icon': 'users'},
+    {'name': 'users', 't_key': 'VIEWS_USERS', 'label': 'Users', 'url_name': 'users', 'icon': 'users'},
 ]
 
 

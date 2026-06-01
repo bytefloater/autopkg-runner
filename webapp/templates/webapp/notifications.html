@@ -25,7 +25,7 @@
             class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700
                    text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
       {% lucide "plus" "w-4 h-4" %}
-      Add Notifier
+      {{ t.NOTIFICATIONS_VIEW.ACTION_ADD_NOTIFIER }}
     </button>
   </div>
 
@@ -33,14 +33,14 @@
   <form method="post" class="mb-6">
     {% csrf_token %}
     <input type="hidden" name="_action" value="save_settings">
-    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">Settings</h3>
+    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</h3>
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
                 divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">
       <div class="px-4 py-4">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">App URL</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_APP_URL }}</label>
         <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">
-          Base URL of this AutoPkg Runner instance, used to build share links included in notifications.
-          Leave blank to omit links. Example: <code class="font-mono text-xs">https://autopkg.example.com</code>
+          {{ t.NOTIFICATIONS_VIEW.OPT_APP_URL_DESC }}
+          <code class="font-mono text-xs">https://autopkg.example.com</code>
         </p>
         <input type="url" name="notify.pwa_base_url" value="{{ pwa_base_url }}"
                placeholder="https://autopkg.example.com"
@@ -50,9 +50,9 @@
                       focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
       </div>
       <div class="px-4 py-4">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Share Link Expiry</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_SHARE_LINK_EXPIRY }}</label>
         <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">
-          Number of days before share links expire. Leave blank for links that never expire.
+          {{ t.NOTIFICATIONS_VIEW.OPT_SHARE_LINK_EXPIRY_DESC }}
         </p>
         <div class="flex items-center gap-2">
           <input type="number" name="notify.share_link_expiry_days" value="{{ share_link_expiry_days }}"
@@ -62,7 +62,7 @@
                         bg-gray-50 dark:bg-slate-800/50 text-sm
                         text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600
                         focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-          <span class="text-sm text-gray-500 dark:text-gray-400">days</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{ t.NOTIFICATIONS_VIEW.UNIT_DAYS }}</span>
         </div>
       </div>
     </div>
@@ -70,7 +70,7 @@
       <button type="submit"
               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
                      rounded-lg transition-colors shadow-sm">
-        Save Settings
+        {{ t.NOTIFICATIONS_VIEW.ACTION_SAVE_SETTINGS }}
       </button>
     </div>
   </form>
@@ -125,11 +125,11 @@
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800">
     <div class="flex flex-col items-center justify-center py-16 gap-3">
       {% lucide "bell-off" "w-10 h-10 text-gray-300 dark:text-gray-700" %}
-      <p class="text-sm text-gray-400 dark:text-gray-500">No notifiers configured.</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.EMPTY_NO_NOTIFIERS }}</p>
       <button type="button" @click="showAdd = true"
               class="mt-1 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium
                      transition-colors shadow-sm">
-        Add your first notifier
+        {{ t.NOTIFICATIONS_VIEW.ACTION_ADD_FIRST }}
       </button>
     </div>
   </div>
@@ -158,7 +158,7 @@
            x-transition:leave-end="opacity-0 scale-95">
 
         <div class="flex items-center justify-between mb-5">
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">New Notifier</h3>
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.ACTION_ADD_NOTIFIER }}</h3>
           <button @click="showAdd = false"
                   class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
                          hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
@@ -170,7 +170,7 @@
           {% csrf_token %}
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Name</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.NOTIFICATIONS_VIEW.FIELD_NAME }}</label>
             <input type="text" name="name" x-model="newName"
                    placeholder="e.g. My Pushover"
                    required autofocus
@@ -180,7 +180,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Type</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.NOTIFICATIONS_VIEW.FIELD_TYPE }}</label>
             <select name="notifier_type" x-model="newType"
                     class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700
                            bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-white
@@ -196,12 +196,12 @@
                     class="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700
                            text-sm font-semibold text-gray-700 dark:text-gray-300
                            hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-              Cancel
+              {{ t.APP.ACTION_CANCEL }}
             </button>
             <button type="submit" :disabled="!newName.trim()"
                     class="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700
                            text-sm font-semibold text-white transition-colors disabled:opacity-40">
-              Next
+              {{ t.NOTIFICATIONS_VIEW.ACTION_NEXT }}
             </button>
           </div>
 

@@ -7,9 +7,9 @@
 <div class="space-y-6">
   <div>
     <div class="flex items-center justify-between min-h-9">
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Schedule</h1>
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_SCHEDULES }}</h1>
     </div>
-    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Configure when the AutoPkg pipeline runs automatically. Uses standard cron syntax.</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t.SCHEDULE_VIEW.DESC_SCHEDULER }}</p>
   </div>
 
   <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"
@@ -22,8 +22,8 @@
       <!-- Enabled toggle -->
       <div class="flex items-center justify-between gap-4">
         <div>
-          <label for="enabled" class="text-sm font-medium text-gray-800 dark:text-gray-200">Enable scheduled runs</label>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">When off, the pipeline only runs when triggered manually or via API.</p>
+          <label for="enabled" class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ t.SCHEDULE_VIEW.ENABLE_SCHEDULER_TOGGLE_HEADER }}</label>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ t.SCHEDULE_VIEW.ENABLE_SCHEDULER_TOGGLE_DESC }}</p>
         </div>
         <button type="button" @click="enabled = !enabled"
                 :class="enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'"
@@ -52,9 +52,9 @@
 
         <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3">
           <p class="text-xs text-blue-700 dark:text-blue-300">
-            <strong>Format:</strong> minute hour day-of-week day-of-month month &nbsp;·&nbsp;
-            Use <code>*</code> for every value, e.g. <code>0 2 * * *</code> runs daily at 02:00.
-            Times are interpreted in <strong>{{ system_tz_name }}</strong> (currently {{ system_tz_abbr }}).
+            <strong>{{ t.SCHEDULE_VIEW.CRON_FORMAT_HINT }}</strong> &nbsp;·&nbsp;
+            {{ t.SCHEDULE_VIEW.CRON_FORMAT_EXAMPLE }}
+            {{ t.SCHEDULE_VIEW.CRON_TZ_INTERPRETED_IN }} <strong>{{ system_tz_name }}</strong> ({{ t.SCHEDULE_VIEW.CRON_TZ_CURRENTLY }} {{ system_tz_abbr }}).
           </p>
         </div>
 
@@ -65,7 +65,7 @@
             <p class="text-sm text-green-700 dark:text-green-300">{{ cron_description }}</p>
             {% if next_run_formatted %}
             <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">
-              Next run: {{ next_run_formatted }}
+              {{ t.SCHEDULE_VIEW.LABEL_NEXT_RUN }} {{ next_run_formatted }}
             </p>
             {% endif %}
           </div>
@@ -76,7 +76,7 @@
       <div class="pt-2">
         <button type="submit"
                 class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
-          Save Schedule
+          {{ t.SCHEDULE_VIEW.ACTION_SAVE }}
         </button>
       </div>
 

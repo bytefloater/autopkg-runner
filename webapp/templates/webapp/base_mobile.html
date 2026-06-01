@@ -215,7 +215,7 @@
         </span>
         <p class="text-[17px] font-semibold text-gray-900 dark:text-white">{{ request.user.username }}</p>
         {% if request.user.email %}<p class="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">{{ request.user.email }}</p>{% endif %}
-        {% if request.user.is_superuser %}<p class="text-[12px] text-blue-500 dark:text-blue-400 mt-0.5">Administrator</p>{% endif %}
+        {% if request.user.is_superuser %}<p class="text-[12px] text-blue-500 dark:text-blue-400 mt-0.5">{{ t.APP.ROLE_SUPERUSER }}</p>{% endif %}
       </div>
       {# Actions — grouped inset list #}
       <div class="mx-4 mb-3 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
@@ -225,7 +225,7 @@
           <span class="w-[29px] h-[29px] rounded-[7px] bg-blue-500 flex items-center justify-center flex-shrink-0">
             {% lucide "sun-moon" "w-4 h-4 text-white" %}
           </span>
-          <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Appearance</span>
+          <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.APP.ACCOUNT_APPEARANCE }}</span>
           <span class="text-[14px] text-gray-400 dark:text-gray-500 mr-1" x-text="themeLabel()"></span>
           {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
         </button>
@@ -235,7 +235,7 @@
           <span class="w-[29px] h-[29px] rounded-[7px] bg-gray-400 dark:bg-gray-500 flex items-center justify-center flex-shrink-0">
             {% lucide "key" "w-4 h-4 text-white" %}
           </span>
-          <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Change Password</span>
+          <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.APP.ACTION_CHANGE_PWD }}</span>
           {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
         </button>
       </div>
@@ -246,7 +246,7 @@
           <span class="w-[29px] h-[29px] rounded-[7px] bg-red-500 flex items-center justify-center flex-shrink-0">
             {% lucide "log-out" "w-4 h-4 text-white" %}
           </span>
-          <span class="flex-1 text-[16px] text-red-500 dark:text-red-400">Sign Out</span>
+          <span class="flex-1 text-[16px] text-red-500 dark:text-red-400">{{ t.APP.ACTION_LOGOUT }}</span>
         </a>
       </div>
     </div>
@@ -270,7 +270,7 @@
         <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-slate-700"></div>
       </div>
       <div class="flex items-center justify-between mb-5">
-        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Change Password</h3>
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t.APP.ACTION_CHANGE_PWD }}</h3>
         <button @click="showChangePw=false"
                 class="p-1.5 rounded-xl text-gray-400 active:opacity-60 transition-opacity duration-75">
           {% lucide "x" "w-4 h-4" %}
@@ -279,40 +279,40 @@
       <form method="post" action="{% url 'change-password' %}" x-ref="changePwForm" class="space-y-4">
         {% csrf_token %}
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.APP.CHANGE_PWD_CURRENT }}</label>
           <input type="password" name="current_password" required autocomplete="current-password"
                  class="w-full px-3 py-3 rounded-xl border border-gray-200/70 dark:border-[#38383a]
                         bg-white dark:bg-[#2c2c2e] text-gray-900 dark:text-white text-sm
                         focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.APP.CHANGE_PWD_NEW }}</label>
           <input type="password" name="new_password" required autocomplete="new-password" minlength="8"
                  class="w-full px-3 py-3 rounded-xl border border-gray-200/70 dark:border-[#38383a]
                         bg-white dark:bg-[#2c2c2e] text-gray-900 dark:text-white text-sm
                         focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm New Password</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.APP.CHANGE_PWD_CONFIRM }}</label>
           <input type="password" name="confirm_password" required autocomplete="new-password" minlength="8"
                  class="w-full px-3 py-3 rounded-xl border border-gray-200/70 dark:border-[#38383a]
                         bg-white dark:bg-[#2c2c2e] text-gray-900 dark:text-white text-sm
                         focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
         </div>
-        <p class="text-xs text-gray-400 dark:text-gray-500">Minimum 8 characters. You will stay logged in.</p>
+        <p class="text-xs text-gray-400 dark:text-gray-500">{{ t.APP.CHANGE_PWD_HINT }}</p>
         <div class="flex gap-3 pt-1">
           <button type="button" @click="showChangePw=false"
                   class="flex-1 px-4 py-3 text-sm font-semibold rounded-xl
                          bg-white dark:bg-[#2c2c2e] border border-gray-200/70 dark:border-[#38383a]
                          text-blue-600 dark:text-blue-400
                          active:opacity-70 transition-opacity duration-75">
-            Cancel
+            {{ t.APP.ACTION_CANCEL }}
           </button>
           <button type="submit"
                   class="flex-1 px-4 py-3 text-sm font-semibold rounded-xl
                          bg-blue-600 text-white
                          active:bg-blue-700 transition-colors duration-75">
-            Change Password
+            {{ t.APP.ACTION_CHANGE_PWD }}
           </button>
         </div>
       </form>

@@ -31,8 +31,8 @@
       {# Keep versions #}
       <div class="flex items-center justify-between px-4 py-4">
         <div>
-          <p class="text-sm font-medium text-gray-900 dark:text-white">Keep Versions</p>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Number of package versions to retain per recipe</p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_GC_KEEP_VERSIONS }}</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ t.CONFIG_VIEW.OPT_GC_KEEP_VERSIONS_DESC }}</p>
         </div>
         <input type="number" name="gc.keep_versions" value="{{ s|lookup:'gc.keep_versions' }}"
                min="1" max="99"
@@ -45,8 +45,8 @@
       {# Clear temporary files #}
       <div class="flex items-center justify-between px-4 py-4">
         <div class="flex-1 min-w-0 pr-6">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">Clear Temporary Files</p>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Remove AutoPkg temporary files after each run</p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_GC_CLEAR_TEMP }}</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ t.CONFIG_VIEW.OPT_GC_CLEAR_TEMP_DESC }}</p>
         </div>
         <input type="hidden" name="gc.clear_temp" :value="clearTemp ? 'on' : ''">
         <button type="button" @click="clearTemp = !clearTemp"
@@ -62,8 +62,8 @@
       {# Clean repo #}
       <div class="flex items-center justify-between px-4 py-4">
         <div class="flex-1 min-w-0 pr-6">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">Clean Repo</p>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Run repoclean to remove old package versions from Munki repo</p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_GC_CLEAN_REPO }}</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ t.CONFIG_VIEW.OPT_GC_CLEAN_REPO_DESC }}</p>
         </div>
         <input type="hidden" name="gc.clean_repo" :value="cleanRepo ? 'on' : ''">
         <button type="button" @click="cleanRepo = !cleanRepo"
@@ -80,10 +80,10 @@
 
     {# RepoClean binary — only when cleanRepo is enabled #}
     <div x-show="cleanRepo" x-transition>
-      <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">RepoClean</h3>
+      <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.CONFIG_VIEW.SECTION_REPOCLEAN }}</h3>
       <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden">
         <div class="px-4 py-4">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">RepoClean Binary</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.CONFIG_VIEW.OPT_GC_REPOCLEAN_BIN }}</label>
           <input type="text" name="gc.repoclean_bin_path" value="{{ s|lookup:'gc.repoclean_bin_path' }}"
                  placeholder="/usr/local/munki/repoclean"
                  class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700

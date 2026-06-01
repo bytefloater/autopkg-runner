@@ -53,11 +53,11 @@
     {# ── Local path ───────────────────────────────────────────────────────── #}
     <div x-show="repoType === 'local'" x-transition>
       <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
-        Local Repository
+        {{ t.CONFIG_VIEW.SECTION_LOCAL_REPO }}
       </h3>
       <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden">
         <div class="px-4 py-4">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Repository Path</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.CONFIG_VIEW.OPT_LOCAL_REPO_PATH }}</label>
           <input type="text" name="repository.local_path" value="{{ s|lookup:'repository.local_path' }}"
                  placeholder="/Volumes/Munki"
                  class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
@@ -101,10 +101,9 @@
                     border border-amber-200 dark:border-amber-800">
           {% lucide "triangle-alert" "w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" %}
           <div>
-            <p class="text-sm font-medium text-amber-800 dark:text-amber-300">SFTP dependencies not installed</p>
+            <p class="text-sm font-medium text-amber-800 dark:text-amber-300">{{ t.CONFIG_VIEW.WARN_SFTP_DEPS_MISSING }}</p>
             <p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-              Run <code class="font-mono bg-amber-100 dark:bg-amber-900/50 px-1 rounded">python manage.py install_sftp_deps</code>
-              to install macFUSE and sshfs, then restart the server.
+              {{ t.CONFIG_VIEW.WARN_SFTP_DEPS_INSTRUCTION }}
             </p>
           </div>
         </div>
@@ -113,13 +112,13 @@
       {# Credentials #}
       <div>
         <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
-          Credentials
+          {{ t.CONFIG_VIEW.SECTION_CREDENTIALS }}
         </h3>
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
                     divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">
 
           <div class="px-4 py-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.APP.FIELDNAME_USERNAME }}</label>
             <input type="text" name="repository.username" value="{{ s|lookup:'repository.username' }}"
                    autocomplete="username"
                    class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
@@ -129,7 +128,7 @@
           </div>
 
           <div class="px-4 py-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.APP.FIELDNANE_PASSWORD }}</label>
             <div class="flex gap-2">
               <input :type="showPw ? 'text' : 'password'" name="repository.password"
                      value="{{ s|lookup:'repository.password' }}"
@@ -142,7 +141,7 @@
                       class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
                              text-sm font-medium text-blue-600 dark:text-blue-400
                              hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
-                      x-text="showPw ? 'Hide' : 'Show'"></button>
+                      x-text="showPw ? '{{ t.APP.ACTION_HIDE|escapejs }}' : '{{ t.APP.ACTION_SHOW|escapejs }}'"></button>
             </div>
           </div>
 
@@ -152,7 +151,7 @@
       {# SMB-specific settings #}
       <div x-show="connType === 'smb'" x-transition>
         <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
-          {{ t.CONFIG_VIEW.CONNECTION_TYPE_SMB }} Server
+          {{ t.CONFIG_VIEW.SECTION_SMB_SERVER }}
         </h3>
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
                     divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">

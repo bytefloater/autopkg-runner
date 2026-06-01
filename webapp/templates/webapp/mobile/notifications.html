@@ -15,7 +15,7 @@
 {% block nav_right %}
 <button @click="$dispatch('open-add-notifier')"
         class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
-  Add
+  {{ t.NOTIFICATIONS_VIEW.ACTION_ADD }}
 </button>
 {% endblock %}
 
@@ -68,7 +68,7 @@
            :style="{ opacity: Math.min(1, Math.abs(dx)/40) }">
         <button @click="$refs.delForm.submit()"
                 class="w-full h-full text-white text-[14px] font-semibold">
-          Delete
+          {{ t.APP.ACTION_DELETE }}
         </button>
       </div>
 
@@ -105,7 +105,7 @@
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
     <div class="flex flex-col items-center justify-center py-12">
       {% lucide "bell-off" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
-      <p class="text-[15px] text-gray-400 dark:text-gray-500">No notifiers configured.</p>
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.EMPTY_NO_NOTIFIERS }}</p>
     </div>
   </div>
   {% endif %}
@@ -113,14 +113,14 @@
   <div class="h-6"></div>
 
   {# ── Settings ─────────────────────────────────────────────────────────── #}
-  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">General</p>
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_GENERAL }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
     <a href="{% url 'notification-settings' %}"
        class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
       <span class="w-[29px] h-[29px] rounded-[7px] bg-pink-500 flex items-center justify-center flex-shrink-0">
         {% lucide "settings" "w-4 h-4 text-white" %}
       </span>
-      <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Notification Settings</span>
+      <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</span>
       {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
     </a>
   </div>
@@ -149,19 +149,19 @@
           <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
         </div>
         <div class="px-4 pt-2 pb-4">
-          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-5">New Notifier</h3>
+          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-5">{{ t.NOTIFICATIONS_VIEW.ACTION_ADD_NOTIFIER }}</h3>
           <form method="post" @submit="showAdd = false">
             {% csrf_token %}
             <div class="bg-white dark:bg-[#2c2c2e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-4">
               <div class="px-4 py-3">
-                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Name</label>
+                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.FIELD_NAME }}</label>
                 <input type="text" name="name" x-model="newName"
                        placeholder="e.g. My Pushover"
                        required autofocus
                        class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
               </div>
               <div class="px-4 py-3">
-                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
+                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.FIELD_TYPE }}</label>
                 <select name="notifier_type" x-model="newType"
                         class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none">
                   <template x-for="tc in typeChoices" :key="tc.value">
@@ -175,13 +175,13 @@
                       class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
                              bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400
                              active:opacity-70 transition-opacity duration-75">
-                Cancel
+                {{ t.APP.ACTION_CANCEL }}
               </button>
               <button type="submit" :disabled="!newName.trim()"
                       class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
                              bg-blue-600 active:bg-blue-700 text-white
                              transition-colors duration-75 disabled:opacity-40">
-                Next
+                {{ t.NOTIFICATIONS_VIEW.ACTION_NEXT }}
               </button>
             </div>
           </form>

@@ -34,7 +34,7 @@
 
     {# Keep versions #}
     <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">Keep Versions</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_GC_KEEP_VERSIONS }}</span>
       <input type="number" name="gc.keep_versions" value="{{ s|lookup:'gc.keep_versions' }}"
              min="1" max="99"
              class="w-16 text-center text-[16px] font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-[#2c2c2e] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -42,7 +42,7 @@
 
     {# Clear temporary files #}
     <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">Clear Temporary Files</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_GC_CLEAR_TEMP }}</span>
       <input type="hidden" name="gc.clear_temp" :value="clearTemp ? 'on' : ''">
       <button type="button" @click="clearTemp = !clearTemp"
               :class="clearTemp ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
@@ -54,7 +54,7 @@
 
     {# Clean repo #}
     <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">Clean Repo</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_GC_CLEAN_REPO }}</span>
       <input type="hidden" name="gc.clean_repo" :value="cleanRepo ? 'on' : ''">
       <button type="button" @click="cleanRepo = !cleanRepo"
               :class="cleanRepo ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
@@ -68,10 +68,10 @@
 
   {# RepoClean binary — only shown when Clean Repo is enabled #}
   <div x-show="cleanRepo" x-transition>
-    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">RepoClean</p>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_REPOCLEAN }}</p>
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       <div class="px-4 py-3">
-        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">RepoClean Binary</label>
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_GC_REPOCLEAN_BIN }}</label>
         <input type="text" name="gc.repoclean_bin_path" value="{{ s|lookup:'gc.repoclean_bin_path' }}"
                placeholder="/usr/local/munki/repoclean"
                class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">

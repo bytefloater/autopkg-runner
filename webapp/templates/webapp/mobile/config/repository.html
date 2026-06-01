@@ -48,10 +48,10 @@
 
   {# ── Local path ─────────────────────────────────────────────────────────── #}
   <div x-show="repoType === 'local'" x-transition>
-    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Local Repository</p>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_LOCAL_REPO }}</p>
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       <div class="px-4 py-3">
-        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Repository Path</label>
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_LOCAL_REPO_PATH }}</label>
         <input type="text" name="repository.local_path" value="{{ s|lookup:'repository.local_path' }}"
                placeholder="/Volumes/Munki"
                class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
@@ -82,29 +82,28 @@
                   border border-amber-200 dark:border-amber-800">
         {% lucide "triangle-alert" "w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" %}
         <div>
-          <p class="text-[14px] font-medium text-amber-800 dark:text-amber-300">SFTP dependencies not installed</p>
+          <p class="text-[14px] font-medium text-amber-800 dark:text-amber-300">{{ t.CONFIG_VIEW.WARN_SFTP_DEPS_MISSING }}</p>
           <p class="text-[12px] text-amber-700 dark:text-amber-400 mt-0.5">
-            Run <code class="font-mono bg-amber-100 dark:bg-amber-900/50 px-1 rounded">python manage.py install_sftp_deps</code>
-            to install macFUSE and sshfs, then restart the server.
+            {{ t.CONFIG_VIEW.WARN_SFTP_DEPS_INSTRUCTION }}
           </p>
         </div>
       </div>
     </div>
 
     {# Credentials — shown for all remote types #}
-    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Credentials</p>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_CREDENTIALS }}</p>
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
          x-data="{ showPw: false }">
 
       <div class="px-4 py-3">
-        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Username</label>
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNAME_USERNAME }}</label>
         <input type="text" name="repository.username" value="{{ s|lookup:'repository.username' }}"
                autocomplete="username"
                class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
       </div>
 
       <div class="px-4 py-3">
-        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Password</label>
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNANE_PASSWORD }}</label>
         <div class="flex gap-2">
           <input :type="showPw ? 'text' : 'password'" name="repository.password"
                  value="{{ s|lookup:'repository.password' }}"
@@ -112,7 +111,7 @@
                  class="flex-1 text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
           <button type="button" @click="showPw = !showPw"
                   class="flex-shrink-0 text-[13px] font-medium text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75"
-                  x-text="showPw ? 'Hide' : 'Show'"></button>
+                  x-text="showPw ? '{{ t.APP.ACTION_HIDE|escapejs }}' : '{{ t.APP.ACTION_SHOW|escapejs }}'"></button>
         </div>
       </div>
 
@@ -120,7 +119,7 @@
 
     {# SMB-specific settings #}
     <div x-show="connType === 'smb'" x-transition>
-      <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.CONNECTION_TYPE_SMB }} Server</p>
+      <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_SMB_SERVER }}</p>
       <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
         <div class="px-4 py-3">

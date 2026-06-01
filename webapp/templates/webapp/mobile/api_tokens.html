@@ -17,11 +17,11 @@
 
   {# ── New token credential banner (shown once after creation) ──────────── #}
   {% if new_token %}
-  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">New Token Created</p>
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_NEW_TOKEN_CREATED }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     <div class="px-4 py-4">
       <p class="text-[15px] font-semibold text-green-600 dark:text-green-400 mb-2">
-        Copy this token now — it won't be shown again.
+        {{ t.TOKENS_VIEW.HINT_COPY_NOW }}
       </p>
       <p class="text-[13px] text-gray-500 dark:text-gray-400 mb-2">
         Token: <span class="font-semibold text-gray-800 dark:text-gray-200">{{ new_token_name }}</span>
@@ -33,9 +33,9 @@
     </div>
     <div class="px-4 py-3">
       <button type="button"
-              onclick="navigator.clipboard.writeText('{{ new_token|escapejs }}').then(() => { this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy to Clipboard', 2000); });"
+              onclick="navigator.clipboard.writeText('{{ new_token|escapejs }}').then(() => { this.textContent = 'Copied!'; setTimeout(() => this.textContent = '{{ t.TOKENS_VIEW.ACTION_COPY_CLIPBOARD|escapejs }}', 2000); });"
               class="w-full py-3 bg-green-600 active:bg-green-700 text-white text-[15px] font-semibold rounded-lg transition-colors duration-75">
-        Copy to Clipboard
+        {{ t.TOKENS_VIEW.ACTION_COPY_CLIPBOARD }}
       </button>
     </div>
   </div>
@@ -43,7 +43,7 @@
   {% endif %}
 
   {# ── API Tokens list ────────────────────────────────────────────────────── #}
-  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">API Tokens</p>
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_API_TOKENS }}</p>
 
   {% if tokens %}
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
@@ -70,7 +70,7 @@
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
     <div class="flex flex-col items-center justify-center py-16">
       {% lucide "key" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
-      <p class="text-[15px] text-gray-400 dark:text-gray-500">No API tokens yet.</p>
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.TOKENS_VIEW.EMPTY_NO_TOKENS }}</p>
     </div>
   </div>
   {% endif %}
@@ -78,12 +78,12 @@
   <div class="mt-4">
     <button type="button" @click="showCreate = true"
             class="mx-4 w-[calc(100%-2rem)] py-[14px] bg-blue-600 active:bg-blue-700 text-white text-[16px] font-semibold rounded-xl transition-colors duration-75">
-      Add Token
+      {{ t.TOKENS_VIEW.ACTION_ADD_TOKEN }}
     </button>
   </div>
 
   {# ── API Endpoints ──────────────────────────────────────────────────────── #}
-  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Endpoints</p>
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_ENDPOINTS }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% for method, path, desc in api_endpoints %}
     <div class="flex items-start gap-3 px-4 py-3">
@@ -126,13 +126,13 @@
           <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
         </div>
         <div class="px-4 pt-2 pb-4">
-          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-5">New API Token</h3>
+          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-5">{{ t.TOKENS_VIEW.MODAL_TITLE }}</h3>
           <form method="post" @submit="showCreate = false">
             {% csrf_token %}
             <input type="hidden" name="action" value="create">
             <div class="mx-0 bg-white dark:bg-[#2c2c2e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-4">
               <div class="px-4 py-3">
-                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Token Name</label>
+                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.TOKENS_VIEW.FIELD_TOKEN_NAME }}</label>
                 <input type="text" name="name" x-model="newName"
                        placeholder="e.g. Home Assistant"
                        required autofocus
@@ -144,13 +144,13 @@
                       class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
                              bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400
                              active:opacity-70 transition-opacity duration-75">
-                Cancel
+                {{ t.APP.ACTION_CANCEL }}
               </button>
               <button type="submit" :disabled="!newName.trim()"
                       class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
                              bg-blue-600 active:bg-blue-700 text-white
                              transition-colors duration-75 disabled:opacity-40">
-                Create
+                {{ t.TOKENS_VIEW.ACTION_CREATE }}
               </button>
             </div>
           </form>
@@ -192,7 +192,7 @@
             Revoke <span x-text="revokeTokenName"></span>?
           </h3>
           <p class="text-[14px] text-gray-500 dark:text-gray-400 text-center mt-2 mb-6">
-            Any integrations using this token will stop working immediately.
+            {{ t.TOKENS_VIEW.CONFIRM_REVOKE_DESC }}
           </p>
           {# Form lives inside the teleported sheet so no cross-boundary $refs needed #}
           <form method="post">
@@ -204,13 +204,13 @@
                       class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
                              bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400
                              active:opacity-70 transition-opacity duration-75">
-                Cancel
+                {{ t.APP.ACTION_CANCEL }}
               </button>
               <button type="submit"
                       class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
                              bg-red-600 active:bg-red-700 text-white
                              transition-colors duration-75">
-                Revoke
+                {{ t.TOKENS_VIEW.ACTION_REVOKE }}
               </button>
             </div>
           </form>

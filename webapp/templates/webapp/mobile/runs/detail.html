@@ -36,7 +36,7 @@
 <div x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})" >
 
   {# ── Stages ──────────────────────────────────────────────────────────────── #}
-  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Stages</p>
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_STAGES }}</p>
   <div id="stages-list" class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% for stage in stages %}
     <div id="stage-row-{{ stage.order }}"
@@ -97,7 +97,7 @@
             {% endfor %}
           </div>
           {% else %}
-          <p class="px-4 py-3 text-xs text-gray-600">No log entries for this stage.</p>
+          <p class="px-4 py-3 text-xs text-gray-600">{{ t.RUN_DETAIL_VIEW.LOG_EMPTY_STAGE_MOBILE }}</p>
           {% endif %}
         </div>
         {% endwith %}
@@ -105,22 +105,22 @@
     </div>
     {% empty %}
     <div id="stages-placeholder" class="px-4 py-8 text-center">
-      <p class="text-[15px] text-gray-400 dark:text-gray-500">No stage data yet.</p>
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.RUN_DETAIL_VIEW.STATE_NO_STAGES }}</p>
     </div>
     {% endfor %}
   </div>
 
   {# ── Live log (only shown while run is active) ─────────────────────────── #}
   {% if run.status == 'running' or run.status == 'pending' %}
-  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Live Output</p>
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_LIVE_OUTPUT }}</p>
   <div class="bg-gray-950 dark:bg-black mx-4 rounded-xl overflow-hidden" id="live-log-panel">
     <div class="flex items-center justify-between px-4 py-2.5 border-b border-gray-800/60">
-      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Output</span>
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.LABEL_OUTPUT }}</span>
       <span x-show="!runComplete" class="flex items-center gap-1.5 text-xs text-blue-400">
         <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-        Live
+        {{ t.APP.STATE_LIVE }}
       </span>
-      <span x-show="runComplete" x-cloak class="text-xs text-gray-500">Done</span>
+      <span x-show="runComplete" x-cloak class="text-xs text-gray-500">{{ t.APP.STATE_DONE }}</span>
     </div>
     <div class="p-3 space-y-0.5 h-52 overflow-y-auto" x-ref="logContainer">
       <template x-for="(e, i) in liveEntries" :key="i">
@@ -130,7 +130,7 @@
           <span class="text-gray-300 break-all" x-text="e.message"></span>
         </div>
       </template>
-      <p class="text-gray-600 text-xs text-center py-8" x-show="liveEntries.length === 0">Connecting…</p>
+      <p class="text-gray-600 text-xs text-center py-8" x-show="liveEntries.length === 0">{{ t.RUN_DETAIL_VIEW.STATE_CONNECTING }}</p>
     </div>
   </div>
   {% endif %}
@@ -152,31 +152,31 @@
     {% endfor %}
     {% else %}
     <div class="px-4 py-3">
-      <p class="text-[15px] text-gray-400 dark:text-gray-500">No data.</p>
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
     </div>
     {% endif %}
   </div>
   {% endfor %}
 
   {# ── Run metadata ───────────────────────────────────────────────────────── #}
-  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Details</p>
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_DETAILS }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">Triggered by</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.RUN_DETAIL_VIEW.META_TRIGGERED_BY }}</span>
       <span class="text-[16px] text-gray-500 dark:text-gray-400">{{ run.triggered_by|capfirst }}</span>
     </div>
     <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">Started</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.RUN_DETAIL_VIEW.META_STARTED }}</span>
       <span class="text-[16px] text-gray-500 dark:text-gray-400 tabular-nums">{{ run.started_at|date:"d M Y, H:i:s" }}</span>
     </div>
     {% if run.completed_at %}
     <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">Duration</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.RUN_DETAIL_VIEW.META_DURATION }}</span>
       <span class="text-[16px] text-gray-500 dark:text-gray-400 tabular-nums">{{ run.started_at|duration:run.completed_at }}</span>
     </div>
     {% endif %}
     <div class="flex items-start justify-between px-4 py-3 gap-4">
-      <span class="text-[16px] text-gray-900 dark:text-white flex-shrink-0">Run ID</span>
+      <span class="text-[16px] text-gray-900 dark:text-white flex-shrink-0">{{ t.RUN_DETAIL_VIEW.META_RUN_ID }}</span>
       <span class="text-[13px] font-mono text-gray-400 dark:text-gray-500 select-all text-right break-all">{{ run.id }}</span>
     </div>
   </div>
@@ -289,7 +289,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100">
               <div class="bg-gray-950 max-h-64 overflow-y-auto">
-                <p class="px-4 py-3 text-xs text-gray-600">No log entries for this stage.</p>
+                <p class="px-4 py-3 text-xs text-gray-600">{{ t.RUN_DETAIL_VIEW.LOG_EMPTY_STAGE_MOBILE }}</p>
               </div>
             </div>`;
           list.appendChild(row);
@@ -311,7 +311,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
           const dot  = document.getElementById('run-status-dot');
           const text = document.getElementById('run-status-text');
           if (dot)  dot.className  = 'w-2 h-2 rounded-full flex-shrink-0 bg-blue-500';
-          if (text) { text.className = 'text-[17px] font-semibold text-blue-500'; text.textContent = 'Running'; }
+          if (text) { text.className = 'text-[17px] font-semibold text-blue-500'; text.textContent = '{{ t.APP.STATE_RUNNING|escapejs }}'; }
         }
         const row = document.getElementById(`stage-row-${order}`);
         if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -336,9 +336,9 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
 
     updateStatusBadge(status) {
       const cfg = {
-        success:   { dotClass: 'bg-green-500',  textClass: 'text-green-500',  label: 'Success' },
-        failed:    { dotClass: 'bg-red-500',     textClass: 'text-red-500',    label: 'Failed' },
-        cancelled: { dotClass: 'bg-amber-500',   textClass: 'text-amber-500',  label: 'Cancelled' },
+        success:   { dotClass: 'bg-green-500',  textClass: 'text-green-500',  label: '{{ t.APP.STATE_SUCCESS|escapejs }}' },
+        failed:    { dotClass: 'bg-red-500',     textClass: 'text-red-500',    label: '{{ t.APP.STATE_FAILED|escapejs }}' },
+        cancelled: { dotClass: 'bg-amber-500',   textClass: 'text-amber-500',  label: '{{ t.APP.STATE_CANCELLED|escapejs }}' },
       }[status];
       if (!cfg) return;
       const dot  = document.getElementById('run-status-dot');

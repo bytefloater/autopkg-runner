@@ -19,7 +19,7 @@
           :class="selCount > 0
             ? 'text-red-500 dark:text-red-400'
             : 'text-red-300 dark:text-red-800 pointer-events-none'">
-    Delete<span x-show="selCount > 0">&nbsp;(<span x-text="selCount"></span>)</span>
+    {{ t.RUNS_VIEW.ACTION_DELETE }}<span x-show="selCount > 0">&nbsp;(<span x-text="selCount"></span>)</span>
   </button>
 </div>
 {% endblock %}
@@ -32,7 +32,7 @@
         class="text-[17px] font-normal text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
   <span x-data="{ managing: false }"
         @toggle-manage-runs.window="managing = !managing"
-        x-text="managing ? 'Done' : 'Manage'">Manage</span>
+        x-text="managing ? '{{ t.RUNS_VIEW.ACTION_DONE|escapejs }}' : '{{ t.RUNS_VIEW.ACTION_MANAGE|escapejs }}'">{{ t.RUNS_VIEW.ACTION_MANAGE }}</span>
 </button>
 {% endblock %}
 
@@ -66,7 +66,7 @@
        hx-swap="outerHTML">
 
     <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-      {{ page_obj.paginator.count }} Run{{ page_obj.paginator.count|pluralize }}
+      {{ page_obj.paginator.count }} {% if page_obj.paginator.count == 1 %}{{ t.RUNS_VIEW.RUN_COUNT_SINGULAR }}{% else %}{{ t.RUNS_VIEW.RUN_COUNT_PLURAL }}{% endif %}
     </p>
 
     {% if page_obj.object_list %}
@@ -132,21 +132,21 @@
       <a href="?page={{ page_obj.previous_page_number }}"
          class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
         {% lucide "chevron-left" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
-        <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Previous Page</span>
+        <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.RUNS_VIEW.PAGINATION_PREV_LONG }}</span>
         <span class="text-[13px] text-gray-400 flex-shrink-0">{{ page_obj.previous_page_number }}</span>
       </a>
       {% endif %}
       {% if page_obj.has_next %}
       <a href="?page={{ page_obj.next_page_number }}"
          class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
-        <span class="flex-1 text-[16px] text-gray-900 dark:text-white">Next Page</span>
+        <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.RUNS_VIEW.PAGINATION_NEXT_LONG }}</span>
         <span class="text-[13px] text-gray-400 flex-shrink-0">{{ page_obj.next_page_number }}</span>
         {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
       </a>
       {% endif %}
     </div>
     <p class="text-center text-[12px] text-gray-400 dark:text-gray-500 mt-2">
-      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      {{ t.RUNS_VIEW.PAGINATION_PAGE }} {{ page_obj.number }} {{ t.RUNS_VIEW.PAGINATION_OF }} {{ page_obj.paginator.num_pages }}
     </p>
     {% endif %}
 
@@ -154,7 +154,7 @@
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
       <div class="flex flex-col items-center justify-center py-20">
         {% lucide "list" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
-        <p class="text-[15px] text-gray-400 dark:text-gray-500">No runs yet.</p>
+        <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.RUNS_VIEW.EMPTY_NO_RUNS_SHORT }}</p>
       </div>
     </div>
     {% endif %}

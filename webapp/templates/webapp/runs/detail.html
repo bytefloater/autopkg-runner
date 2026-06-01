@@ -9,7 +9,7 @@
   {# ── Breadcrumb + run header ── #}
   <div class="flex items-center gap-3 flex-wrap">
     <a href="{% url 'run-list' %}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1">
-      {% lucide "chevron-left" "w-4 h-4" %} All Runs
+      {% lucide "chevron-left" "w-4 h-4" %} {{ t.RUNS_VIEW.NAV_ALL_RUNS }}
     </a>
     <span class="text-gray-300 dark:text-gray-600">/</span>
     <span class="text-sm font-mono text-gray-600 dark:text-gray-300">{{ run.id }}</span>
@@ -22,10 +22,10 @@
 
   {# ── Meta row ── #}
   <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-4 flex-wrap items-center">
-    <span>Triggered by <strong class="text-gray-700 dark:text-gray-300">{{ run.triggered_by }}</strong></span>
-    <span>Started <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|date:"d M Y, H:i:s" }}</strong></span>
+    <span>{{ t.RUN_DETAIL_VIEW.META_TRIGGERED_BY }} <strong class="text-gray-700 dark:text-gray-300">{{ run.triggered_by }}</strong></span>
+    <span>{{ t.RUN_DETAIL_VIEW.META_STARTED }} <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|date:"d M Y, H:i:s" }}</strong></span>
     {% if run.completed_at %}
-    <span>Duration <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|duration:run.completed_at }}</strong></span>
+    <span>{{ t.RUN_DETAIL_VIEW.META_DURATION }} <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|duration:run.completed_at }}</strong></span>
     {% endif %}
     <span class="text-xs text-blue-500 dark:text-blue-400 tabular-nums" x-text="liveStatus"></span>
   </div>
@@ -113,7 +113,7 @@
 
           {# Empty state for in-progress stages with no logs yet #}
           <template x-if="{% with sl=logs_by_stage|lookup:stage.name %}{{ sl|length|default:0 }}{% endwith %} === 0 && !(stageLogs['{{ stage.name }}'] || []).length">
-            <p class="text-gray-600 text-xs py-3 text-center italic">No log output for this stage yet.</p>
+            <p class="text-gray-600 text-xs py-3 text-center italic">{{ t.RUN_DETAIL_VIEW.LOG_EMPTY_STAGE }}</p>
           </template>
         </div>
       </div>
@@ -161,7 +161,7 @@
               </div>
             </template>
             <template x-if="!(stageLogs[stage.name] || []).length">
-              <p class="text-gray-600 text-xs py-3 text-center italic">Waiting for log output…</p>
+              <p class="text-gray-600 text-xs py-3 text-center italic">{{ t.RUN_DETAIL_VIEW.LOG_WAITING }}</p>
             </template>
           </div>
         </div>
@@ -172,7 +172,7 @@
     <template x-if="dynamicStages.length === 0">
       <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-8 text-center shadow-sm">
         <svg class="w-6 h-6 text-blue-400 animate-spin mx-auto mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        <p class="text-sm text-gray-400 dark:text-gray-500">Waiting for pipeline to start…</p>
+        <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.RUN_DETAIL_VIEW.STATE_WAITING_PIPELINE }}</p>
       </div>
     </template>
 
@@ -187,7 +187,7 @@
         <span class="flex-shrink-0 text-gray-400 transition-transform duration-200" :class="openStage === '__general__' ? 'rotate-90' : ''">
           {% lucide "chevron-right" "w-4 h-4" %}
         </span>
-        <span class="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">General</span>
+        <span class="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ t.RUN_DETAIL_VIEW.SECTION_GENERAL_LOGS }}</span>
         <span class="text-xs text-gray-400">{{ general_logs|length }} line{{ general_logs|length|pluralize }}</span>
       </button>
       <div x-show="openStage === '__general__'" class="bg-gray-950 dark:bg-black border-t border-gray-800">
@@ -228,7 +228,7 @@
         </tbody>
       </table>
       {% else %}
-      <p class="text-xs text-gray-400">No data.</p>
+      <p class="text-xs text-gray-400">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
       {% endif %}
     </div>
   </div>
@@ -262,7 +262,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
     },
 
     startSSE(runId) {
-      this.liveStatus = '● Live';
+      this.liveStatus = '● {{ t.APP.STATE_LIVE|escapejs }}';
       this.eventSource = new EventSource(`/runs/${runId}/stream/?from=${lastLogId}`);
 
       this.eventSource.onmessage = (e) => {
@@ -317,7 +317,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
       });
 
       this.eventSource.onerror = () => {
-        this.liveStatus = 'Disconnected';
+        this.liveStatus = '{{ t.APP.STATE_DISCONNECTED|escapejs }}';
         this._closeSSE();
       };
     },
@@ -345,8 +345,8 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
     },
 
     statusLabel(status) {
-      return { running: 'In Progress', success: 'Success', failed: 'Failure',
-               pending: 'Pending', cancelled: 'Cancelled', skipped: 'Skipped' }[status] || status;
+      return { running: '{{ t.RUN_DETAIL_VIEW.STATUS_IN_PROGRESS|escapejs }}', success: '{{ t.RUN_DETAIL_VIEW.STATUS_SUCCESS|escapejs }}', failed: '{{ t.RUN_DETAIL_VIEW.STATUS_FAILURE|escapejs }}',
+               pending: '{{ t.RUN_DETAIL_VIEW.STATUS_PENDING|escapejs }}', cancelled: '{{ t.RUN_DETAIL_VIEW.STATUS_CANCELLED|escapejs }}', skipped: '{{ t.RUN_DETAIL_VIEW.STATUS_SKIPPED|escapejs }}' }[status] || status;
     },
 
     stageBadgeClass(status) {
