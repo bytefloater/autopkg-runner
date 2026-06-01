@@ -92,7 +92,19 @@
             <span x-show="selected.includes('{{ run.id }}')">{% lucide "check" "w-3.5 h-3.5" %}</span>
           </span>
           {% else %}
-          <span class="w-[22px] h-[22px] block flex-shrink-0"></span>
+          {# Cancel button for stuck running/pending runs in manage mode #}
+          <form method="post" action="{% url 'run-cancel' run.id %}"
+                hx-post="{% url 'run-cancel' run.id %}"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful){ if(window._pwaNavigate) _pwaNavigate('{% url 'run-list' %}', true); else location.reload(); }"
+                @click.stop>
+            {% csrf_token %}
+            <button type="submit"
+                    class="w-[22px] h-[22px] rounded flex items-center justify-center flex-shrink-0 bg-red-100 dark:bg-red-900/30 text-red-500">
+              {% lucide "x" "w-3.5 h-3.5" %}
+            </button>
+          </form>
           {% endif %}
         </div>
 

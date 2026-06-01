@@ -102,6 +102,34 @@ class RunDeleteView(LoginRequiredMixin, View):
         return redirect('run-list')
 
 
+class RunCancelView(LoginRequiredMixin, View):
+    """POST — cancel a single active (pending or running) run.
+
+    Marks the run as 'cancelled' so the UI is unblocked.  If a pipeline thread
+    is still alive it will finish naturally but won't overwrite the cancelled
+    status (the _execute_run finally block excludes cancelled rows).
+    """
+
+    def post(self, request, run_id):
+        from django.utils import timezone
+        from webapp.models import Run, StageExecution
+
+        now = timezone.now()
+        run = Run.objects.filter(id=run_id, status__in=('pending', 'running')).first()
+        if run:
+            StageExecution.objects.filter(
+                run=run, status__in=('pending', 'running'),
+            ).update(status='cancelled', completed_at=now)
+            run.status = 'cancelled'
+            run.completed_at = now
+            run.save(update_fields=['status', 'completed_at'])
+
+        if request.headers.get('HX-Request'):
+            from django.http import HttpResponse
+            return HttpResponse(status=204)
+        return redirect('run-list')
+
+
 def run_stream(request, run_id):
     """SSE endpoint: streams LogEntry rows for a running pipeline."""
     from webapp.models import LogEntry, Run, StageExecution

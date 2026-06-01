@@ -58,7 +58,16 @@ def get_scheduler() -> BackgroundScheduler:
 
 
 def _safe_trigger_scheduled_run():
-    """Wrapper called by APScheduler; skips the run if one is already active."""
+    """Wrapper called by APScheduler; skips the run if one is already active.
+
+    APScheduler uses a thread pool, so this function may run in a thread that
+    previously executed a job.  Calling close_old_connections() ensures Django
+    doesn't try to reuse a connection that has been closed server-side between
+    firings (especially relevant for PostgreSQL; harmless for SQLite).
+    """
+    import django.db
+    django.db.close_old_connections()
+
     from webapp.runner import trigger_manual_run, RunAlreadyRunningError
     logger.info('Scheduler firing scheduled run')
     try:

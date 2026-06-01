@@ -138,9 +138,21 @@
           </td>
           <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ run.triggered_by }}</td>
           <td class="px-4 py-3 text-right">
-            <a href="{% url 'run-detail' run.id %}"
-               @click.stop
-               class="text-xs text-blue-600 dark:text-blue-400 hover:underline">{{ t.RUNS_VIEW.ACTION_VIEW }}</a>
+            <div class="flex items-center justify-end gap-3" @click.stop>
+              {% if run.status == 'running' or run.status == 'pending' %}
+              <form method="post" action="{% url 'run-cancel' run.id %}"
+                    hx-post="{% url 'run-cancel' run.id %}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-swap="none"
+                    hx-on::after-request="if(event.detail.successful){ htmx.trigger('#run-list-section','htmx:refresh') }">
+                {% csrf_token %}
+                <button type="submit"
+                        class="text-xs text-red-500 dark:text-red-400 hover:underline">{{ t.APP.ACTION_CANCEL }}</button>
+              </form>
+              {% endif %}
+              <a href="{% url 'run-detail' run.id %}"
+                 class="text-xs text-blue-600 dark:text-blue-400 hover:underline">{{ t.RUNS_VIEW.ACTION_VIEW }}</a>
+            </div>
           </td>
         </tr>
         {% endfor %}

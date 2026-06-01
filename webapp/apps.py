@@ -4,6 +4,27 @@ import threading
 
 from django.apps import AppConfig
 
+# Management commands that should never start background services.
+# Anything NOT in this set is assumed to be a serving command (runserver,
+# serve, gunicorn workers via their own argv[0] path, etc.).
+_SKIP_COMMANDS = frozenset({
+    # Database
+    'migrate', 'makemigrations', 'showmigrations', 'sqlmigrate',
+    'squashmigrations', 'optimizemigration',
+    # Static files
+    'collectstatic', 'findstatic',
+    # Auth / user management
+    'createsuperuser', 'changepassword',
+    # Inspection / development
+    'shell', 'dbshell', 'check', 'inspectdb', 'diffsettings',
+    'sendtestemail', 'startapp', 'startproject',
+    # Testing
+    'test', 'testserver',
+    # Project-specific non-serving commands
+    'configure', 'setup', 'install_sftp_deps',
+    'generate_vapid_keys', 'resetpassword',
+})
+
 
 class WebappConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
@@ -11,18 +32,18 @@ class WebappConfig(AppConfig):
 
     def ready(self):
         # Only start background services (scheduler, stale-run cleanup) when
-        # the process is actually *serving*.
+        # the process is actually *serving requests*.
         #
-        # Management commands (migrate, shell, check, createsuperuser, …) and
-        # bare invocations ("python manage.py" with no subcommand) must never
-        # touch the database here — the tables may not exist yet.
+        # Strategy: block known non-serving management commands; allow
+        # everything else (runserver, our custom `serve` wrapper, gunicorn
+        # workers, etc.) to proceed.  This is safer than a whitelist because
+        # it works with any custom serving wrapper without needing code changes.
         #
-        # Detection logic:
-        #  • If argv[0] looks like manage.py we are in a management-command
-        #    context.  Only 'runserver' should proceed, and only in the child
-        #    reloader process (RUN_MAIN=true) to avoid double-starting.
-        #  • Any other argv[0] (gunicorn, uvicorn, …) means we are a real
-        #    WSGI/ASGI server — proceed unconditionally.
+        # Auto-reload guard: Django's StatReloader forks a parent (watcher)
+        # and a child (server).  RUN_MAIN=true is set only in the child.
+        # We must not start the scheduler in the parent or we'd get two
+        # schedulers firing concurrently.  When --noreload is in argv there is
+        # only a single process, so we skip the RUN_MAIN check entirely.
 
         via_manage = sys.argv and os.path.basename(sys.argv[0]) in ('manage.py', 'manage')
 
@@ -30,26 +51,21 @@ class WebappConfig(AppConfig):
             # No subcommand at all → just showing help, do nothing.
             if len(sys.argv) < 2:
                 return
-            # Any management command other than runserver → do nothing.
-            if sys.argv[1] != 'runserver':
+            # Known non-serving command → do nothing.
+            if sys.argv[1] in _SKIP_COMMANDS:
                 return
-            # runserver with auto-reload (default): Django forks a watcher
-            # parent and a child reloader.  RUN_MAIN=true is set only in the
-            # child, which is the process that actually serves requests.
-            # Only start services there to avoid double-scheduling.
-            #
-            # runserver --noreload: there is a single process with no
-            # RUN_MAIN set.  We must start services here.
+            # Serving command with auto-reload: skip the parent watcher process.
+            # Only the child (RUN_MAIN=true) or a --noreload single-process
+            # invocation should start background services.
             noreload = '--noreload' in sys.argv or '--no-reload' in sys.argv
             if not noreload and os.environ.get('RUN_MAIN') != 'true':
                 return
 
         # Defer all DB-touching work to a daemon thread.  AppConfig.ready()
         # is called while the app registry is still being populated
-        # (Apps.ready is False), so any ORM query triggers a Django 5.x
-        # RuntimeWarning.  Running the same work one tick later — after all
-        # ready() methods have returned — avoids the warning without changing
-        # the effective startup behaviour.
+        # (Apps.ready is False), so any ORM query triggers a RuntimeWarning.
+        # Running the same work one tick later avoids the warning without
+        # changing the effective startup behaviour.
         threading.Thread(target=self._start_services, daemon=True).start()
 
     def _start_services(self):

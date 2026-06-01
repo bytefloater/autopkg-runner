@@ -131,11 +131,13 @@ def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
         final_status = 'failed'
     finally:
         completed_at = datetime.now(timezone.utc)
-        Run.objects.filter(id=run_id).update(
+        # Only update if the run hasn't been cancelled from outside
+        # (e.g. the user hit "Cancel" in the UI while the pipeline was running).
+        Run.objects.filter(id=run_id).exclude(status='cancelled').update(
             status=final_status,
             completed_at=completed_at,
         )
-        Task.objects.filter(id=task_id).update(
+        Task.objects.filter(id=task_id).exclude(status='cancelled').update(
             status=final_status,
             completed_at=completed_at,
         )
