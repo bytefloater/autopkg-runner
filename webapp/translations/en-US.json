@@ -15,9 +15,9 @@
         "STATE_DONE": "Done",
         "STATE_DISCONNECTED": "Disconnected",
 
-        "DARKMODE_STATE_LIGHT": "Light Mode",
-        "DARKMODE_STATE_DARK": "Dark Mode",
-        "DARKMODE_STATE_SYSTEM": "Follow System",
+        "DARKMODE_STATE_LIGHT": "Light",
+        "DARKMODE_STATE_DARK": "Dark",
+        "DARKMODE_STATE_SYSTEM": "System",
 
         "ACTION_TRIGGER_RUN": "Trigger Run",
         "ACTION_VIEW_LOGS": "View Logs",
