@@ -36,7 +36,6 @@ def send(
     }
 
     body = json.dumps(payload).encode()
-    conn = http.client.HTTPSConnection("discord.com", 443)
     conn = http.client.HTTPSConnection("discord.com", 443, context=ssl_context())
     conn.request(
         "POST",
@@ -47,17 +46,19 @@ def send(
     conn.getresponse()
 
 if __name__ == "__main__":
-    import json
-    from __info__ import CONFIG_FILE
+    import argparse
 
-    with open(CONFIG_FILE, mode="r", encoding="utf-8") as config_file:
-        raw = json.load(config_file)
-
-    settings: dict = raw["module_settings"]["core.notify"]["notifiers.discord"]
+    parser = argparse.ArgumentParser(
+        prog="Discord Notifier (Test Entry Point)",
+        description="Send a test Discord notification using the tokens provided in the console"
+    )
+    parser.add_argument("-i", "--webhook-id", required=True)
+    parser.add_argument("-t", "--webhook-token", required=True)
+    args = parser.parse_args()
 
     config = {
-        "webhook_id": settings.get("webhook_id"),
-        "webhook_token": settings.get("webhook_token")
+        "webhook_id": args.webhook_id,
+        "webhook_token": args.webhook_token
     }
 
     send(

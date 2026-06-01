@@ -26,7 +26,6 @@ def send(
                    use a share link so the in-app browser opens the report.
         url_title: Display label for *url* (optional; defaults to "View report").
     """
-    conn = http.client.HTTPSConnection("api.pushover.net", 443)
     conn = http.client.HTTPSConnection("api.pushover.net", 443, context=ssl_context())
     parameters = {
         "token":     configuration["app_token"],
@@ -53,17 +52,19 @@ def send(
         raise RuntimeError(f"Pushover returned HTTP {resp.status}: {body}")
 
 if __name__ == "__main__":
-    import json
-    from __info__ import CONFIG_FILE
+    import argparse
 
-    with open(CONFIG_FILE, mode="r", encoding="utf-8") as config_file:
-        raw = json.load(config_file)
-
-    settings: dict = raw["module_settings"]["core.notify"]["notifiers.pushover"]
+    parser = argparse.ArgumentParser(
+        prog="Pushover Notifier (Test Entry Point)",
+        description="Send a test Pushover notification using the tokens provided in the console"
+    )
+    parser.add_argument("-a", "--app-token", required=True)
+    parser.add_argument("-u", "--user-token", required=True)
+    args = parser.parse_args()
 
     config = {
-        "app_token": settings.get("app_token"),
-        "user_token": settings.get("user_token")
+        "app_token": args.app_token,
+        "user_token": args.user_token
     }
 
     send(
