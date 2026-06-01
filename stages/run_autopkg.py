@@ -3,6 +3,7 @@ import plistlib
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Optional, Any
 
 from libs.stage import Stage
 from libs.run_command import run_cmd
@@ -23,7 +24,7 @@ class RunAutoPkg(Stage):
         # Created fresh each run; cleaned up in cleanup().
         self._tmp_plist = None
 
-    def run(self):
+    def run(self) -> Optional[Any]:
         recipes = []
         with open(self.recipe_fpath, 'r', encoding='utf-8') as recipe_file:
             for recipe in recipe_file:

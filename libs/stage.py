@@ -1,4 +1,6 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
+from typing import Optional, Any
 
 from logbook import Logger
 from libs.config import PipelineConfig
@@ -8,9 +10,9 @@ class Stage(ABC):
     name = "unnamed‑stage"
     logger: Logger
     config: PipelineConfig
-    ctx: dict[str, any]
+    ctx: dict[str, Any]
 
-    def __init__(self, config: PipelineConfig, ctx: dict[str, any], logger: Logger):
+    def __init__(self, config: PipelineConfig, ctx: dict[str, Any], logger: Logger):
         self.config = config  # your typed config object
         self.ctx    = ctx     # shared dict for passing state around
         self.logger = logger
@@ -35,7 +37,7 @@ class Stage(ABC):
         return True
 
     @abstractmethod
-    def run(self):
+    def run(self) -> Optional[Any]:
         """Do the work of this stage."""
 
     def post_check(self) -> bool:

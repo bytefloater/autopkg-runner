@@ -5,6 +5,7 @@ from pprint import pprint
 import re
 import socket
 import subprocess
+from typing import Optional, Any
 
 import dns.resolver
 from zeroconf import Zeroconf
@@ -41,7 +42,7 @@ class ZeroConfigResolver:
         return domains
 
 
-    def lookup_mdns(self, name: str, service_type: str, timeout: int = 3000) -> dict[str, any]:
+    def lookup_mdns(self, name: str, service_type: str, timeout: int = 3000) -> dict[str, Any]:
         """
         Perform multicast DNS (mDNS) lookup using zeroconf for a .local service.
         """
@@ -56,18 +57,22 @@ class ZeroConfigResolver:
 
             addresses = [socket.inet_ntoa(addr) for addr in svc_info.addresses]
             properties = {k.decode(): v for k, v in svc_info.properties.items()}
+            svc_server = str(svc_info.server)
+
+            if svc_server is None:
+                return {'error': 'svc_server returned None'}
 
             return {
                 'addresses': addresses,
                 'port': svc_info.port,
-                'server': svc_info.server.rstrip('.'),
+                'server': svc_server.rstrip('.'),
                 'properties': properties,
             }
         finally:
             zeroconf.close()
 
 
-    def lookup_unicast(self, service_fqdn: str) -> dict[str, any]:
+    def lookup_unicast(self, service_fqdn: str) -> dict[str, Any]:
         """
         Perform unicast DNS resolution for a given SRV FQDN, including A/AAAA lookups.
         """
@@ -93,7 +98,7 @@ class ZeroConfigResolver:
             return {'error': str(err)}
 
 
-    def resolve_service(self, name: str, service_type: str, timeout: int = 3000) -> dict[str, dict[str, any]]:
+    def resolve_service(self, name: str, service_type: str, timeout: int = 3000) -> dict[str, dict[str, Any]]:
         """
         Resolve a DNS-SD service instance across mDNS (.local) and each search domain.
 
@@ -102,7 +107,7 @@ class ZeroConfigResolver:
         :param timeout: Milliseconds to wait for mDNS responses
         :return: Mapping of domain to resolution info or error
         """
-        results: dict[str, dict[str, any]] = {}
+        results: dict[str, dict[str, Any]] = {}
 
         for domain in self.domains:
             if domain == 'local':
@@ -113,7 +118,7 @@ class ZeroConfigResolver:
 
         return results
     
-    def pick_best_result(self, results: dict[str, dict[str, any]]) -> dict[str, any]:
+    def pick_best_result(self, results: dict[str, dict[str, Any]]) -> dict[str, Any]:
         """
         Given per-domain resolution results, pick a single result according to:
         1. If no lookups succeeded, return an error.

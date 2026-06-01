@@ -1,3 +1,5 @@
+from typing import Optional
+
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -16,7 +18,7 @@ class APITokenAuthentication(BaseAuthentication):
 
         return self._authenticate_key(auth[1])
 
-    def authenticate_header(self, request):
+    def authenticate_header(self, request) -> Optional[str]: # type: ignore
         return self.keyword
 
     def _authenticate_key(self, key):

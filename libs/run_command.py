@@ -26,15 +26,16 @@ def run_cmd(command: list[str], logger: Logger):
     while open_fds:
         readable, _, _ = select.select(open_fds, [], [])
         for fd in readable:
-            line = fd.readline()
-            if line:
-                if fd is proc.stdout:
-                    logger.info(line.rstrip())
+            if fd is not None:
+                line = fd.readline()
+                if line:
+                    if fd is proc.stdout:
+                        logger.info(line.rstrip())
+                    else:
+                        logger.error(line.rstrip())
                 else:
-                    logger.error(line.rstrip())
-            else:
-                # EOF on this pipe — process has closed it.
-                open_fds.discard(fd)
+                    # EOF on this pipe — process has closed it.
+                    open_fds.discard(fd)
 
     proc.wait()
     if proc.returncode:
