@@ -84,6 +84,24 @@ class Command(BaseCommand):
             )
             self.stdout.write('')
 
+        # ── Migration check ───────────────────────────────────────────────────
+        # Run any unapplied migrations before the server starts so the DB is
+        # always in sync.  Prints nothing and exits cleanly if up to date.
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
+        try:
+            executor = MigrationExecutor(connection)
+            pending = executor.migration_plan(executor.loader.graph.leaf_nodes())
+            if pending:
+                self.stdout.write(self.style.WARNING(
+                    f'  Applying {len(pending)} pending migration(s)…'
+                ))
+                call_command('migrate', '--run-syncdb', verbosity=1)
+                self.stdout.write(self.style.SUCCESS('  Migrations applied.'))
+                self.stdout.write('')
+        except Exception as exc:
+            self.stderr.write(self.style.WARNING(f'  Migration check failed: {exc}'))
+
         kwargs = {'addrport': f'{host}:{port}'}
         if options['noreload']:
             kwargs['use_reloader'] = False
