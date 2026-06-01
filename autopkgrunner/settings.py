@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -6,6 +7,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']   # required — set in .env
 
 DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
+
+# True when loaded via manage.py (dev server, management commands).
+# False when loaded directly by a WSGI server such as gunicorn.
+# Used to gate production-only behaviour (WhiteNoise, etc.) without
+# relying on the DEBUG flag, which may be True in both environments.
+_VIA_MANAGE = bool(sys.argv) and os.path.basename(sys.argv[0]) in ('manage.py', 'manage')
 
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS',
@@ -28,6 +35,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise serves static files when running under gunicorn.
+    # The Django dev server handles static files itself, so WhiteNoise is
+    # excluded when launched via manage.py to avoid unnecessary overhead.
+    *(['whitenoise.middleware.WhiteNoiseMiddleware'] if not _VIA_MANAGE else []),
     'django.contrib.sessions.middleware.SessionMiddleware',
     'webapp.middleware.MobileDetectionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -78,6 +89,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+if not _VIA_MANAGE:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
