@@ -11,4 +11,4 @@ zeroconf>=0.148.0
 pywebpush>=2.0
 gunicorn>=23.0.0
 whitenoise>=6.0
-truststore>=0.9
+truststore>=0.9; python_version >= "3.10"
