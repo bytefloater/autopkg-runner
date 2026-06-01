@@ -1,0 +1,117 @@
+{
+  "NAME": "Français (France)",
+  "APP": {
+    "NAME": "AutoPkg Runner",
+    "VERSION": "Base {project.version} données",
+    
+    "STATE_SUCCESS": "Succès",
+    "STATE_RUNNING": "Exécution",
+    "STATE_FAILURE": "Échec",
+    "STATE_LIVE": "En direct",
+    
+    "DARKMODE_STATE_LIGHT": "Mode clair",
+    "DARKMODE_STATE_DARK": "Mode sombre",
+    "DARKMODE_STATE_SYSTEM": "Suivre le système",
+    
+    "ACTION_TRIGGER_RUN": "Déclenchement de l'exécution",
+    "ACTION_VIEW_LOGS": "Voir les journaux",
+    "ACTION_CHANGE_PWD": "Modifier le mot de passe",
+    "ACTION_RESET_PWD": "Réinitialiser le mot de passe",
+    "ACTION_LOGIN": "Se connecter",
+    "ACTION_LOGOUT": "Se déconnecter",
+    "ACTION_EDIT": "Modifier",
+    "ACTION_SAVE": "Enregistrer",
+    "ACTION_BACK": "Retour",
+    
+    "VIEWS_DASHBOARD": "Tableau de bord",
+    "VIEWS_RUNS": "Courses",
+    "VIEWS_SCHEDULES": "Programme",
+    "VIEWS_CONFIG": "Configuration de la base de données",
+    "VIEWS_TOKENS": "Jetons",
+    "VIEWS_USERS": "Utilisateurs",
+    
+    "FIELDNAME_USERNAME": "Nom d'utilisateur",
+    "FIELDNANE_PASSWORD": "Mot de passe",
+    
+    "ROLE_SUPERUSER": "Administrateur",
+    
+    "RUN_TRIGGER_TYPE_WEB": "Manuel",
+    "RUN_TRIGGER_TYPE_API": "API",
+    "RUN_TRIGGER_TYPE_SCHEULE": "Programme"
+  },
+  "DASHBOARD_VIEW": {
+    "HEADER_RUN_COUNT": "Courses",
+    "HEADER_SUCCESS_RATE": "Taux de réussite",
+    "HEADER_NEXT_RUN": "Prochaine exécution programmée",
+    
+    "STATE_NO_RUN_SCHEDULED": "Non planifié",
+    
+    "ACTION_VIEW_LOGS": "@:APP.ACTION_VIEW_LOGS",
+    "ACTION_VIEW_ALL": "Tout voir"
+  },
+  "SCHEDULE_VIEW": {
+    "DESC_SCHEDULER": "Configurer quand le pipeline AutoPkg s'exécute automatiquement. Utilisez la syntaxe standard de cron.",
+    
+    "ENABLE_SCHEDULER_TOGGLE_HEADER": "Activer les exécutions programmées",
+    "ENABLE_SCHEDULER_TOGGLE_DESC": "Lorsque cette option est désactivée, le pipeline ne s'exécute que lorsqu'il est déclenché via l'interface WebUI ou l'API."
+  },
+  "TOKENS_VIEW": {
+    "SECTION_API_TOKENS": "Jetons API",
+    "SECTION_API_REFERENCE": "Référence API",
+    
+    "ACTION_NEW_TOKEN": "Nouveau jeton"
+  },
+  "USER_VIEW": {
+    "SECTION_USERS": "@:APP.VIEWS_USERS",
+    
+    "TABLE_CAT_USERNAME": "Nom d'utilisateur",
+    "TABLE_CAT_EMAIL": "Courriel",
+    "TABLE_CAT_ACTIVE": "Actif",
+    "TABLE_CAT_ROLE": "Rôle",
+    
+    "ACTION_ADD_USER": "Ajouter un utilisateur"
+  },
+  "CONFIG_VIEW": {
+    "HEADER_CONFIG": "@:APP.VIEWS_CONFIG",
+    
+    "REPOTYPE_LOCAL": "Local",
+    "REPOTYPE_REMOTE": "Hôte distance",
+    
+    "CONNECTION_TYPE_SSH": "SSH",
+    "CONNECTION_TYPE_SMB": "SMB",
+    
+    "TAB_AUTOPKG": "AutoPkg",
+    "TAB_REPO": "Référentiel",
+    "TAB_WORKFLOW": "Flux de travail",
+    "TAB_GARBAGE_COLLECTOR": "Collecteur d'ordures",
+    "TAB_NOTIFICATIONS": "Notifications",
+    "TAB_LOGGING": "Journalisation",
+    "TAB_WEBINTERFACE": "Interface Utilisateur",
+    
+    "ACTION_SAVE_CONFIG": "Sauvegarder la configuration",
+    "ACTION_SAVE_CONFIG_INFO": "Les paramètres sont appliqués à toutes les nouvelles exécutions",
+    
+    "OPT_AUTOPKG_BINARY": "Binaire d'AutoPkg",
+    "OPT_AUTOPKG_BINARY_DESC": "Chemin d'accès au binaire AutoPkg",
+    "OPT_AUTOPKG_CACHE_PATH": "Chemin du cache",
+    "OPT_AUTOPKG_CACHE_PATH_DESC": "Chemin d'accès au répertoire du cache d'AutoPkg",
+    "OPT_AUTOPKG_RECIPE_LIST": "Liste des recettes d'AutoPkg",
+    "OPT_AUTOPKG_RECIPE_LIST_DESC": "Chemin d'accès au fichier contenant la liste des recettes d'AutoPkg à exécuter",
+    "OPT_AUTOPKG_REPORT_PLIST": "Chemin d'accès à la liste de sortie des rapports AutoPkg",
+    
+    "OPT_UPDATE_REPOS": "Mise à jour des dépôts",
+    "OPT_UPDATE_REPOS_DESC": "Mise à jour des dépôts Git distants avant chaque exécution.",
+    
+    "OPT_REPO_TYPE": "Type de dépôt",
+    "OPT_CONNECTION_TYPE": "Méthode de connexion",
+    "OPT_SERVER_HOST": "Serveur Hôte",
+    "OPT_SERVER_LOCAL_MNT_PATH": "Chemin de montage local",
+    "OPT_SERVER_PUBLIC_URL": "URL publique",
+    
+    "OPT_SMB_SERVER_SHARE": "Partage du serveur",
+    
+    "OPT_LOG_LEVEL": "Niveau de consignation",
+
+    "OPT_LANG_SELECT": "Langue d'affichage"
+  }
+}

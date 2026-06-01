@@ -235,7 +235,7 @@
         "SECTION_SUBSCRIBED_DEVICES": "Subscribed Devices",
         "SECTION_MESSAGE_TEMPLATE": "Message Template",
 
-        "OPT_APP_URL": "App URL",
+        "OPT_APP_URL": "Base URL",
         "OPT_APP_URL_DESC": "Base URL of this AutoPkg Runner instance, used for notification links.",
         "OPT_APP_URL_DESC_SHORT": "The public base URL of this server.",
         "OPT_SHARE_LINK_EXPIRY": "Share Link Expiry",
