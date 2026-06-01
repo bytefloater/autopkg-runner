@@ -14,7 +14,7 @@ def _read_svg(name: str) -> str:
     if name not in _SVG_CACHE:
         from django.contrib.staticfiles import finders
         path = finders.find(f'ui_symbols/{name}.svg')
-        if path:
+        if isinstance(path, str):
             with open(path, 'r', encoding='utf-8') as fh:
                 _SVG_CACHE[name] = fh.read().strip()
         else:

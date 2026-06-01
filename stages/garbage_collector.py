@@ -41,9 +41,9 @@ class GarbageCollector(Stage):
 
         value, unit = int(match.group(1)), match.group(2)
         unit_map = {
-            "h": lambda: timedelta(hours=value),
-            "d": lambda: timedelta(days=value),
-            "w": lambda: timedelta(weeks=value)
+            "h": timedelta(hours=value),
+            "d": timedelta(days=value),
+            "w": timedelta(weeks=value),
         }
         return unit_map[unit]
 
@@ -51,7 +51,7 @@ class GarbageCollector(Stage):
         self.logger.info(f"Clearing AutoPkg Cache... ({retention})")
 
         dirs = list(os.scandir(self.cache_dir))
-        cutoff = datetime.now() - self._parse_retention(retention)()
+        cutoff = datetime.now() - self._parse_retention(retention)
         expired = []
 
         self.logger.info(f"Found {len(dirs)} item(s) in cache")
@@ -96,7 +96,7 @@ class GarbageCollector(Stage):
                 self.repoclean_fpath,
                 f"--keep={self.keep_versions}",
                 "--auto",  # Bypass confirmation prompts on deletion
-                self.local_mnt
+                str(self.local_mnt)
             ], self.logger)
         except subprocess.CalledProcessError:
             self.logger.error("Failed to clean repo, check your configuration!")

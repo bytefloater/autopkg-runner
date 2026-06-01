@@ -38,7 +38,7 @@ class UpdateRepos(Stage):
 
         # Extract repo URLs
         for entry in cmd_out.entries():
-            match = re.search(r'\(([^)]*)\)', entry.get("msg"))
+            match = re.search(r'\(([^)]*)\)', entry.get("msg", ""))
             if match:
                 # Inside parenthesis
                 repo_urls.append(match.group(1))
@@ -46,16 +46,17 @@ class UpdateRepos(Stage):
         self.logger.info(f"Found {len(repo_urls)} repository URL(s)")
         self.logger.info("Updating from remote repositories...")
 
-        # Update remote repos
-        try:
-            for url in repo_urls:
+        # Update remote repos — errors are caught per-URL so a single failure
+        # does not prevent the remaining repositories from being updated.
+        for url in repo_urls:
+            try:
                 run_cmd([
                     str(self.autopkg_fpath),
                     "repo-update",
-                    url
+                    url,
                 ], self.logger)
-        except subprocess.CalledProcessError:
-            self.logger.error(f"Failed to update repository {url}")
+            except subprocess.CalledProcessError:
+                self.logger.error(f"Failed to update repository {url}")
     
     def post_check(self):
         if self.update_before_each_run:

@@ -44,12 +44,12 @@ def _describe_cron(s, tz_abbr: str = '') -> str:
     # Day/month part
     parts = []
     if day_of_week != '*':
-        days = [_DOW_NAMES.get(d.strip(), d.strip()) for d in day_of_week.split(',')]
+        days = [_DOW_NAMES.get(d.strip()) or d.strip() for d in day_of_week.split(',')]
         parts.append('on ' + ', '.join(days))
     if day_of_month != '*':
         parts.append(f'on day {day_of_month} of the month')
     if month != '*':
-        months = [_MONTH_NAMES.get(m.strip(), m.strip()) for m in month.split(',')]
+        months = [_MONTH_NAMES.get(m.strip()) or m.strip() for m in month.split(',')]
         parts.append('in ' + ', '.join(months))
 
     when = ', '.join(parts) if parts else 'every day'

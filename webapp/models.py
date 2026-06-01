@@ -3,6 +3,7 @@ from __future__ import annotations
 import binascii
 import os
 import uuid
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import models
@@ -204,8 +205,9 @@ class Schedule(models.Model):
         self.pk = 1
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        pass
+    def delete(self, *args, **kwargs) -> tuple[int, dict[str, int]]:
+        # Singleton row — deletion is intentionally a no-op.
+        return 0, {}
 
     @classmethod
     def get(cls):
@@ -239,6 +241,15 @@ class Run(models.Model):
     started_at      = models.DateTimeField(auto_now_add=True, db_index=True)
     completed_at    = models.DateTimeField(null=True, blank=True)
     config_snapshot = models.JSONField(default=dict)
+
+    # Reverse relations — declared for type checkers (django-stubs does not
+    # synthesise related managers from related_name automatically).
+    if TYPE_CHECKING:
+        stage_executions : models.Manager[StageExecution]
+        log_entries      : models.Manager[LogEntry]
+        recipe_results   : models.Manager[RecipeResult]
+        tasks            : models.Manager[Task]
+        share_token      : RunShareToken
 
     class Meta:
         ordering = ['-started_at']
@@ -297,6 +308,7 @@ class LogEntry(models.Model):
         ('NOTICE',  'Notice'),
     ]
 
+    id         : int  # Django auto-field; declared for type checkers
     run        = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='log_entries')
     timestamp  = models.DateTimeField(db_index=True)
     level      = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='INFO')
@@ -322,6 +334,7 @@ class RecipeResult(models.Model):
     ]
 
     run         = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='recipe_results')
+    run_id: uuid.UUID  # synthesised by Django from the ForeignKey; declared for type checkers
     result_type = models.CharField(max_length=30, choices=RESULT_TYPES)
     data        = models.JSONField(default=list)
 
@@ -341,6 +354,7 @@ class RunShareToken(models.Model):
 
     token      = models.CharField(max_length=86, unique=True, db_index=True)
     run        = models.OneToOneField(Run, on_delete=models.CASCADE, related_name='share_token')
+    run_id: uuid.UUID  # synthesised by Django from the OneToOneField; declared for type checkers
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -405,6 +419,7 @@ class Task(models.Model):
     task_type    = models.CharField(max_length=30, choices=TYPE_CHOICES)
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING, db_index=True)
     run          = models.ForeignKey(Run, null=True, blank=True, on_delete=models.SET_NULL, related_name='tasks')
+    run_id       : uuid.UUID | None  # synthesised by Django from the ForeignKey; declared for type checkers
     created_at   = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     error        = models.TextField(blank=True)

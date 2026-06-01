@@ -77,7 +77,9 @@ class ZeroConfigResolver:
         Perform unicast DNS resolution for a given SRV FQDN, including A/AAAA lookups.
         """
         try:
-            srv_rr = dns.resolver.resolve(service_fqdn, 'SRV')[0]
+            # dnspython stubs type resolve() elements as Rdata, not the specific
+            # SRV/A subclass — annotate as Any so Pylance allows subtype attrs.
+            srv_rr: Any = dns.resolver.resolve(service_fqdn, 'SRV')[0]
             target = str(srv_rr.target).rstrip('.')
             port = srv_rr.port
 
@@ -85,7 +87,8 @@ class ZeroConfigResolver:
             for record in ('A'):
                 try:
                     for r in dns.resolver.resolve(target, record):
-                        addresses.append(r.address)
+                        a_record: Any = r
+                        addresses.append(a_record.address)
                 except dns.resolver.NoAnswer:
                     continue
 

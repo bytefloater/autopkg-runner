@@ -12,7 +12,7 @@ from stages import (
 
 
 class Orchestrator:
-    STAGE_CLASSES: list[Stage] = [
+    STAGE_CLASSES: list[type[Stage]] = [
         EnvironmentCheck,
         MountRepository,
         UpdateRepos,

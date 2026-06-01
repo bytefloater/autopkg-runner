@@ -1,10 +1,17 @@
 import os
 import select
 import subprocess
-from logbook import Logger
+from typing import Protocol
 
 
-def run_cmd(command: list[str], logger: Logger):
+class _SupportsLogging(Protocol):
+    """Structural type accepted by run_cmd — satisfied by logbook.Logger,
+    InterceptLogger, and any other object with info/error methods."""
+    def info(self, msg: str, /) -> None: ...
+    def error(self, msg: str, /) -> None: ...
+
+
+def run_cmd(command: list[str], logger: _SupportsLogging):
     # For Python children, ensure unbuffered output; harmless for others.
     env = os.environ.copy()
     env.setdefault("PYTHONUNBUFFERED", "1")

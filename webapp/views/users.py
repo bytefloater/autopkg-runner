@@ -35,7 +35,7 @@ class UsersView(LoginRequiredMixin, TemplateView):
         users = list(User.objects.order_by('username'))
         current_pk = self.request.user.pk
         for u in users:
-            u.is_self = (u.pk == current_pk)
+            setattr(u, 'is_self', u.pk == current_pk)
         ctx['users'] = users
         ctx['new_user_creds'] = self.request.session.pop('new_user_creds', None)
         ctx['reset_creds']    = self.request.session.pop('reset_creds', None)

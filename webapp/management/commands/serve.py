@@ -102,7 +102,7 @@ class Command(BaseCommand):
         except Exception as exc:
             self.stderr.write(self.style.WARNING(f'  Migration check failed: {exc}'))
 
-        kwargs = {'addrport': f'{host}:{port}'}
+        kwargs: dict[str, object] = {'addrport': f'{host}:{port}'}
         if options['noreload']:
             kwargs['use_reloader'] = False
 

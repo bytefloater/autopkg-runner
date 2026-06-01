@@ -67,6 +67,7 @@ class MountRepository(Stage):
     def pre_check(self) -> bool:
         if self._is_local():
             return self._check_local_path()
+        assert self.mounter is not None  # set in __init__ when not local
         return (
             self.mounter.is_reachable()
             and self.mounter.is_mount_point_available()
@@ -78,11 +79,16 @@ class MountRepository(Stage):
                 f"Using local repository at {self.local_path} — no mounting required."
             )
             return
+        assert self.mounter is not None  # set in __init__ when not local
         self.mounter.mount()
 
     def post_check(self) -> bool:
         """Verify the mounted/local repository is accessible as a directory."""
-        base: Path = self.local_path if self._is_local() else self.mounter.mount_point
+        if self._is_local():
+            base: Path = self.local_path
+        else:
+            assert self.mounter is not None  # set in __init__ when not local
+            base = self.mounter.mount_point
 
         self.logger.info("Starting repository structure check...")
         if not base.is_dir():
@@ -95,4 +101,5 @@ class MountRepository(Stage):
     def cleanup(self):
         if self._is_local():
             return
+        assert self.mounter is not None  # set in __init__ when not local
         self.mounter.unmount()

@@ -63,6 +63,7 @@ class Command(BaseCommand):
         # Public key: uncompressed point (65 bytes), base64url-encoded
         from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
         from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+        assert v.public_key is not None, "generate_keys() must be called before accessing public_key"
         pub_bytes = v.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
         pub_b64   = base64.urlsafe_b64encode(pub_bytes).decode().rstrip('=')
 

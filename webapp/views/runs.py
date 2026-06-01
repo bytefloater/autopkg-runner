@@ -146,7 +146,7 @@ def run_stream(request, run_id):
 
             run = Run.objects.filter(id=run_id).first()
             if not run:
-                yield 'event: error\ndata: {"error": "run not found"}\n\n'
+                yield b'event: error\ndata: {"error": "run not found"}\n\n'
                 break
 
             # Push new log entries
@@ -161,7 +161,7 @@ def run_stream(request, run_id):
                     'message': entry.message,
                     'timestamp': entry.timestamp.isoformat(),
                 })
-                yield f'data: {payload}\n\n'
+                yield f'data: {payload}\n\n'.encode()
                 last_log_id = entry.id
 
             # Push stage status updates
@@ -177,15 +177,15 @@ def run_stream(request, run_id):
                         'started_at': stage.started_at.isoformat() if stage.started_at else None,
                         'completed_at': stage.completed_at.isoformat() if stage.completed_at else None,
                     })
-                    yield f'data: {payload}\n\n'
+                    yield f'data: {payload}\n\n'.encode()
 
             if run.status in ('success', 'failed', 'cancelled'):
                 # Tell the browser to wait 24 h before reconnecting — effectively
                 # disabling auto-reconnect so a client close() wins the race.
-                yield 'retry: 86400000\n\n'
+                yield b'retry: 86400000\n\n'
                 payload = json.dumps({'type': 'complete', 'status': run.status})
-                yield f'data: {payload}\n\n'
-                yield 'event: done\ndata: {}\n\n'
+                yield f'data: {payload}\n\n'.encode()
+                yield b'event: done\ndata: {}\n\n'
                 break
 
             time.sleep(1)
