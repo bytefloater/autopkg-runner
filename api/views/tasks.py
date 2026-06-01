@@ -30,7 +30,10 @@ class GetTaskStatusView(APIView):
 
         try:
             task = Task.objects.get(id=uuid_val)
-        except (Task.DoesNotExist, ValueError):
+        except Exception as exc:
+            from django.core.exceptions import ValidationError as DjangoValidationError
+            if not isinstance(exc, (Task.DoesNotExist, ValueError, DjangoValidationError)):
+                raise
             return Response({'error': 'Task not found'}, status=404)
 
         return Response(TaskSerializer(task).data)

@@ -15,7 +15,10 @@ class GetRunDataView(APIView):
 
         try:
             run = Run.objects.get(id=uuid_val)
-        except (Run.DoesNotExist, ValueError):
+        except Exception as exc:
+            from django.core.exceptions import ValidationError as DjangoValidationError
+            if not isinstance(exc, (Run.DoesNotExist, ValueError, DjangoValidationError)):
+                raise
             return Response({'error': 'Run not found'}, status=404)
 
         return Response(RunDetailSerializer(run).data)
