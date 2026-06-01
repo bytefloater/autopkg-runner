@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 
 from django.apps import AppConfig
 
@@ -43,6 +44,17 @@ class WebappConfig(AppConfig):
             if not noreload and os.environ.get('RUN_MAIN') != 'true':
                 return
 
+        # Defer all DB-touching work to a daemon thread.  AppConfig.ready()
+        # is called while the app registry is still being populated
+        # (Apps.ready is False), so any ORM query triggers a Django 5.x
+        # RuntimeWarning.  Running the same work one tick later — after all
+        # ready() methods have returned — avoids the warning without changing
+        # the effective startup behaviour.
+        threading.Thread(target=self._start_services, daemon=True).start()
+
+    def _start_services(self):
+        """Start the APScheduler and clean up orphaned runs. Runs in a daemon
+        thread so it executes after the app registry is fully initialised."""
         from webapp.scheduler import start_scheduler
         start_scheduler()
         self._mark_interrupted_runs()
