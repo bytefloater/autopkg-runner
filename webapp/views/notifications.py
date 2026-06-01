@@ -82,11 +82,12 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         notifier = get_object_or_404(Notifier, pk=kwargs['pk'])
         schema   = NOTIFIER_TYPES.get(notifier.notifier_type, {})
-        ctx['active_tab'] = 'config'
-        ctx['notifier']   = notifier
-        ctx['schema']     = schema
-        ctx['fields']     = schema.get('fields', [])
-        ctx['variables']  = self.TEMPLATE_VARIABLES
+        ctx['active_tab']        = 'config'
+        ctx['notifier']          = notifier
+        ctx['schema']            = schema
+        ctx['fields']            = schema.get('fields', [])
+        ctx['variables']         = self.TEMPLATE_VARIABLES
+        ctx['decrypted_config']  = notifier.decrypted_config
 
         if notifier.notifier_type == 'webpush':
             ctx['webpush_subscriptions'] = WebPushSubscription.objects.filter(notifier=notifier)

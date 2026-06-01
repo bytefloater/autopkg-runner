@@ -81,7 +81,7 @@
 
     {% if field.type == 'bool' %}
     {# Bool field #}
-    {% with current=notifier.config|lookup:field.key %}
+    {% with current=decrypted_config|lookup:field.key %}
     <div class="flex items-center justify-between px-4 py-3"
          x-data="{ val: {{ current|yesno:'true,false' }} }">
       <span class="text-[16px] text-gray-900 dark:text-white">{{ field.label }}</span>
@@ -101,7 +101,7 @@
       <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ field.label }}</label>
       <div class="flex gap-2 items-center">
         <input :type="show ? 'text' : 'password'" name="{{ field.key }}"
-               value="{{ notifier.config|lookup:field.key }}"
+               value="{{ decrypted_config|lookup:field.key }}"
                placeholder="••••••••"
                class="flex-1 text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-400">
         <button type="button" @click="show = !show"
@@ -115,7 +115,7 @@
     <div class="px-4 py-3">
       <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ field.label }}</label>
       <input type="text" name="{{ field.key }}"
-             value="{{ notifier.config|lookup:field.key }}"
+             value="{{ decrypted_config|lookup:field.key }}"
              class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
     </div>
     {% endif %}
