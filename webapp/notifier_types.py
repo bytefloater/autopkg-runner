@@ -16,16 +16,16 @@ NOTIFIER_TYPES: dict[str, dict] = {
     'pushover': {
         'label': 'Pushover',
         'fields': [
-            {'key': 'app_token',     'label': 'App Token',     'type': 'password', 'required': True},
-            {'key': 'user_token',    'label': 'User Token',    'type': 'password', 'required': True},
-            {'key': 'supports_html', 'label': 'HTML Messages', 'type': 'bool',     'default': True},
+            {'key': 'app_token',     'label': 'App Token',     't_key': 'OPT_APP_TOKEN',     'type': 'password', 'required': True},
+            {'key': 'user_token',    'label': 'User Token',    't_key': 'OPT_USER_TOKEN',    'type': 'password', 'required': True},
+            {'key': 'supports_html', 'label': 'HTML Messages', 't_key': 'OPT_SUPPORTS_HTML', 'type': 'bool',     'default': True},
         ],
     },
     'discord': {
         'label': 'Discord',
         'fields': [
-            {'key': 'webhook_id',    'label': 'Webhook ID',    'type': 'text',     'required': True},
-            {'key': 'webhook_token', 'label': 'Webhook Token', 'type': 'password', 'required': True},
+            {'key': 'webhook_id',    'label': 'Webhook ID',    't_key': 'OPT_WEBHOOK_ID',    'type': 'text',     'required': True},
+            {'key': 'webhook_token', 'label': 'Webhook Token', 't_key': 'OPT_WEBHOOK_TOKEN', 'type': 'password', 'required': True},
         ],
     },
     'webpush': {

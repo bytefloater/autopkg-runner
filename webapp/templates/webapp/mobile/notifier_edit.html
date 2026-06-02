@@ -84,7 +84,7 @@
     {% with current=decrypted_config|lookup:field.key %}
     <div class="flex items-center justify-between px-4 py-3"
          x-data="{ val: {{ current|yesno:'true,false' }} }">
-      <span class="text-[16px] text-gray-900 dark:text-white">{{ field.label }}</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW|lookup:field.t_key }}</span>
       <input type="hidden" name="{{ field.key }}" :value="val ? 'on' : ''">
       <button type="button" @click="val = !val"
               :class="val ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
@@ -98,7 +98,7 @@
     {% elif field.type == 'password' %}
     {# Password field #}
     <div class="px-4 py-3" x-data="{ show: false }">
-      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ field.label }}</label>
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW|lookup:field.t_key }}</label>
       <div class="flex gap-2 items-center">
         <input :type="show ? 'text' : 'password'" name="{{ field.key }}"
                value="{{ decrypted_config|lookup:field.key }}"
@@ -113,7 +113,7 @@
     {% else %}
     {# Text field (default) #}
     <div class="px-4 py-3">
-      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ field.label }}</label>
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW|lookup:field.t_key }}</label>
       <input type="text" name="{{ field.key }}"
              value="{{ decrypted_config|lookup:field.key }}"
              class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">

@@ -183,7 +183,7 @@
     },
     "USER_VIEW": {
         "SECTION_ACCOUNT": "Account",
-        "SECTION_ROLE_STATUS": "Role & Status",
+        "SECTION_ROLE_STATUS": "Role/Status",
         "SECTION_ACTIONS": "Actions",
 
         "TABLE_CAT_USERNAME": "Username",
@@ -241,6 +241,11 @@
         "OPT_SHARE_LINK_EXPIRY": "Share Link Expiry",
         "OPT_SHARE_LINK_EXPIRY_DESC": "Number of days before share links expire.",
         "OPT_SHARE_LINK_EXPIRY_DESC_SHORT": "Days before share links expire.",
+        "OPT_APP_TOKEN": "App Token",
+        "OPT_USER_TOKEN": "User Token",
+        "OPT_SUPPORTS_HTML": "HTML Messages",
+        "OPT_WEBHOOK_ID": "Webhook ID",
+        "OPT_WEBHOOK_TOKEN": "Webhook Token",
         "UNIT_DAYS": "days",
 
         "FIELD_NAME": "Name",
@@ -285,7 +290,19 @@
         "TEST_SUCCESS": "Test sent successfully.",
         "TEST_FAILED": "Test failed.",
 
-        "CONFIRM_DELETE_DESC": "This notifier will stop sending alerts immediately. This action cannot be undone."
+        "CONFIRM_DELETE_DESC": "This notifier will stop sending alerts immediately. This action cannot be undone.",
+
+        "TMPLT_STATUS_VARHINT": "\"succeeded\" or \"failed\"",
+        "TMPLT_STATUS_EMOJI_VARHINT": "",
+        "TMPLT_IMPORTS_VARHINT": "Number of Munki Imports",
+        "TMPLT_FAILURES_VARHINT": "Number of Recipe Failures",
+        "TMPLT_DOWNLOADS_VARHINT": "Number of Downloaded Packages",
+        "TMPLT_DURATION_VARHINT": "Run Duration (e.g. \"2m 34s\")",
+        "TMPLT_SHARE_URL_VARHINT": "Obscure share-link URL",
+        "TMPLT_RUN_ID_VARHINT": "Run UUID",
+        "TMPLT_TRIGGERED_BY_VARHINT": "The method used to trigger the run (\"manual|scheduler|api\")",
+        "TMPLT_DATE_VARHINT": "Run Date",
+        "TMPLT_TIME_VARHINT": "Run Time"
     },
     "ABOUT_VIEW": {
         "TITLE": "About",
