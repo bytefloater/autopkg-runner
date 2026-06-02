@@ -1,8 +1,15 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}API Tokens — AutoPkg Runner{% endblock %}
-{% block nav_title %}API Tokens{% endblock %}
+{% block title %}{{ t.TOKENS_VIEW.TITLE }} — {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.TOKENS_VIEW.TITLE }}{% endblock %}
+
+{% block nav_right %}
+<button @click="$dispatch('open-add-token')"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.TOKENS_VIEW.ACTION_ADD }}
+</button>
+{% endblock %}
 
 {% block content %}
 <div class="h-4"></div>
@@ -13,7 +20,7 @@
   showRevoke: false,
   revokeTokenId: null,
   revokeTokenName: '',
-}">
+}" @open-add-token.window="showCreate = true">
 
   {# ── New token credential banner (shown once after creation) ──────────── #}
   {% if new_token %}
@@ -74,13 +81,6 @@
     </div>
   </div>
   {% endif %}
-
-  <div class="mt-4">
-    <button type="button" @click="showCreate = true"
-            class="mx-4 w-[calc(100%-2rem)] py-[14px] bg-blue-600 active:bg-blue-700 text-white text-[16px] font-semibold rounded-xl transition-colors duration-75">
-      {{ t.TOKENS_VIEW.ACTION_ADD_TOKEN }}
-    </button>
-  </div>
 
   {# ── API Endpoints ──────────────────────────────────────────────────────── #}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_ENDPOINTS }}</p>

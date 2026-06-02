@@ -27,6 +27,7 @@
         "ACTION_LOGOUT": "Sign Out",
         "ACTION_EDIT": "Edit",
         "ACTION_SAVE": "Save",
+        "ACTION_ADD": "Add",
         "ACTION_BACK": "Back",
         "ACTION_CANCEL": "Cancel",
         "ACTION_DELETE": "Delete",
@@ -153,6 +154,9 @@
         "ACTION_SAVE": "Save Schedule"
     },
     "TOKENS_VIEW": {
+        "TITLE": "API Tokens",
+        "ACTION_ADD": "@:APP.ACTION_ADD",
+
         "SECTION_API_TOKENS": "API Tokens",
         "SECTION_API_REFERENCE": "API Reference",
         "SECTION_NEW_TOKEN_CREATED": "New Token Created",
@@ -276,7 +280,7 @@
         "STATE_SENDING": "Sending…",
         "STATE_SUBSCRIBED": "Subscribed ✓",
         "STATE_SUBSCRIBED_DEVICE": "This device is subscribed",
-        "STATE_SUBSCRIBING": "Subscribing…",
+        "STATE_SUBSCRIBING": "Subscribing...",
 
         "EMPTY_NO_NOTIFIERS": "No notifiers configured.",
         "EMPTY_NO_DEVICES": "No devices subscribed.",
