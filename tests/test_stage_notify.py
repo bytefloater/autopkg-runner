@@ -51,6 +51,65 @@ class TestRender:
         })
         assert result == '✅ succeeded'
 
+    # ── {share_link:"text"} HTML shorthand ────────────────────────────────────
+
+    def test_share_link_double_quotes_with_url(self):
+        result = self._call(
+            '{share_link:"View Report"}',
+            {'share_url': 'https://example.com/share/abc/'},
+        )
+        assert result == '<a href="https://example.com/share/abc/">View Report</a>'
+
+    def test_share_link_single_quotes_with_url(self):
+        result = self._call(
+            "{share_link:'View Report'}",
+            {'share_url': 'https://example.com/share/abc/'},
+        )
+        assert result == '<a href="https://example.com/share/abc/">View Report</a>'
+
+    def test_share_link_without_url_collapses_to_empty(self):
+        result = self._call('{share_link:"View Report"}', {'share_url': ''})
+        assert result == ''
+
+    def test_share_link_missing_share_url_key_collapses_to_empty(self):
+        # share_url not in ctx at all — should still collapse cleanly
+        result = self._call('{share_link:"Report"}', {})
+        assert result == ''
+
+    def test_share_link_mixed_with_other_variables(self):
+        result = self._call(
+            '{status_emoji} Run {share_link:"Details"}',
+            {
+                'status_emoji': '✅',
+                'share_url': 'https://example.com/share/xyz/',
+            },
+        )
+        assert result == '✅ Run <a href="https://example.com/share/xyz/">Details</a>'
+
+    def test_share_link_collapses_cleanly_in_sentence(self):
+        # When no URL, surrounding text is preserved but the placeholder is gone
+        result = self._call(
+            'Run complete. {share_link:"Open report"}',
+            {'share_url': ''},
+        )
+        assert result == 'Run complete. '
+
+    def test_share_url_raw_still_works(self):
+        # Backward compatibility: bare {share_url} still renders the raw URL
+        result = self._call(
+            'Link: {share_url}',
+            {'share_url': 'https://example.com/share/abc/'},
+        )
+        assert result == 'Link: https://example.com/share/abc/'
+
+    def test_share_link_custom_text_preserved_exactly(self):
+        result = self._call(
+            '{share_link:"AutoPkg Run Report — June 2025"}',
+            {'share_url': 'https://push.example.com/share/tok/'},
+        )
+        assert 'AutoPkg Run Report — June 2025' in result
+        assert 'href="https://push.example.com/share/tok/"' in result
+
 
 # ── NotifyOnCompletion helper methods ─────────────────────────────────────────
 

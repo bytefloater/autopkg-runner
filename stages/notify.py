@@ -19,19 +19,36 @@ Available template variables
   {failures}     count of recipe failures
   {downloads}    count of URL downloads + pkg copies
   {duration}     e.g. "2m 34s" (empty string if not available)
-  {share_url}    obscure share-link URL (empty if pwa_base_url not configured)
+  {share_url}    raw share-link URL (empty if pwa_base_url not configured)
   {run_id}       UUID string of the run
   {triggered_by} "manual" | "scheduler" | "api"
   {date}         run start date, e.g. "2025-01-15"
   {time}         run start time, e.g. "14:30"
+
+HTML link shorthand (HTML notifiers only)
+─────────────────────────────────────────
+  {share_link:"Custom Text"}   →  <a href="URL">Custom Text</a>
+  {share_link:'Custom Text'}   →  <a href="URL">Custom Text</a>
+
+  When no share URL is configured the placeholder is replaced with an empty
+  string so the surrounding sentence stays clean.  Single or double quotes
+  are both accepted.
 """
 
 import importlib
+import re
 
 from libs.stage import Stage
 
 
 # ── Template helpers ──────────────────────────────────────────────────────────
+
+# Matches {share_link:"Custom Text"} and {share_link:'Custom Text'}.
+# This syntax is intentionally not valid Python format-string syntax (the colon
+# would be misinterpreted as a format-spec separator), so it is handled by a
+# dedicated regex pass *before* str.format_map sees the template.
+_SHARE_LINK_RE = re.compile(r'\{share_link:(["\'])([^"\']*?)\1\}')
+
 
 class _SafeDict(dict):
     """dict subclass that returns the raw ``{key}`` placeholder for missing keys."""
@@ -40,7 +57,26 @@ class _SafeDict(dict):
 
 
 def _render(template: str, ctx: dict) -> str:
-    """Render *template* against *ctx*, leaving unknown placeholders intact."""
+    """Render *template* against *ctx*, leaving unknown placeholders intact.
+
+    Handles the HTML link shorthand ``{share_link:"Custom Text"}`` as a
+    pre-processing step before the standard ``str.format_map`` call:
+
+    * When a share URL is present: replaced with ``<a href="URL">Custom Text</a>``.
+    * When no share URL is configured: replaced with an empty string.
+    """
+    # ── 1. Handle {share_link:"text"} / {share_link:'text'} ──────────────────
+    share_url = ctx.get('share_url', '')
+
+    def _expand_share_link(m: re.Match) -> str:
+        link_text = m.group(2)
+        if share_url:
+            return f'<a href="{share_url}">{link_text}</a>'
+        return ''
+
+    template = _SHARE_LINK_RE.sub(_expand_share_link, template)
+
+    # ── 2. Standard variable substitution ────────────────────────────────────
     try:
         return template.format_map(_SafeDict(ctx))
     except (ValueError, KeyError):

@@ -32,11 +32,16 @@ def send(
         "user":      configuration["user_token"],
         "title":     title,
         "message":   message,
-        "html":      1,
         "ttl":       2592000,   # 30 days
         "url":       url,
         "url_title": url_title or ("View report" if url else None),
     }
+
+    # Enable Pushover's HTML rendering only when the notifier is configured to
+    # send HTML messages.  When False (plain text), omitting the parameter lets
+    # Pushover display the message as-is without attempting HTML parsing.
+    if configuration.get('supports_html'):
+        parameters['html'] = 1
 
     # Strip None values before sending
     parameters = {k: v for k, v in parameters.items() if v is not None}

@@ -43,7 +43,10 @@ def send(
         body,
         {"Content-type": "application/json"},
     )
-    conn.getresponse()
+    resp = conn.getresponse()
+    if not (200 <= resp.status < 300):
+        body_text = resp.read().decode(errors='replace')
+        raise RuntimeError(f"Discord webhook returned HTTP {resp.status}: {body_text}")
 
 if __name__ == "__main__":
     import argparse

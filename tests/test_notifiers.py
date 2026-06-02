@@ -81,6 +81,39 @@ class TestPushoverSend:
         # urlencode() returns a str; None-valued keys are stripped before encoding
         assert 'url=None' not in body
 
+    def test_html_param_sent_when_supports_html_true(self):
+        resp = _mock_http_response(200)
+        conn = _mock_connection(resp)
+        from notifiers.pushover import send
+        config = {'app_token': 'APP', 'user_token': 'USR', 'supports_html': True}
+        with patch('notifiers.pushover.ssl_context', return_value=ssl.create_default_context()), \
+             patch('http.client.HTTPSConnection', return_value=conn):
+            send(config, '<b>Hello</b>')
+        body = conn.request.call_args[0][2]
+        assert 'html=1' in body
+
+    def test_html_param_absent_when_supports_html_false(self):
+        resp = _mock_http_response(200)
+        conn = _mock_connection(resp)
+        from notifiers.pushover import send
+        config = {'app_token': 'APP', 'user_token': 'USR', 'supports_html': False}
+        with patch('notifiers.pushover.ssl_context', return_value=ssl.create_default_context()), \
+             patch('http.client.HTTPSConnection', return_value=conn):
+            send(config, 'Plain text message')
+        body = conn.request.call_args[0][2]
+        assert 'html=' not in body
+
+    def test_html_param_absent_when_supports_html_not_set(self):
+        resp = _mock_http_response(200)
+        conn = _mock_connection(resp)
+        from notifiers.pushover import send
+        config = {'app_token': 'APP', 'user_token': 'USR'}
+        with patch('notifiers.pushover.ssl_context', return_value=ssl.create_default_context()), \
+             patch('http.client.HTTPSConnection', return_value=conn):
+            send(config, 'No HTML flag')
+        body = conn.request.call_args[0][2]
+        assert 'html=' not in body
+
 
 # ---------------------------------------------------------------------------
 # Discord
@@ -110,35 +143,77 @@ class TestDiscordSend:
         content = body.get('content', '')
         assert 'https://example.com' in content
 
+    def test_204_success_does_not_raise(self):
+        """Discord webhooks return 204 No Content on success."""
+        resp = _mock_http_response(204)
+        conn = _mock_connection(resp)
+        self._send(conn)  # must not raise
+
+    def test_non_2xx_raises_runtime_error(self):
+        resp = _mock_http_response(401, b'{"message": "401: Unauthorized"}')
+        conn = _mock_connection(resp)
+        from notifiers.discord import send
+        config = {'webhook_id': 'WID', 'webhook_token': 'WTOK'}
+        with patch('notifiers.discord.ssl_context', return_value=ssl.create_default_context()), \
+             patch('http.client.HTTPSConnection', return_value=conn):
+            with pytest.raises(RuntimeError, match='401'):
+                send(config, 'Hello')
+
+    def test_404_raises_with_status_in_message(self):
+        resp = _mock_http_response(404, b'{"message": "Unknown Webhook"}')
+        conn = _mock_connection(resp)
+        from notifiers.discord import send
+        config = {'webhook_id': 'BAD', 'webhook_token': 'BAD'}
+        with patch('notifiers.discord.ssl_context', return_value=ssl.create_default_context()), \
+             patch('http.client.HTTPSConnection', return_value=conn):
+            with pytest.raises(RuntimeError) as exc_info:
+                send(config, 'Hello')
+        assert '404' in str(exc_info.value)
+
+    def test_200_ok_also_accepted(self):
+        """Some proxy setups may return 200 instead of 204 — treat all 2xx as success."""
+        resp = _mock_http_response(200)
+        conn = _mock_connection(resp)
+        self._send(conn)  # must not raise
+
 
 # ---------------------------------------------------------------------------
 # SSL context
 # ---------------------------------------------------------------------------
 
 class TestSSLContext:
-    def test_truststore_available_returns_truststore_context(self):
-        mock_ctx = MagicMock(spec=ssl.SSLContext)
-        mock_truststore = MagicMock()
-        mock_truststore.SSLContext.return_value = mock_ctx
+    def test_certifi_available_uses_certifi_cafile(self):
+        """When certifi is installed ssl_context() builds a context with its CA bundle."""
+        import importlib
+        import notifiers._ssl as ssl_mod
+        importlib.reload(ssl_mod)
+        ctx = ssl_mod.ssl_context()
+        # certifi is a transitive dep — it will be present in the test env
+        assert isinstance(ctx, ssl.SSLContext)
+
+    def test_falls_back_to_default_when_certifi_missing(self):
+        """When certifi is not installed ssl_context() falls back to the built-in default."""
         import sys
-        with patch.dict(sys.modules, {'truststore': mock_truststore}):
-            import importlib
-            import notifiers._ssl as ssl_mod
+        import importlib
+        import notifiers._ssl as ssl_mod
+        with patch.dict(sys.modules, {'certifi': None}):
             importlib.reload(ssl_mod)
             ctx = ssl_mod.ssl_context()
-        assert ctx is mock_ctx
+        assert isinstance(ctx, ssl.SSLContext)
 
-    def test_falls_back_when_truststore_missing(self):
-        import sys
-        # Remove truststore from modules to simulate ImportError
-        saved = sys.modules.pop('truststore', None)
-        try:
-            import importlib
-            import notifiers._ssl as ssl_mod
+    def test_pip_system_certs_patch_is_respected(self):
+        """If pip-system-certs patches certifi.where(), that patched path is used."""
+        import importlib
+        import notifiers._ssl as ssl_mod
+        mock_certifi = MagicMock()
+        mock_certifi.where.return_value = '/patched/system/certs.pem'
+        with patch.dict('sys.modules', {'certifi': mock_certifi}):
             importlib.reload(ssl_mod)
-            with patch.dict(sys.modules, {'truststore': None}):
-                ctx = ssl_mod.ssl_context()
-            assert isinstance(ctx, ssl.SSLContext)
-        finally:
-            if saved:
-                sys.modules['truststore'] = saved
+            # The function should call certifi.where() — if pip-system-certs has
+            # patched it, the system cert bundle path would be returned here.
+            # We just verify that certifi.where() is called (not hardcoded).
+            try:
+                ssl_mod.ssl_context()
+            except Exception:
+                pass  # cafile path may not exist on disk; that's fine
+        mock_certifi.where.assert_called_once()
