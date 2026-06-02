@@ -129,7 +129,7 @@
           <td class="px-4 py-3">
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ run.status|status_color }}">
               <span class="w-1.5 h-1.5 rounded-full {{ run.status|status_dot }}"></span>
-              {{ run.get_status_display }}
+              {% if run.status == 'success' %}{{ t.APP.STATE_SUCCESS }}{% elif run.status == 'running' %}{{ t.APP.STATE_RUNNING }}{% elif run.status == 'failed' %}{{ t.APP.STATE_FAILED }}{% elif run.status == 'cancelled' %}{{ t.APP.STATE_CANCELLED }}{% elif run.status == 'pending' %}{{ t.APP.STATE_PENDING }}{% else %}{{ run.get_status_display }}{% endif %}
             </span>
           </td>
           <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ run.started_at|date:"d M Y, H:i:s" }}</td>

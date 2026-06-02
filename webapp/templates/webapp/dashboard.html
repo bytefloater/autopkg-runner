@@ -53,7 +53,7 @@
     <div class="px-5 py-4 flex items-center gap-4">
       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ last_run.status|status_color }}">
         <span class="w-1.5 h-1.5 rounded-full {{ last_run.status|status_dot }}"></span>
-        {{ last_run.get_status_display }}
+        {% if last_run.status == 'success' %}{{ t.APP.STATE_SUCCESS }}{% elif last_run.status == 'running' %}{{ t.APP.STATE_RUNNING }}{% elif last_run.status == 'failed' %}{{ t.APP.STATE_FAILED }}{% elif last_run.status == 'cancelled' %}{{ t.APP.STATE_CANCELLED }}{% elif last_run.status == 'pending' %}{{ t.APP.STATE_PENDING }}{% else %}{{ last_run.get_status_display }}{% endif %}
       </span>
       <div class="text-sm text-gray-600 dark:text-gray-300">
         {{ t.DASHBOARD_VIEW.META_TRIGGERED_BY }} <strong>{{ last_run.triggered_by }}</strong>

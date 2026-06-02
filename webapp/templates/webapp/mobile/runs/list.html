@@ -128,7 +128,7 @@
             {% elif run.status == 'failed' %}text-red-500
             {% elif run.status == 'cancelled' %}text-amber-500
             {% else %}text-gray-500{% endif %}">
-            {{ run.get_status_display }}
+            {% if run.status == 'success' %}{{ t.APP.STATE_SUCCESS }}{% elif run.status == 'running' %}{{ t.APP.STATE_RUNNING }}{% elif run.status == 'failed' %}{{ t.APP.STATE_FAILED }}{% elif run.status == 'cancelled' %}{{ t.APP.STATE_CANCELLED }}{% elif run.status == 'pending' %}{{ t.APP.STATE_PENDING }}{% else %}{{ run.get_status_display }}{% endif %}
           </span>
           <span x-show="!managing">{% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}</span>
         </div>
