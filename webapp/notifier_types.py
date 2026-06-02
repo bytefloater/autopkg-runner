@@ -5,11 +5,11 @@ To add a new notifier type, add an entry to NOTIFIER_TYPES:
   label  — human-readable name shown in the UI
   fields — ordered list of field descriptors:
     key      — the dict key in Notifier.config
-    label    — display label
-    type     — 'text' | 'password' | 'bool' | 'select'
+    label    — display label (English fallback)
+    t_key    — NOTIFICATIONS_VIEW translation key for the label
+    type     — 'text' | 'password' | 'bool'
     required — whether the field must be non-empty to save (default False)
     default  — value to pre-fill when type is first selected (optional)
-    options  — [(value, label), ...] for 'select' type
 """
 
 NOTIFIER_TYPES: dict[str, dict] = {
@@ -33,6 +33,43 @@ NOTIFIER_TYPES: dict[str, dict] = {
         # No configuration fields — subscriptions are managed per-device via
         # the browser's Push API.  The notifier edit page shows a dedicated
         # subscription-management UI when this type is selected.
+        'fields': [],
+    },
+    'email': {
+        'label': 'Email (SMTP)',
+        'fields': [
+            {'key': 'from_address', 'label': 'From Address',  't_key': 'OPT_FROM_ADDRESS',    'type': 'text',     'required': True},
+            {'key': 'recipients',   'label': 'Recipients',    't_key': 'OPT_RECIPIENTS',      'type': 'text',     'required': True},
+            {'key': 'smtp_server',  'label': 'SMTP Server',   't_key': 'OPT_SMTP_SERVER',     'type': 'text',     'required': True},
+            {'key': 'smtp_port',    'label': 'SMTP Port',     't_key': 'OPT_SMTP_PORT',       'type': 'text',     'default': '587'},
+            {'key': 'use_ssl',      'label': 'Use SSL',       't_key': 'OPT_USE_SSL',         'type': 'bool',     'default': False},
+            {'key': 'use_auth',     'label': 'Authentication','t_key': 'OPT_USE_AUTH',        'type': 'bool',     'default': True},
+            {'key': 'username',     'label': 'Username',      't_key': 'OPT_USERNAME',        'type': 'text'},
+            {'key': 'password',     'label': 'Password',      't_key': 'OPT_SMTP_PASSWORD',   'type': 'password'},
+        ],
+    },
+    'slack': {
+        'label': 'Slack',
+        'fields': [
+            {'key': 'webhook_url', 'label': 'Webhook URL', 't_key': 'OPT_WEBHOOK_URL', 'type': 'text', 'required': True},
+        ],
+    },
+    'msteams': {
+        'label': 'Microsoft Teams',
+        'fields': [
+            {'key': 'webhook_url', 'label': 'Webhook URL', 't_key': 'OPT_WEBHOOK_URL', 'type': 'text', 'required': True},
+        ],
+    },
+    'googlechat': {
+        'label': 'Google Chat',
+        'fields': [
+            {'key': 'webhook_url', 'label': 'Webhook URL', 't_key': 'OPT_WEBHOOK_URL', 'type': 'text', 'required': True},
+        ],
+    },
+    'systemnotify': {
+        'label': 'System Notification',
+        # No configuration — fires osascript (macOS) or notify-send (Linux)
+        # on the host running AutoPkg Runner.
         'fields': [],
     },
 }
