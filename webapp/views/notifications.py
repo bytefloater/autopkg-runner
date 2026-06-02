@@ -63,21 +63,23 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
         return [self.template_name]
 
     # Variables available in message / title templates — shown in the UI reference.
+    # Second element is the NOTIFICATIONS_VIEW translation key for the description.
     TEMPLATE_VARIABLES = [
-        ('status',       '"succeeded" or "failed"'),
-        ('status_emoji', '✅ or ❌'),
-        ('imports',      'Count of Munki imports'),
-        ('failures',     'Count of recipe failures'),
-        ('downloads',    'Count of downloads'),
-        ('duration',     'Run duration, e.g. "2m 34s"'),
-        ('share_url',    'Obscure share-link URL'),
-        ('run_id',       'Run UUID'),
-        ('triggered_by', '"manual", "scheduler", or "api"'),
-        ('date',         'Run date, e.g. "2025-01-15"'),
-        ('time',         'Run start time, e.g. "14:30"'),
+        ('status',       'TMPLT_STATUS_VARHINT'),
+        ('status_emoji', 'TMPLT_STATUS_EMOJI_VARHINT'),
+        ('imports',      'TMPLT_IMPORTS_VARHINT'),
+        ('failures',     'TMPLT_FAILURES_VARHINT'),
+        ('downloads',    'TMPLT_DOWNLOADS_VARHINT'),
+        ('duration',     'TMPLT_DURATION_VARHINT'),
+        ('share_url',    'TMPLT_SHARE_URL_VARHINT'),
+        ('run_id',       'TMPLT_RUN_ID_VARHINT'),
+        ('triggered_by', 'TMPLT_TRIGGERED_BY_VARHINT'),
+        ('date',         'TMPLT_DATE_VARHINT'),
+        ('time',         'TMPLT_TIME_VARHINT'),
     ]
 
     def get_context_data(self, **kwargs):
+        from webapp import translations as _trans
         from webapp.models import Notifier, Setting, WebPushSubscription
         ctx = super().get_context_data(**kwargs)
         notifier = get_object_or_404(Notifier, pk=kwargs['pk'])
@@ -86,8 +88,21 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
         ctx['notifier']          = notifier
         ctx['schema']            = schema
         ctx['fields']            = schema.get('fields', [])
-        ctx['variables']         = self.TEMPLATE_VARIABLES
         ctx['decrypted_config']  = notifier.decrypted_config
+
+        # Resolve variable hint descriptions from the active language.
+        # Subscript access (not .get()) lets TranslationProxy.__missing__ fire for
+        # absent or empty-valued keys, returning the dotted key path as a visible
+        # fallback — consistent with how {{ t.X.Y }} behaves everywhere else.
+        try:
+            lang = Setting.get('ui.language', 'en-US')
+        except Exception:
+            lang = 'en-US'
+        notif_t = _trans.load(lang)['NOTIFICATIONS_VIEW']
+        ctx['variables'] = [
+            (var, notif_t[t_key])
+            for var, t_key in self.TEMPLATE_VARIABLES
+        ]
 
         if notifier.notifier_type == 'webpush':
             ctx['webpush_subscriptions'] = WebPushSubscription.objects.filter(notifier=notifier)
