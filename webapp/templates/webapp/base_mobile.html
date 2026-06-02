@@ -186,7 +186,7 @@
                   active:text-gray-600 dark:active:text-gray-300
                 {% endif %}">
         {% lucide tab.icon "w-6 h-6" %}
-        <span class="text-[10px] font-medium tracking-tight">{{ tab.label }}</span>
+        <span class="text-[10px] font-medium tracking-tight">{{ t.APP|lookup:tab.t_key }}</span>
       </a>
       {% endfor %}
     </div>
