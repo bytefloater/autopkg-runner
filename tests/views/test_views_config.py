@@ -98,3 +98,61 @@ class TestConfigSectionViewPost:
             'autopkg.recipe_list': '~/list.txt',
         })
         assert resp.status_code == 302
+
+    def test_post_saves_int_setting(self, client):
+        from webapp.models import Setting
+        client.post('/config/gc/', {
+            'gc.keep_versions': '3',
+            'gc.repoclean_bin_path': '/usr/local/bin/repoclean',
+        })
+        assert Setting.get('gc.keep_versions') == '3'
+
+    def test_post_invalid_int_stores_zero(self, client):
+        from webapp.models import Setting
+        client.post('/config/gc/', {
+            'gc.keep_versions': 'notanumber',
+        })
+        assert Setting.get('gc.keep_versions') == '0'
+
+    def test_logging_level_query_param_overrides_stored_value(self, client):
+        """GET /config/logging/?level=DEBUG should reflect DEBUG in context."""
+        resp = client.get('/config/logging/?level=DEBUG')
+        assert resp.status_code == 200
+        assert resp.context['s'].get('logging.level') == 'DEBUG'
+
+    def test_logging_level_invalid_param_ignored(self, client):
+        """GET /config/logging/?level=NOTVALID should not apply the override."""
+        from webapp.models import Setting
+        Setting.set('logging.level', 'INFO')
+        resp = client.get('/config/logging/?level=NOTVALID')
+        assert resp.status_code == 200
+        assert resp.context['s'].get('logging.level') == 'INFO'
+
+
+@pytest.mark.django_db
+class TestLogLevelPickerView:
+    url = '/config/logging/level/'
+
+    def test_requires_login(self, anon_client):
+        resp = anon_client.get(self.url)
+        assert resp.status_code == 302
+
+    def test_renders_for_authenticated_user(self, client):
+        resp = client.get(self.url)
+        assert resp.status_code == 200
+
+    def test_context_has_log_levels(self, client):
+        resp = client.get(self.url)
+        assert 'log_levels' in resp.context
+        assert len(resp.context['log_levels']) > 0
+
+    def test_current_level_from_query_param(self, client):
+        resp = client.get(f'{self.url}?current=ERROR')
+        assert resp.status_code == 200
+        assert resp.context['current_level'] == 'ERROR'
+
+    def test_current_level_falls_back_to_stored_setting(self, client):
+        from webapp.models import Setting
+        Setting.set('logging.level', 'WARNING')
+        resp = client.get(self.url)
+        assert resp.context['current_level'] == 'WARNING'

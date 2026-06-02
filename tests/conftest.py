@@ -122,6 +122,30 @@ def pending_run(db):
 
 
 @pytest.fixture
+def notifier(db):
+    """A Pushover notifier for notification view tests."""
+    from webapp.models import Notifier
+    return Notifier.objects.create(
+        name='Test Notifier',
+        notifier_type='pushover',
+        enabled=True,
+        config={},
+    )
+
+
+@pytest.fixture
+def webpush_notifier(db):
+    """A WebPush notifier (no config fields)."""
+    from webapp.models import Notifier
+    return Notifier.objects.create(
+        name='WebPush Notifier',
+        notifier_type='webpush',
+        enabled=True,
+        config={},
+    )
+
+
+@pytest.fixture
 def schedule(db):
     """The singleton Schedule row (pk=1) in its default enabled state."""
     from webapp.models import Schedule

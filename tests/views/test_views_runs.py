@@ -138,3 +138,68 @@ class TestRunStream:
         resp = client.get(self._url(run.id))
         assert resp.status_code == 200
         assert 'text/event-stream' in resp.get('Content-Type', '')
+
+    def test_stream_emits_complete_event_for_finished_run(self, client, run):
+        """Consuming the generator for a completed run yields a 'complete' event."""
+        resp = client.get(self._url(run.id))
+        chunks = b''.join(resp.streaming_content)
+        assert b'complete' in chunks
+        assert run.status.encode() in chunks
+
+    def test_stream_emits_log_entries(self, client, run):
+        """Log entries are included in the SSE stream."""
+        from datetime import datetime, timezone
+        from webapp.models import LogEntry
+        LogEntry.objects.create(
+            run=run,
+            level='INFO',
+            message='Test log message',
+            stage_name='',
+            timestamp=datetime.now(timezone.utc),
+        )
+        resp = client.get(self._url(run.id))
+        chunks = b''.join(resp.streaming_content)
+        assert b'Test log message' in chunks
+
+    def test_stream_emits_stage_updates(self, client, run):
+        """Stage execution records are included in the SSE stream."""
+        from webapp.models import StageExecution
+        from datetime import datetime, timezone
+        StageExecution.objects.create(
+            run=run,
+            name='UpdateRepos',
+            status='success',
+            order=0,
+            started_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(timezone.utc),
+        )
+        resp = client.get(self._url(run.id))
+        chunks = b''.join(resp.streaming_content)
+        assert b'UpdateRepos' in chunks
+
+    def test_stream_sends_error_for_nonexistent_run(self, client):
+        """A nonexistent run_id causes an error event to be emitted."""
+        missing_id = uuid.uuid4()
+        resp = client.get(self._url(missing_id))
+        chunks = b''.join(resp.streaming_content)
+        assert b'error' in chunks or b'not found' in chunks
+
+    def test_stream_respects_from_param(self, client, run):
+        """?from=<id> skips log entries with id <= that value."""
+        from datetime import datetime, timezone
+        from webapp.models import LogEntry
+        entry = LogEntry.objects.create(
+            run=run,
+            level='DEBUG',
+            message='older message',
+            stage_name='',
+            timestamp=datetime.now(timezone.utc),
+        )
+        # Request with from=entry.id → should skip the entry above
+        resp = client.get(self._url(run.id) + f'?from={entry.id}')
+        chunks = b''.join(resp.streaming_content)
+        assert b'older message' not in chunks
+
+    def test_stream_no_cache_control_header(self, client, run):
+        resp = client.get(self._url(run.id))
+        assert resp.get('Cache-Control') == 'no-cache'

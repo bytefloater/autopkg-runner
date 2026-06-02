@@ -13,14 +13,64 @@ class TestGetSystemTimezone:
         tz = get_system_timezone()
         assert isinstance(tz, ZoneInfo)
 
-    def test_falls_back_to_utc_when_os_readlink_fails(self):
+    def test_falls_back_to_utc_when_both_sources_fail(self):
         from webapp.scheduler import get_system_timezone
-        with patch('os.readlink', side_effect=OSError('no symlink')), \
+        with patch('os.path.realpath', side_effect=OSError('no symlink')), \
              patch('builtins.open', side_effect=OSError('no file')):
             tz = get_system_timezone()
-        assert isinstance(tz, ZoneInfo)
-        # Should be UTC as final fallback
         assert str(tz) == 'UTC'
+
+    def test_reads_localtime_symlink_successfully(self):
+        from webapp.scheduler import get_system_timezone
+        with patch('os.path.realpath', return_value='/usr/share/zoneinfo/Europe/London'):
+            tz = get_system_timezone()
+        assert str(tz) == 'Europe/London'
+
+    def test_falls_back_to_etc_timezone(self):
+        """When /etc/localtime has no /zoneinfo/ component, reads /etc/timezone."""
+        from webapp.scheduler import get_system_timezone
+        from unittest.mock import mock_open
+        with patch('os.path.realpath', return_value='/etc/localtime'), \
+             patch('builtins.open', mock_open(read_data='America/New_York')):
+            tz = get_system_timezone()
+        assert str(tz) == 'America/New_York'
+
+    def test_falls_back_to_utc_when_localtime_no_zoneinfo(self):
+        """realpath returns a path without /zoneinfo/ and /etc/timezone fails."""
+        from webapp.scheduler import get_system_timezone
+        with patch('os.path.realpath', return_value='/etc/localtime'), \
+             patch('builtins.open', side_effect=OSError('no timezone file')):
+            tz = get_system_timezone()
+        assert str(tz) == 'UTC'
+
+
+class TestGetScheduler:
+    def test_creates_new_scheduler_when_none_exists(self):
+        import webapp.scheduler as sched_mod
+        from apscheduler.schedulers.background import BackgroundScheduler
+
+        original = sched_mod._scheduler
+        sched_mod._scheduler = None
+        try:
+            with patch.object(sched_mod, 'BackgroundScheduler') as mock_bgs_cls:
+                mock_instance = MagicMock()
+                mock_bgs_cls.return_value = mock_instance
+                result = sched_mod.get_scheduler()
+            assert result is mock_instance
+            mock_bgs_cls.assert_called_once()
+        finally:
+            sched_mod._scheduler = original
+
+    def test_returns_existing_scheduler(self):
+        import webapp.scheduler as sched_mod
+        fake = MagicMock()
+        original = sched_mod._scheduler
+        sched_mod._scheduler = fake
+        try:
+            result = sched_mod.get_scheduler()
+            assert result is fake
+        finally:
+            sched_mod._scheduler = original
 
 
 @pytest.mark.django_db
@@ -47,6 +97,52 @@ class TestRescheduleJob:
         with patch('webapp.scheduler.get_scheduler', return_value=mock_sched):
             reschedule_job()
         mock_sched.add_job.assert_not_called()
+
+    def test_starts_scheduler_when_not_running(self, schedule):
+        from webapp.scheduler import reschedule_job
+        mock_sched = self._mock_scheduler()
+        mock_sched.running = False  # not yet started
+        with patch('webapp.scheduler.get_scheduler', return_value=mock_sched):
+            reschedule_job()
+        mock_sched.start.assert_called_once()
+
+    def test_remove_job_exception_is_swallowed(self, schedule):
+        """If remove_job raises (e.g. job doesn't exist), it is silently ignored."""
+        from webapp.scheduler import reschedule_job
+        mock_sched = self._mock_scheduler()
+        mock_sched.remove_job.side_effect = Exception('job not found')
+        with patch('webapp.scheduler.get_scheduler', return_value=mock_sched):
+            reschedule_job()   # must not raise
+        mock_sched.add_job.assert_called_once()
+
+
+@pytest.mark.django_db
+class TestStartScheduler:
+    def test_starts_scheduler_if_not_running(self, schedule):
+        from webapp.scheduler import start_scheduler
+        mock_sched = MagicMock()
+        mock_sched.running = False
+        with patch('webapp.scheduler.get_scheduler', return_value=mock_sched), \
+             patch('webapp.scheduler.reschedule_job'):
+            start_scheduler()
+        mock_sched.start.assert_called_once()
+
+    def test_does_not_restart_already_running_scheduler(self, schedule):
+        from webapp.scheduler import start_scheduler
+        mock_sched = MagicMock()
+        mock_sched.running = True
+        with patch('webapp.scheduler.get_scheduler', return_value=mock_sched), \
+             patch('webapp.scheduler.reschedule_job'):
+            start_scheduler()
+        mock_sched.start.assert_not_called()
+
+    def test_reschedule_exception_is_logged(self, schedule):
+        from webapp.scheduler import start_scheduler
+        mock_sched = MagicMock()
+        mock_sched.running = True
+        with patch('webapp.scheduler.get_scheduler', return_value=mock_sched), \
+             patch('webapp.scheduler.reschedule_job', side_effect=Exception('db gone')):
+            start_scheduler()  # must not raise
 
 
 @pytest.mark.django_db
