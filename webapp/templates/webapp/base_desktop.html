@@ -39,6 +39,7 @@
     [x-cloak] { display: none !important; }
     .log-line { font-family: 'SF Mono','Fira Code','Fira Mono','Roboto Mono',monospace; font-size: 0.78rem; line-height: 1.5; }
   </style>
+  {% block extra_head %}{% endblock %}
 </head>
 
 <body class="h-full bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100"
@@ -76,8 +77,8 @@
   </script>
   {% endif %}
 
-  {# ── TOPBAR — horizontal nav, sticky, full-width ── #}
-  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm
+  {# ── TOPBAR — horizontal nav, full-width ── #}
+  <header class="z-40 bg-white dark:bg-slate-900
                  border-b border-gray-200 dark:border-slate-800">
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center h-14 gap-2">
@@ -329,6 +330,13 @@
   <main class="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     {% block content %}{% endblock %}
   </main>
+
+  {# Attach Django's CSRF token to every HTMX request as a header #}
+  <script>
+    document.addEventListener('htmx:configRequest', function (evt) {
+      evt.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+    });
+  </script>
 
   {% block scripts %}{% endblock %}
 

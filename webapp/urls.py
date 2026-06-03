@@ -4,7 +4,7 @@ from django.views.generic import RedirectView
 
 from webapp.views import (
     dashboard, runs, schedule, config, api_tokens, users, pwa, account,
-    notifications, share, about,
+    notifications, share, about, recipes,
 )
 from webapp.views.config import LogLevelPickerView
 
@@ -62,6 +62,25 @@ urlpatterns = [
          notifications.WebPushUnsubscribeView.as_view(), name='webpush-unsubscribe'),
     path('config/logging/level/',
          LogLevelPickerView.as_view(), name='config-logging-level'),
+
+    # ── Recipes ───────────────────────────────────────────────────────────────
+    path('recipes/', RedirectView.as_view(url='/recipes/repos/'), name='recipes'),
+    path('recipes/repos/',
+         recipes.ReposView.as_view(), name='recipes-repos'),
+    path('recipes/repos/add/',
+         recipes.RepoAddView.as_view(), name='recipes-repo-add'),
+    path('recipes/repos/delete/',
+         recipes.RepoDeleteView.as_view(), name='recipes-repo-delete'),
+    path('recipes/repos/update/',
+         recipes.RepoUpdateView.as_view(), name='recipes-repo-update'),
+    path('recipes/list/',
+         recipes.RecipeListView.as_view(), name='recipes-list'),
+    path('recipes/list/data/',
+         recipes.RecipeDataView.as_view(), name='recipes-list-data'),
+    path('recipes/overrides/create/',
+         recipes.OverrideCreateView.as_view(), name='recipes-override-create'),
+    path('recipes/overrides/<path:fname>/edit/',
+         recipes.OverrideEditView.as_view(), name='recipes-override-edit'),
 
     # ── Other ─────────────────────────────────────────────────────────────────
     path('api-tokens/', api_tokens.ApiTokensView.as_view(), name='api-tokens'),

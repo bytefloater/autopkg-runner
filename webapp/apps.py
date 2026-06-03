@@ -69,11 +69,14 @@ class WebappConfig(AppConfig):
         threading.Thread(target=self._start_services, daemon=True).start()
 
     def _start_services(self):
-        """Start the APScheduler and clean up orphaned runs. Runs in a daemon
-        thread so it executes after the app registry is fully initialised."""
+        """Start the APScheduler, clean up orphaned runs, and pre-warm caches.
+        Runs in a daemon thread so it executes after the app registry is fully
+        initialised."""
         from webapp.scheduler import start_scheduler
+        from webapp.views.recipes import _start_cache_build
         start_scheduler()
         self._mark_interrupted_runs()
+        _start_cache_build()  # pre-warm recipe list cache before first request
 
     def _mark_interrupted_runs(self):
         """
