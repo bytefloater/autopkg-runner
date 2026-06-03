@@ -4,6 +4,14 @@
 {% block title %}{{ t.TOKENS_VIEW.TITLE }} - {{ t.APP.NAME }}{% endblock %}
 {% block nav_title %}{{ t.TOKENS_VIEW.TITLE }}{% endblock %}
 
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
 {% block nav_right %}
 <button @click="$dispatch('open-add-token')"
         class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
@@ -86,16 +94,18 @@
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_ENDPOINTS }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% for method, path, desc in api_endpoints %}
-    <div class="flex items-start gap-3 px-4 py-3">
-      <span class="text-[12px] font-bold font-mono flex-shrink-0 w-10 pt-0.5
-                   {% if method == 'POST' %}text-green-600 dark:text-green-400
-                   {% elif method == 'DELETE' %}text-red-500 dark:text-red-400
-                   {% else %}text-blue-600 dark:text-blue-400{% endif %}">
+    <div class="flex items-center gap-3 px-4 py-3">
+      <span class="inline-flex items-center justify-center flex-shrink-0
+                   text-[10px] font-bold font-mono tracking-wide
+                   px-2 py-0.5 rounded-full min-w-[52px]
+                   {% if method == 'POST' %}bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400
+                   {% elif method == 'DELETE' %}bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400
+                   {% else %}bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400{% endif %}">
         {{ method }}
       </span>
       <div class="min-w-0 flex-1">
-        <code class="text-[13px] font-mono text-gray-700 dark:text-gray-300 break-all">{{ path }}</code>
-        <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ desc }}</p>
+        <code class="block text-[13px] font-mono text-gray-700 dark:text-gray-300 break-all leading-snug">{{ path }}</code>
+        <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5 leading-snug">{{ desc }}</p>
       </div>
     </div>
     {% endfor %}

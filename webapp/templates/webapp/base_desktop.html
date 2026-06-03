@@ -16,9 +16,6 @@
     })();
   </script>
 
-  {# iPadOS 13+ disguises itself as macOS Safari (no "iPad" in the UA string).
-     Detect via touch capability: Macs have maxTouchPoints === 0; iPads do not.
-     Set a cookie and reload once so the server routes to the mobile template. #}
   <script>
     (function () {
       if (document.cookie.indexOf('desktop_mode=1') !== -1) return;
