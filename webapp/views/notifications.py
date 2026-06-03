@@ -62,7 +62,7 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
             return ['webapp/mobile/notifier_edit.html']
         return [self.template_name]
 
-    # Variables available in message / title templates — shown in the UI reference.
+    # Variables available in message / title templates - shown in the UI reference.
     # Second element is the NOTIFICATIONS_VIEW translation key for the description.
     TEMPLATE_VARIABLES = [
         ('status',       'TMPLT_STATUS_VARHINT'),
@@ -93,7 +93,7 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
         # Resolve variable hint descriptions from the active language.
         # Subscript access (not .get()) lets TranslationProxy.__missing__ fire for
         # absent or empty-valued keys, returning the dotted key path as a visible
-        # fallback — consistent with how {{ t.X.Y }} behaves everywhere else.
+        # fallback - consistent with how {{ t.X.Y }} behaves everywhere else.
         try:
             lang = Setting.get('ui.language', 'en-US')
         except Exception:
@@ -131,7 +131,7 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
             else:
                 val = request.POST.get(key, '')
                 # Don't overwrite a saved password with an empty POST value.
-                # Use decrypted_config so we get the plaintext — save() will
+                # Use decrypted_config so we get the plaintext - save() will
                 # re-encrypt it when the notifier is written back.
                 if ftype == 'password' and not val:
                     cfg[key] = notifier.decrypted_config.get(key, '')
@@ -208,7 +208,7 @@ class NotifierTestView(LoginRequiredMixin, View):
                     "This is a test notification from AutoPkg Runner. "
                     "If you received this, your notifier is configured correctly. ✅"
                 ),
-                title="AutoPkg Runner — Test",
+                title="AutoPkg Runner - Test",
             )
         except Exception as exc:
             return JsonResponse(

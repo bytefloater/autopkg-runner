@@ -11,11 +11,11 @@ class TestDurationFilter:
         return duration(start, end)
 
     def test_none_none_returns_dash(self):
-        assert self._call(None, None) == '—'
+        assert self._call(None, None) == '-'
 
     def test_start_none_returns_dash(self):
         now = datetime.now(timezone.utc)
-        assert self._call(now, None) == '—'
+        assert self._call(now, None) == '-'
 
     def test_45_seconds(self):
         now = datetime.now(timezone.utc)
@@ -36,7 +36,7 @@ class TestDurationFilter:
     def test_negative_delta_returns_dash(self):
         now = datetime.now(timezone.utc)
         # end before start
-        assert self._call(now, now - timedelta(seconds=10)) == '—'
+        assert self._call(now, now - timedelta(seconds=10)) == '-'
 
 
 class TestStatusColorFilter:

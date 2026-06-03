@@ -1,7 +1,7 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}Run — AutoPkg Runner{% endblock %}
+{% block title %}Run - AutoPkg Runner{% endblock %}
 
 {# iOS-style back button: chevron + previous-screen label #}
 {% block nav_left %}
@@ -50,7 +50,7 @@
       <button @click="open = !open"
               class="w-full flex items-center gap-3 px-4 py-3 text-left active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
 
-        {# Icon container — ID keyed on stage.order so JS can swap it via SSE #}
+        {# Icon container - ID keyed on stage.order so JS can swap it via SSE #}
         <span id="stage-icon-{{ stage.order }}"
               class="flex-shrink-0 w-5 h-5 flex items-center justify-center">
           {% if stage.status == 'success' %}
@@ -84,7 +84,7 @@
         </svg>
       </button>
 
-      {# Stage log entries — uses logs_by_stage dict keyed by stage name #}
+      {# Stage log entries - uses logs_by_stage dict keyed by stage name #}
       <div x-show="open"
            x-transition:enter="transition ease-out duration-150"
            x-transition:enter-start="opacity-0"
@@ -244,7 +244,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
       this.eventSource.onerror = () => { this._closeSSE(); };
     },
 
-    // Null out all handlers then close — prevents the browser auto-reconnect
+    // Null out all handlers then close - prevents the browser auto-reconnect
     // from re-delivering entries after the run finishes.
     _closeSSE() {
       if (this.eventSource) {
@@ -255,7 +255,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
       }
     },
 
-    // Handle a stage SSE event — creates the row if it doesn't exist yet,
+    // Handle a stage SSE event - creates the row if it doesn't exist yet,
     // then updates the icon and (if completed) the duration.
     handleStageUpdate(data) {
       const { order, status, name, started_at, completed_at } = data;
@@ -310,7 +310,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
       }
 
       if (status === 'running') {
-        // First stage starting means the run is now running — update the badge.
+        // First stage starting means the run is now running - update the badge.
         if (this.currentStatus === 'pending') {
           this.currentStatus = 'running';
           const dot  = document.getElementById('run-status-dot');
@@ -369,7 +369,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
     // Format a duration from ISO timestamps
     _dur(a, b) {
       const s = Math.floor((new Date(b) - new Date(a)) / 1000);
-      if (s < 0)  return '—';
+      if (s < 0)  return '-';
       if (s < 60) return `${s}s`;
       const m = Math.floor(s / 60), r = s % 60;
       return m < 60 ? `${m}m ${r}s` : `${Math.floor(m / 60)}h ${m % 60}m`;

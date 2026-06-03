@@ -1,4 +1,4 @@
-"""Tests for webapp.views.pwa — ManifestView and ServiceWorkerView."""
+"""Tests for webapp.views.pwa - ManifestView and ServiceWorkerView."""
 from __future__ import annotations
 
 import json

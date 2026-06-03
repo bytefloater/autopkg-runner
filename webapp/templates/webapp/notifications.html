@@ -1,7 +1,7 @@
 {% extends "webapp/base_desktop.html" %}
 {% load webapp_extras %}
 
-{% block title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }} — {{ t.APP.NAME }}{% endblock %}
+{% block title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }} - {{ t.APP.NAME }}{% endblock %}
 
 {% block content %}
 <div x-data="{
@@ -86,7 +86,7 @@
       <span class="w-2 h-2 rounded-full flex-shrink-0
                    {% if n.enabled %}bg-green-500{% else %}bg-gray-300 dark:bg-gray-600{% endif %}"></span>
 
-      {# Name & type — clickable #}
+      {# Name & type - clickable #}
       <a href="{% url 'notifier-edit' n.pk %}"
          class="flex-1 min-w-0 group">
         <p class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">

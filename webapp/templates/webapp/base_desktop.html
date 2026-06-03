@@ -16,6 +16,19 @@
     })();
   </script>
 
+  {# iPadOS 13+ disguises itself as macOS Safari (no "iPad" in the UA string).
+     Detect via touch capability: Macs have maxTouchPoints === 0; iPads do not.
+     Set a cookie and reload once so the server routes to the mobile template. #}
+  <script>
+    (function () {
+      if (document.cookie.indexOf('desktop_mode=1') !== -1) return;
+      if (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1) {
+        document.cookie = 'ipad_detected=1; path=/; max-age=31536000; SameSite=Lax';
+        window.location.reload();
+      }
+    })();
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = {
     darkMode: 'class',
@@ -77,13 +90,13 @@
   </script>
   {% endif %}
 
-  {# ── TOPBAR — horizontal nav, full-width ── #}
+  {# ── TOPBAR - horizontal nav, full-width ── #}
   <header class="z-40 bg-white dark:bg-slate-900
                  border-b border-gray-200 dark:border-slate-800">
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center h-14 gap-2">
 
-        {# Hamburger — LEFT of logo, visible below lg #}
+        {# Hamburger - LEFT of logo, visible below lg #}
         <button @click="open=true"
                 class="lg:hidden p-1.5 rounded-lg flex-shrink-0
                        text-gray-500 hover:text-gray-900 dark:hover:text-white
@@ -99,7 +112,7 @@
           </span>
         </div>
 
-        {# Horizontal nav — lg and above #}
+        {# Horizontal nav - lg and above #}
         <nav class="hidden lg:flex items-center gap-0.5 flex-1">
           {% for tab in nav_tabs %}
           <a href="{% url tab.url_name %}"
@@ -121,7 +134,7 @@
         {# Right-side controls #}
         <div class="flex items-center gap-1.5 ml-auto">
 
-          {# 3-way theme toggle — icon trio, hidden below lg (lives in drawer on small screens) #}
+          {# 3-way theme toggle - icon trio, hidden below lg (lives in drawer on small screens) #}
           <div class="hidden lg:flex items-center rounded-lg
                       bg-gray-100 dark:bg-slate-800
                       border border-gray-200 dark:border-slate-700
@@ -211,7 +224,7 @@
     </div>
   </header>
 
-  {# ── MOBILE DRAWER — slides in from left below md breakpoint ── #}
+  {# ── MOBILE DRAWER - slides in from left below md breakpoint ── #}
 
   {# Scrim #}
   <div x-show="open" x-cloak @click="open=false"
@@ -228,7 +241,7 @@
               border-r border-gray-100 dark:border-slate-800
               shadow-2xl transition-transform duration-200 ease-in-out lg:hidden">
 
-    {# Drawer header — close button LEFT of logo, matching hamburger position in topbar #}
+    {# Drawer header - close button LEFT of logo, matching hamburger position in topbar #}
     <div class="flex items-center gap-3 h-14 px-4 flex-shrink-0
                 border-b border-gray-100 dark:border-slate-800">
       <button @click="open=false"
@@ -264,7 +277,7 @@
     <div class="flex-shrink-0 px-3 pb-4 pt-2
                 border-t border-gray-100 dark:border-slate-800 space-y-2">
 
-      {# Theme toggle — full-width trio #}
+      {# Theme toggle - full-width trio #}
       <div class="flex items-center rounded-lg bg-gray-100 dark:bg-slate-800 p-1 gap-0.5">
         <button @click="setTheme('light')"
                 :class="theme==='light'

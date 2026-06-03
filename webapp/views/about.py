@@ -1,7 +1,7 @@
 """
 webapp/views/about.py
 ─────────────────────
-About page — shows application version, AutoPkg version (with update check),
+About page - shows application version, AutoPkg version (with update check),
 and MunkiTools version.
 
 All external calls (subprocess + GitHub API) are wrapped in try/except so the
@@ -47,7 +47,7 @@ def _autopkg_latest_release() -> Optional[str]:
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read())
             tag = data.get('tag_name', '')
-            # Tags are typically 'v2.7.2' — strip leading 'v'
+            # Tags are typically 'v2.7.2' - strip leading 'v'
             return tag.lstrip('v') or None
     except Exception:
         return None

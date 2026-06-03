@@ -1,7 +1,7 @@
 {% extends "webapp/base_desktop.html" %}
 {% load webapp_extras %}
 
-{% block title %}{{ notifier.name }} — {{ t.APP.NAME }}{% endblock %}
+{% block title %}{{ notifier.name }} - {{ t.APP.NAME }}{% endblock %}
 
 {% block content %}
 <div>
@@ -35,7 +35,7 @@
               });
               this.testResult = await r.json();
             } catch(e) {
-              this.testResult = { success: false, message: 'Network error — check the console.' };
+              this.testResult = { success: false, message: 'Network error - check the console.' };
             }
             this.testing = false;
           }
@@ -232,7 +232,7 @@
         <div class="px-4 py-4">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.NOTIFICATIONS_VIEW.FIELD_MESSAGE }}</label>
           <textarea name="message_template" rows="4"
-                    placeholder="Leave blank to use the auto-generated message.&#10;&#10;Example: {status_emoji} AutoPkg {status} — {imports} imported, {failures} failures. {share_url}"
+                    placeholder="Leave blank to use the auto-generated message.&#10;&#10;Example: {status_emoji} AutoPkg {status} - {imports} imported, {failures} failures. {share_url}"
                     class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
                            bg-gray-50 dark:bg-slate-800/50 text-sm font-mono
                            text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600
@@ -288,7 +288,7 @@
     {# ── Save + Danger zone ─────────────────────────────────────────────────── #}
     <div class="flex items-center justify-between gap-4">
 
-      {# Delete button — triggers modal #}
+      {# Delete button - triggers modal #}
       <button type="button"
               @click="$dispatch('open-delete-modal')"
               class="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 dark:border-red-800
@@ -406,7 +406,7 @@ function webPushManager(notifierPk, vapidPublicKey) {
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
           let msg;
           if (isIOS && !window.navigator.standalone) {
-            msg = 'Open this app from your Home Screen icon — push notifications are only available when running as an installed PWA, not in Safari.';
+            msg = 'Open this app from your Home Screen icon - push notifications are only available when running as an installed PWA, not in Safari.';
           } else if (isIOS) {
             msg = 'Push notifications require a secure HTTPS connection and iOS 16.4 or later.';
           } else {

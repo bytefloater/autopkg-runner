@@ -1,12 +1,12 @@
 {% extends "webapp/base_desktop.html" %}
 {% load webapp_extras %}
 
-{% block title %}Users — AutoPkg Runner{% endblock %}
+{% block title %}Users - AutoPkg Runner{% endblock %}
 
 {% block content %}
 <div class="space-y-6" x-data="usersPage()">
 
-  {# ── Page header — consistent with Dashboard / Runs #}
+  {# ── Page header - consistent with Dashboard / Runs #}
   <div class="flex items-center justify-between">
     <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_USERS }}</h1>
     <button @click="showCreate = true"
@@ -38,7 +38,7 @@
   {% endwith %}
   {% endif %}
 
-  {# Hidden reset-password form — submitted programmatically from the confirm modal #}
+  {# Hidden reset-password form - submitted programmatically from the confirm modal #}
   <form id="reset-pw-form" method="post" x-ref="resetForm" class="hidden">
     {% csrf_token %}
     <input type="hidden" name="action" value="reset_password">
@@ -68,7 +68,7 @@
               {% if u.is_self %}<span class="text-xs text-gray-400 dark:text-gray-500">{{ t.USER_VIEW.LABEL_YOU }}</span>{% endif %}
             </div>
           </td>
-          <td class="px-5 py-3 text-gray-500 dark:text-gray-400 text-sm hidden sm:table-cell">{{ u.email|default:"—" }}</td>
+          <td class="px-5 py-3 text-gray-500 dark:text-gray-400 text-sm hidden sm:table-cell">{{ u.email|default:"-" }}</td>
           <td class="px-4 py-3 text-center">
             {% if u.is_active %}<span class="inline-block w-2 h-2 rounded-full bg-green-500"></span>{% else %}<span class="inline-block w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>{% endif %}
           </td>
@@ -81,12 +81,12 @@
           </td>
           <td class="px-5 py-3">
             <div class="flex items-center justify-end gap-2">
-              {# Edit button — opens edit modal (visible for all users, including self) #}
+              {# Edit button - opens edit modal (visible for all users, including self) #}
               <button @click="openEdit({{ u.pk }}, '{{ u.username|escapejs }}', '{{ u.email|escapejs }}', {{ u.is_active|yesno:'true,false' }}, {{ u.is_superuser|yesno:'true,false' }}, {{ u.is_self|yesno:'true,false' }})"
                       class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 transition-colors">
                 {{ t.APP.ACTION_EDIT }}
               </button>
-              {# Reset password — hidden for the current user (they use Change Password in the nav menu) #}
+              {# Reset password - hidden for the current user (they use Change Password in the nav menu) #}
               {% if not u.is_self %}
               <button type="button" @click="openResetConfirm({{ u.pk }}, '{{ u.username|escapejs }}')"
                       class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 transition-colors">
@@ -203,7 +203,7 @@
                  placeholder="user@example.com">
         </div>
 
-        {# Active / Admin toggles — hidden when editing your own account #}
+        {# Active / Admin toggles - hidden when editing your own account #}
         <template x-if="!editIsSelf">
           <div class="space-y-0">
             <div class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-slate-800">

@@ -171,7 +171,7 @@ class TestDiscordSend:
         assert '404' in str(exc_info.value)
 
     def test_200_ok_also_accepted(self):
-        """Some proxy setups may return 200 instead of 204 — treat all 2xx as success."""
+        """Some proxy setups may return 200 instead of 204 - treat all 2xx as success."""
         resp = _mock_http_response(200)
         conn = _mock_connection(resp)
         self._send(conn)  # must not raise
@@ -188,7 +188,7 @@ class TestSSLContext:
         import notifiers._ssl as ssl_mod
         importlib.reload(ssl_mod)
         ctx = ssl_mod.ssl_context()
-        # certifi is a transitive dep — it will be present in the test env
+        # certifi is a transitive dep - it will be present in the test env
         assert isinstance(ctx, ssl.SSLContext)
 
     def test_falls_back_to_default_when_certifi_missing(self):
@@ -209,7 +209,7 @@ class TestSSLContext:
         mock_certifi.where.return_value = '/patched/system/certs.pem'
         with patch.dict('sys.modules', {'certifi': mock_certifi}):
             importlib.reload(ssl_mod)
-            # The function should call certifi.where() — if pip-system-certs has
+            # The function should call certifi.where() - if pip-system-certs has
             # patched it, the system cert bundle path would be returned here.
             # We just verify that certifi.where() is called (not hardcoded).
             try:

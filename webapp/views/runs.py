@@ -83,7 +83,7 @@ class TriggerRunView(LoginRequiredMixin, View):
 
 
 class RunDeleteView(LoginRequiredMixin, View):
-    """POST — delete one or more completed runs by UUID.
+    """POST - delete one or more completed runs by UUID.
 
     Accepts ``run_ids`` as a multi-value POST field (one UUID per value).
     Active runs (pending / running) are silently skipped.
@@ -103,7 +103,7 @@ class RunDeleteView(LoginRequiredMixin, View):
 
 
 class RunCancelView(LoginRequiredMixin, View):
-    """POST — cancel a single active (pending or running) run.
+    """POST - cancel a single active (pending or running) run.
 
     Marks the run as 'cancelled' so the UI is unblocked.  If a pipeline thread
     is still alive it will finish naturally but won't overwrite the cancelled
@@ -180,7 +180,7 @@ def run_stream(request, run_id):
                     yield f'data: {payload}\n\n'.encode()
 
             if run.status in ('success', 'failed', 'cancelled'):
-                # Tell the browser to wait 24 h before reconnecting — effectively
+                # Tell the browser to wait 24 h before reconnecting - effectively
                 # disabling auto-reconnect so a client close() wins the race.
                 yield b'retry: 86400000\n\n'
                 payload = json.dumps({'type': 'complete', 'status': run.status})

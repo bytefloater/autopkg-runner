@@ -1,7 +1,7 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}Users — {{ t.APP.NAME }}{% endblock %}
+{% block title %}Users - {{ t.APP.NAME }}{% endblock %}
 {% block nav_title %}{{ t.APP.VIEWS_USERS }}{% endblock %}
 
 {% block nav_left %}
@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block nav_right %}
-{# Dispatch a custom event — the button lives in the header, outside the x-data scope #}
+{# Dispatch a custom event - the button lives in the header, outside the x-data scope #}
 <button @click="$dispatch('users:open-create')"
         class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
   {{ t.USER_VIEW.ACTION_ADD }}

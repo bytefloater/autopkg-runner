@@ -1,7 +1,7 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}{{ edit_user.username }} — {{ t.APP.NAME }}{% endblock %}
+{% block title %}{{ edit_user.username }} - {{ t.APP.NAME }}{% endblock %}
 {% block nav_title %}{{ edit_user.username }}{% endblock %}
 
 {% block nav_left %}
@@ -121,7 +121,7 @@
 <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6"
      x-data="{ showDelete: false }">
 
-  {# Reset password — direct submit, no confirmation needed (result shown on next page) #}
+  {# Reset password - direct submit, no confirmation needed (result shown on next page) #}
   <form method="post">
     {% csrf_token %}
     <input type="hidden" name="action" value="reset_password">
@@ -131,7 +131,7 @@
     </button>
   </form>
 
-  {# Delete — opens confirmation sheet #}
+  {# Delete - opens confirmation sheet #}
   <form method="post" x-ref="deleteForm">
     {% csrf_token %}
     <input type="hidden" name="action" value="delete">

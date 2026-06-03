@@ -1,7 +1,7 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}Schedule — AutoPkg Runner{% endblock %}
+{% block title %}Schedule - AutoPkg Runner{% endblock %}
 {% block nav_title %}{{ t.APP.VIEWS_SCHEDULES }}{% endblock %}
 
 {% block nav_right %}
@@ -35,7 +35,7 @@
 
   </div>
 
-  {# Cron expression fields — visible only when enabled #}
+  {# Cron expression fields - visible only when enabled #}
   <div x-show="enabled" x-transition>
     <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.SCHEDULE_VIEW.SECTION_CRON_EXPRESSION }}</p>
     <p class="px-4 pb-2 text-[12px] text-gray-400 dark:text-gray-500">{{ t.SCHEDULE_VIEW.CRON_TZ_PREFIX }} {{ system_tz_name }} ({{ system_tz_abbr }})</p>

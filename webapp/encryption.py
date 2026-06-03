@@ -3,7 +3,7 @@ Field-level encryption for sensitive settings stored in the database.
 
 The Fernet key is derived deterministically from Django's SECRET_KEY so that
 no additional environment variable is required.  Changing SECRET_KEY will make
-all encrypted credentials unreadable — re-enter them after any key rotation.
+all encrypted credentials unreadable - re-enter them after any key rotation.
 
 Stored format:  "enc:<fernet-url-safe-base64-token>"
 Legacy / empty values (no "enc:" prefix) are returned unchanged so that
@@ -42,7 +42,7 @@ def decrypt(value: str) -> str:
     * If *value* has no ``enc:`` prefix it is treated as legacy plain-text and
       returned unchanged.
     * If decryption fails (wrong key, corrupted token) an empty string is
-      returned so the application does not hard-crash — the user will need to
+      returned so the application does not hard-crash - the user will need to
       re-enter the credential.
     """
     if not value or not value.startswith(ENCRYPTED_PREFIX):

@@ -46,7 +46,7 @@ class UpdateRepos(Stage):
         self.logger.info(f"Found {len(repo_urls)} repository URL(s)")
         self.logger.info("Updating from remote repositories...")
 
-        # Update remote repos — errors are caught per-URL so a single failure
+        # Update remote repos - errors are caught per-URL so a single failure
         # does not prevent the remaining repositories from being updated.
         for url in repo_urls:
             try:

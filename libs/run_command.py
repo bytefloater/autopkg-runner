@@ -5,7 +5,7 @@ from typing import Protocol
 
 
 class _SupportsLogging(Protocol):
-    """Structural type accepted by run_cmd — satisfied by logbook.Logger,
+    """Structural type accepted by run_cmd - satisfied by logbook.Logger,
     InterceptLogger, and any other object with info/error methods."""
     def info(self, msg: str, /) -> None: ...
     def error(self, msg: str, /) -> None: ...
@@ -27,7 +27,7 @@ def run_cmd(command: list[str], logger: _SupportsLogging):
 
     # Read both pipes in the *calling* thread rather than spawning reader
     # threads.  This is essential so that Logbook's thread-local handler
-    # stack — which holds DBLogHandler — is active when each line is logged.
+    # stack - which holds DBLogHandler - is active when each line is logged.
     # select.select() lets us multiplex both pipes without blocking on either.
     open_fds = {proc.stdout, proc.stderr}
     while open_fds:
@@ -41,7 +41,7 @@ def run_cmd(command: list[str], logger: _SupportsLogging):
                     else:
                         logger.error(line.rstrip())
                 else:
-                    # EOF on this pipe — process has closed it.
+                    # EOF on this pipe - process has closed it.
                     open_fds.discard(fd)
 
     proc.wait()

@@ -1,7 +1,7 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}{{ t.CONFIG_VIEW.TAB_REPO }} — {{ t.APP.NAME }}{% endblock %}
+{% block title %}{{ t.CONFIG_VIEW.TAB_REPO }} - {{ t.APP.NAME }}{% endblock %}
 {% block nav_title %}{{ t.CONFIG_VIEW.TAB_REPO }}{% endblock %}
 
 {% block nav_left %}
@@ -90,7 +90,7 @@
       </div>
     </div>
 
-    {# Credentials — shown for all remote types #}
+    {# Credentials - shown for all remote types #}
     <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_CREDENTIALS }}</p>
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
          x-data="{ showPw: false }">

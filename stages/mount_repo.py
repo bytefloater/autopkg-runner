@@ -76,7 +76,7 @@ class MountRepository(Stage):
     def run(self):
         if self._is_local():
             self.logger.info(
-                f"Using local repository at {self.local_path} — no mounting required."
+                f"Using local repository at {self.local_path} - no mounting required."
             )
             return
         assert self.mounter is not None  # set in __init__ when not local

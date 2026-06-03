@@ -80,7 +80,7 @@ def _render(template: str, ctx: dict) -> str:
     try:
         return template.format_map(_SafeDict(ctx))
     except (ValueError, KeyError):
-        return template   # malformed format string — return as-is
+        return template   # malformed format string - return as-is
 
 
 # ── Stage ─────────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ class NotifyOnCompletion(Stage):
 
     def run(self):
         if not self.notifiers:
-            self.logger.info("No notifiers configured — skipping.")
+            self.logger.info("No notifiers configured - skipping.")
             return
 
         run_id  = self.ctx.get("run_id")
@@ -112,12 +112,12 @@ class NotifyOnCompletion(Stage):
             try:
                 provider_mod = importlib.import_module(module_path)
             except ModuleNotFoundError:
-                self.logger.error(f"Notifier module '{module_path}' not found — skipping.")
+                self.logger.error(f"Notifier module '{module_path}' not found - skipping.")
                 continue
 
             _send = getattr(provider_mod, "send", None)
             if _send is None:
-                self.logger.error(f"Module '{module_path}' has no send() function — skipping.")
+                self.logger.error(f"Module '{module_path}' has no send() function - skipping.")
                 continue
 
             cfg          = notifier.decrypted_config if hasattr(notifier, 'decrypted_config') else (notifier.config or {})
@@ -198,7 +198,7 @@ class NotifyOnCompletion(Stage):
 
     def _build_template_context(self, summary: dict, run_id) -> dict:
         """Build the ``{variable}`` substitution dict for message templates."""
-        # Infer pipeline success from stage executions — at this point in the
+        # Infer pipeline success from stage executions - at this point in the
         # pipeline all preceding stages have completed and their status is in DB.
         succeeded = True
         duration_str = ""

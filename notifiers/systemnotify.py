@@ -2,8 +2,8 @@
 Display a native system notification on the AutoPkg Runner host machine.
 
 Platform support:
-  macOS  — osascript  (display notification … with title …)
-  Linux  — notify-send
+  macOS  - osascript  (display notification … with title …)
+  Linux  - notify-send
 """
 import platform
 import subprocess
@@ -20,7 +20,7 @@ def send(
     """Display a native OS notification on the server that runs AutoPkg Runner.
 
     Parameters:
-        configuration: {}   — no configuration fields required
+        configuration: {}   - no configuration fields required
         message:   Body text of the notification.
         title:     Notification title (optional; defaults to "AutoPkg Runner").
         url:       Appended as plain text to the message body (optional).

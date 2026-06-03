@@ -11,7 +11,7 @@ from django.views.generic import TemplateView
 _DOW_NAMES = {
     '0': 'Sunday', '1': 'Monday', '2': 'Tuesday', '3': 'Wednesday',
     '4': 'Thursday', '5': 'Friday', '6': 'Saturday',
-    # APScheduler also accepts sun/mon/… — handle numeric only here
+    # APScheduler also accepts sun/mon/… - handle numeric only here
 }
 
 _MONTH_NAMES = {

@@ -78,7 +78,7 @@ class ZeroConfigResolver:
         """
         try:
             # dnspython stubs type resolve() elements as Rdata, not the specific
-            # SRV/A subclass — annotate as Any so Pylance allows subtype attrs.
+            # SRV/A subclass - annotate as Any so Pylance allows subtype attrs.
             srv_rr: Any = dns.resolver.resolve(service_fqdn, 'SRV')[0]
             target = str(srv_rr.target).rstrip('.')
             port = srv_rr.port

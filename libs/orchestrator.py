@@ -56,7 +56,7 @@ class Orchestrator:
             return False
 
         # Separate the notification stage so it always runs even when earlier
-        # stages fail — otherwise a pipeline error skips the notification entirely.
+        # stages fail - otherwise a pipeline error skips the notification entirely.
         notify_stage = next(
             (s for s in self.stages if isinstance(s, NotifyOnCompletion)), None
         )
@@ -85,7 +85,7 @@ class Orchestrator:
                 except Exception:
                     self.logger.exception(f'Cleanup error in {s.name}')
 
-            # Always dispatch notifications — success or failure.
+            # Always dispatch notifications - success or failure.
             if notify_stage is not None:
                 try:
                     self._notify(notify_stage.name, 'running')

@@ -28,11 +28,11 @@ def _read_svg(name: str) -> str:
 def duration(start, end):
     """Return a human-readable duration string from two datetimes."""
     if not start or not end:
-        return '—'
+        return '-'
     delta = end - start
     total = int(delta.total_seconds())
     if total < 0:
-        return '—'
+        return '-'
     if total < 60:
         return f'{total}s'
     m, s = divmod(total, 60)
@@ -89,7 +89,7 @@ def lucide(name, classes='w-5 h-5'):
     """Render a Lucide icon as an inline SVG.
 
     Uses ``currentColor`` from the surrounding element, so icons automatically
-    adapt to any text colour — including dark-mode variants.
+    adapt to any text colour - including dark-mode variants.
 
     Handles both compact single-line SVGs and the multi-line format emitted by
     the Lucide static CDN (which includes a license comment and a pre-existing

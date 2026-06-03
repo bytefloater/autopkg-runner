@@ -73,7 +73,7 @@ def _safe_trigger_scheduled_run():
     try:
         trigger_manual_run(triggered_by='scheduler')
     except RunAlreadyRunningError:
-        logger.warning('Scheduled run skipped — a run is already in progress.')
+        logger.warning('Scheduled run skipped - a run is already in progress.')
     except Exception:
         logger.exception('Unhandled error in scheduled run trigger')
 
@@ -115,11 +115,11 @@ def reschedule_job():
         job = scheduler.get_job('autopkg_scheduled_run')
         next_rt = getattr(job, 'next_run_time', None) if job else None
         logger.info(
-            'Scheduled job registered: %s %s %s %s %s (%s) — next run: %s',
+            'Scheduled job registered: %s %s %s %s %s (%s) - next run: %s',
             schedule.minute, schedule.hour,
             schedule.day_of_week, schedule.day_of_month, schedule.month,
             tz.key,
-            next_rt or '(scheduler not yet started — will fire once running)',
+            next_rt or '(scheduler not yet started - will fire once running)',
         )
     else:
         logger.info('Scheduled job removed (schedule disabled)')

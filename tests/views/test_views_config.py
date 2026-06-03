@@ -77,7 +77,7 @@ class TestConfigSectionViewPost:
         from webapp.models import Setting
         # First, set a real password
         Setting.set('repository.password', 'original-password')
-        # POST with blank password — should not overwrite
+        # POST with blank password - should not overwrite
         client.post('/config/repository/', {
             'repository.type': 'remote',
             'repository.connection_type': 'smb',
@@ -87,7 +87,7 @@ class TestConfigSectionViewPost:
             'repository.mount_path': '/tmp/Munki',
             'repository.public_url': '',
             'repository.username': 'admin',
-            'repository.password': '',  # blank — should be skipped
+            'repository.password': '',  # blank - should be skipped
         })
         assert Setting.get('repository.password') == 'original-password'
 

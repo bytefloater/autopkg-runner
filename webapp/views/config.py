@@ -22,7 +22,7 @@ CONFIG_SECTIONS = [
 
 
 class ConfigRootView(LoginRequiredMixin, TemplateView):
-    """Configuration landing page — shows a navigable list of sections."""
+    """Configuration landing page - shows a navigable list of sections."""
 
     template_name = 'webapp/config.html'
 

@@ -30,7 +30,7 @@ class TranslationProxy(dict):
     Nested dicts are automatically wrapped so the full path accumulates at
     every level.  Django template dot-notation ({{ t.APP.ACTION_SAVE }})
     resolves to a plain string for present keys, and to the path string for
-    absent ones — making missing translations immediately visible without
+    absent ones - making missing translations immediately visible without
     raising exceptions.
     """
 
@@ -63,7 +63,7 @@ def _resolve_ref(value: str, root: dict) -> str:
     current: dict | str = root
     for part in key_path.split('.'):
         if not isinstance(current, dict):
-            return value          # broken reference — return as-is
+            return value          # broken reference - return as-is
         current = current.get(part, value)
     return current if isinstance(current, str) else value
 

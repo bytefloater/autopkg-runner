@@ -41,7 +41,7 @@ self.addEventListener('fetch', (event) => {
   // API: always network
   if (url.pathname.startsWith('/api/')) return;
 
-  // Splash screens are large and only used by iOS at launch — skip caching.
+  // Splash screens are large and only used by iOS at launch - skip caching.
   if (url.pathname.startsWith('/static/splash_screens/')) return;
 
   // Static assets: cache-first

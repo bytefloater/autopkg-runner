@@ -1,4 +1,4 @@
-"""Tests for webapp.views.users.UsersView — superuser guards."""
+"""Tests for webapp.views.users.UsersView - superuser guards."""
 from __future__ import annotations
 
 import pytest
@@ -203,7 +203,7 @@ class TestUserEditView:
             'is_active': 'on',
             'is_superuser': '',   # demote
         })
-        # Should be prevented — not self-edit scenario means it should check remaining
+        # Should be prevented - not self-edit scenario means it should check remaining
         # but since we're editing a *different* superuser via admin_client…
         # admin_client is logged in as superuser so self-edit path fires; email change only
         superuser.refresh_from_db()
@@ -256,7 +256,7 @@ class TestUserEditView:
         # superuser should still exist since second superuser is trying to delete the last admin
         # Actually, since 'second' exists as another superuser, deleting superuser should succeed
         # Let me instead test deleting 'second' (the only remaining one) after removing superuser manually
-        # Actually the simpler test: second tries to delete superuser when there are 2 superusers — SHOULD succeed
+        # Actually the simpler test: second tries to delete superuser when there are 2 superusers - SHOULD succeed
         User.objects.filter(id=superuser.id).delete()
         # Now second is the only superuser. Try to delete second.
         resp = c.post(self._url(second.id), {'action': 'delete'})

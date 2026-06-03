@@ -1,7 +1,7 @@
 {% load webapp_extras %}
 <tr class="group hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
 
-  {# URL — hover reveals local path as a tooltip #}
+  {# URL - hover reveals local path as a tooltip #}
   <td class="px-4 py-2 max-w-0 w-full align-middle">
     <div class="relative group/path">
       <span class="text-sm font-mono text-gray-800 dark:text-gray-200 truncate block">{{ repo.url }}</span>
@@ -50,7 +50,7 @@
   <td class="px-4 py-2 text-right whitespace-nowrap align-middle">
     <div class="inline-flex items-center gap-1.5">
 
-      {# Update — spinner lives inside the button; covered by htmx-indicator overlay when loading #}
+      {# Update - spinner lives inside the button; covered by htmx-indicator overlay when loading #}
       <button type="button"
               hx-post="{% url 'recipes-repo-update' %}"
               hx-vals='{"repo_path": "{{ repo.path|escapejs }}", "repo_url": "{{ repo.url|escapejs }}"}'

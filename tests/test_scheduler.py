@@ -150,7 +150,7 @@ class TestSafeTriggerScheduledRun:
     def test_calls_trigger_manual_run_with_scheduler(self):
         from webapp.scheduler import _safe_trigger_scheduled_run
         # trigger_manual_run is imported inside _safe_trigger_scheduled_run from
-        # webapp.runner — patch it at the source module.
+        # webapp.runner - patch it at the source module.
         with patch('webapp.runner.trigger_manual_run') as mock_trigger, \
              patch('django.db.close_old_connections'):
             _safe_trigger_scheduled_run()

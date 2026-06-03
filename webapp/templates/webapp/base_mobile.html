@@ -81,7 +81,7 @@
   <style>
     [x-cloak] { display: none !important; }
 
-    /* ── Chrome separator — matches divide-gray-200/70 / divide-[#38383a] ── */
+    /* ── Chrome separator - matches divide-gray-200/70 / divide-[#38383a] ── */
     :root        { --chrome-sep: rgba(229,231,235,0.70); }
     .dark        { --chrome-sep: #38383a; }
 
@@ -99,7 +99,7 @@
     /* Monospace log lines */
     .log-line { font-family: 'SF Mono','Menlo','Monaco',monospace; font-size: 0.72rem; line-height: 1.45; }
 
-    /* Page enter — iOS-style spring (fast attack, gentle overshoot) */
+    /* Page enter - iOS-style spring (fast attack, gentle overshoot) */
     /* to: transform:none (not translateX(0)) so fill-mode:both doesn't leave a
        transform on <main>, which would make it a containing block for
        position:fixed children (bottom sheets, overlays, etc.)            */
@@ -143,7 +143,7 @@
   {# ── Page content ────────────────────────────────────────────────────────── #}
   {# pb-28 keeps content clear of the fixed bottom tab bar                     #}
   {# {% block scripts %} lives here so page-specific JS is included in the     #}
-  {# SPA content swap — re-executed before Alpine.initTree() on each navigate  #}
+  {# SPA content swap - re-executed before Alpine.initTree() on each navigate  #}
   <main class="flex-1 overflow-y-auto pb-28 page-enter" id="page-content"
         style="padding-top:calc(44px + env(safe-area-inset-top,0px))">
     {# ── Flash messages (inside main so SPA navigation clears them) ─────────── #}
@@ -171,7 +171,7 @@
 
   {# ── Bottom tab bar ──────────────────────────────────────────────────────── #}
   {# 5 base tabs max so the bar never overflows a 375 pt iPhone viewport.      #}
-  {# box-shadow replaces border-t — avoids the 3-device-pixel line on 3× DPR. #}
+  {# box-shadow replaces border-t - avoids the 3-device-pixel line on 3× DPR. #}
   <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-xl"
        style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 6px); box-shadow:0 -1px 0 var(--chrome-sep);">
     <div id="tab-bar" class="flex items-center justify-around pt-2 px-2">
@@ -206,7 +206,7 @@
       <div class="flex justify-center pt-3 pb-2">
         <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
       </div>
-      {# User info — centred avatar + name #}
+      {# User info - centred avatar + name #}
       <div class="flex flex-col items-center pt-3 pb-5">
         <span class="w-16 h-16 rounded-full bg-blue-600/15 border border-blue-500/20
                      flex items-center justify-center text-2xl font-bold
@@ -217,7 +217,7 @@
         {% if request.user.email %}<p class="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">{{ request.user.email }}</p>{% endif %}
         {% if request.user.is_superuser %}<p class="text-[12px] text-blue-500 dark:text-blue-400 mt-0.5">{{ t.APP.ROLE_SUPERUSER }}</p>{% endif %}
       </div>
-      {# Actions — grouped inset list #}
+      {# Actions - grouped inset list #}
       <div class="mx-4 mb-3 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
         <button @click="cycleTheme()"
                 class="w-full flex items-center gap-3 px-4 py-[13px] text-left
@@ -333,7 +333,7 @@
       try {
         const res = await fetch(url, { credentials: 'same-origin' });
         if (!res.ok) {
-          // Server error — fall back to full navigation so the browser shows its own error
+          // Server error - fall back to full navigation so the browser shows its own error
           location.href = url;
           return;
         }
@@ -363,7 +363,7 @@
         if (window.Alpine) Alpine.initTree(main);
 
         // Re-register HTMX attributes (polling triggers, etc.) on the new content.
-        // Alpine.initTree re-wires Alpine — the equivalent for HTMX is htmx.process().
+        // Alpine.initTree re-wires Alpine - the equivalent for HTMX is htmx.process().
         // Without this, elements like #run-list-section with hx-trigger="every 10s"
         // are invisible to HTMX after an SPA navigation and never start polling.
         if (window.htmx) htmx.process(main);
@@ -391,7 +391,7 @@
         document.title = doc.title;
         if (push) history.pushState({}, '', url);
       } catch {
-        // Network failure — fall back to full navigation
+        // Network failure - fall back to full navigation
         if (push) location.href = url;
       }
     }

@@ -34,7 +34,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--network',
             action='store_true',
-            help='Bind to 0.0.0.0 — makes the server reachable on all local interfaces.',
+            help='Bind to 0.0.0.0 - makes the server reachable on all local interfaces.',
         )
         parser.add_argument(
             '--noreload',
@@ -71,7 +71,7 @@ class Command(BaseCommand):
 
             self.stdout.write('')
             self.stdout.write(
-                self.style.WARNING(f'  Binding to 0.0.0.0:{port} — reachable on all local interfaces.')
+                self.style.WARNING(f'  Binding to 0.0.0.0:{port} - reachable on all local interfaces.')
             )
             self.stdout.write(
                 self.style.WARNING( '  ALLOWED_HOSTS temporarily set to [*] (DEBUG mode).')

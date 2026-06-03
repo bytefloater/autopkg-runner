@@ -83,7 +83,7 @@ def _git_behind_count(repo_path: str) -> int:
     """Return how many commits the local branch is behind its upstream.
 
     Returns -1 if git status cannot be determined (no upstream, not a git repo, etc.).
-    This check is local-only — no network call.
+    This check is local-only - no network call.
     """
     try:
         r = subprocess.run(
@@ -181,7 +181,7 @@ class RepoDeleteView(LoginRequiredMixin, View):
 
 
 class RepoUpdateView(LoginRequiredMixin, View):
-    """HTMX endpoint — runs ``autopkg repo-update`` and returns a refreshed table row."""
+    """HTMX endpoint - runs ``autopkg repo-update`` and returns a refreshed table row."""
 
     def post(self, request):
         from django.template.loader import render_to_string
@@ -281,7 +281,7 @@ def _read_recipe_identifier(path: Path) -> str:
 
 
 _RECIPES_CACHE: dict = {'data': None, 'ts': 0.0}
-_RECIPES_CACHE_TTL = 300  # seconds — re-scan after 5 minutes
+_RECIPES_CACHE_TTL = 300  # seconds - re-scan after 5 minutes
 _RECIPES_BUILD_LOCK = threading.Lock()
 _RECIPES_BUILDING = False
 
@@ -300,7 +300,7 @@ def _is_cache_ready() -> bool:
 def _start_cache_build():
     """Spawn a background thread to scan recipe files if the cache is cold or stale.
 
-    Safe to call from any request handler — the lock prevents duplicate builds.
+    Safe to call from any request handler - the lock prevents duplicate builds.
     """
     global _RECIPES_BUILDING
     if _is_cache_ready() or _RECIPES_BUILDING:
@@ -313,7 +313,7 @@ def _start_cache_build():
     def _build():
         global _RECIPES_BUILDING
         try:
-            # Phase 1 — collect unique recipe file paths (sequential; deduplicates stems)
+            # Phase 1 - collect unique recipe file paths (sequential; deduplicates stems)
             all_files: list = []
             seen_stems: set = set()
             for search_dir in _recipe_search_dirs():
@@ -326,7 +326,7 @@ def _start_cache_build():
                         seen_stems.add(stem)
                         all_files.append(recipe_file)
 
-            # Phase 2 — read Identifier from each file in parallel
+            # Phase 2 - read Identifier from each file in parallel
             stem_to_ident: dict = {}
             workers = min(16, max(1, len(all_files)))
             with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -408,7 +408,7 @@ def _build_recipe_entries(run_list_set: set) -> tuple:
                 'in_run_list':   parent_id in run_list_set,
             }
 
-    # Orphan overrides — no matching parent stem found in the search dirs
+    # Orphan overrides - no matching parent stem found in the search dirs
     for stem, o_info in override_map.items():
         if stem not in entries_by_key:
             ov_id = o_info['identifier']

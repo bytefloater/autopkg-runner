@@ -1,7 +1,7 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}Runs — AutoPkg Runner{% endblock %}
+{% block title %}Runs - AutoPkg Runner{% endblock %}
 {% block nav_title %}Runs{% endblock %}
 
 {# ── Left nav slot: Delete button (manage mode only) ──────────────────────── #}
@@ -50,7 +50,7 @@
      }"
      @toggle-manage-runs.window="managing = !managing; selected = []; $dispatch('runs-selected', { count: 0 })">
 
-  {# Hidden delete form — wired to the nav-bar button via form="runs-delete-form" #}
+  {# Hidden delete form - wired to the nav-bar button via form="runs-delete-form" #}
   <form id="runs-delete-form" method="post" action="{% url 'run-delete' %}" class="hidden">
     {% csrf_token %}
     <template x-for="id in selected" :key="id">
@@ -112,7 +112,7 @@
         <span x-show="!managing" x-cloak
               class="w-2.5 h-2.5 rounded-full flex-shrink-0 {{ run.status|status_dot }}"></span>
 
-        {# Row content — pointer-events-none so the parent div handles all taps #}
+        {# Row content - pointer-events-none so the parent div handles all taps #}
         <div class="flex-1 min-w-0 flex items-center gap-3 pointer-events-none">
           <div class="flex-1 min-w-0">
             <p class="text-[16px] font-medium text-gray-900 dark:text-white tabular-nums">

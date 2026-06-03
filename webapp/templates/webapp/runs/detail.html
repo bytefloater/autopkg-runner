@@ -1,7 +1,7 @@
 {% extends "webapp/base_desktop.html" %}
 {% load webapp_extras %}
 
-{% block title %}Run {{ run.id|truncatechars:8 }} — AutoPkg Runner{% endblock %}
+{% block title %}Run {{ run.id|truncatechars:8 }} - AutoPkg Runner{% endblock %}
 
 {% block content %}
 <div class="space-y-4" x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})">
@@ -31,7 +31,7 @@
   </div>
 
   {# ══════════════════════════════════════════════════════════════ #}
-  {# ACCORDION — one panel per stage                               #}
+  {# ACCORDION - one panel per stage                               #}
   {# ══════════════════════════════════════════════════════════════ #}
   <div class="space-y-2">
 
@@ -282,7 +282,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
           this.$nextTick(() => this.scrollToBottom(key));
 
         } else if (data.type === 'stage') {
-          // Replace the whole stageStatuses object — Alpine 3 won't react to
+          // Replace the whole stageStatuses object - Alpine 3 won't react to
           // in-place property assignment on a nested object.
           this.stageStatuses = { ...this.stageStatuses, [data.name]: data.status };
           // Maintain dynamicStages array for live-only renders.

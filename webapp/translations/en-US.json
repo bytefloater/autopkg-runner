@@ -175,10 +175,10 @@
         "ACTION_CREATE": "Create",
         "ACTION_CREATE_FIRST": "Create your first token",
 
-        "HINT_COPY_NOW": "Copy this token now — it won’t be shown again.",
+        "HINT_COPY_NOW": "Copy this token now - it won’t be shown again.",
 
         "BANNER_TOKEN_CREATED_PREFIX": "Token",
-        "BANNER_TOKEN_CREATED_SUFFIX": "created — copy it now. It won’t be shown again.",
+        "BANNER_TOKEN_CREATED_SUFFIX": "created - copy it now. It won’t be shown again.",
 
         "MODAL_TITLE": "New API Token",
 
@@ -215,8 +215,8 @@
 
         "EMPTY_NO_USERS": "No users found.",
 
-        "CREDS_BANNER_CREATED": "Account created — save these credentials now.",
-        "CREDS_BANNER_RESET": "Password reset — save the new password now.",
+        "CREDS_BANNER_CREATED": "Account created - save these credentials now.",
+        "CREDS_BANNER_RESET": "Password reset - save the new password now.",
         "CREDS_BANNER_DISCLAIMER": "These credentials are not stored in plain text and will not be shown again.",
         "CREDS_BANNER_DISCLAIMER_SHORT": "These credentials will not be shown again.",
 
@@ -328,7 +328,7 @@
         "STATE_NOT_INSTALLED": "Not installed",
         "STATE_UPDATE_CHECK_FAILED": "Could not check for updates.",
 
-        "UPDATE_AVAILABLE_PREFIX": "Update available —",
+        "UPDATE_AVAILABLE_PREFIX": "Update available -",
         "UPDATE_AVAILABLE_SUFFIX": "is the latest release.",
         "UP_TO_DATE_PREFIX": "Up to date (latest:",
         "UP_TO_DATE_SUFFIX": ")",

@@ -1,12 +1,12 @@
 {% extends "webapp/base_desktop.html" %}
 {% load webapp_extras %}
 
-{% block title %}API Tokens — AutoPkg Runner{% endblock %}
+{% block title %}API Tokens - AutoPkg Runner{% endblock %}
 
 {% block content %}
 <div class="space-y-6" x-data="tokenPage()">
 
-  {# ── Page header — consistent with Dashboard / Runs #}
+  {# ── Page header - consistent with Dashboard / Runs #}
   <div class="flex items-center justify-between">
     <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.TOKENS_VIEW.SECTION_API_TOKENS }}</h1>
     <button @click="showCreate = true"

@@ -55,7 +55,7 @@ class Command(BaseCommand):
 
         # Encode private key as URL-safe base64 (no padding).
         # private_bytes_raw() was added in cryptography 40; use private_numbers()
-        # to extract the raw 32-byte scalar — works on all versions.
+        # to extract the raw 32-byte scalar - works on all versions.
         priv_int = v.private_key.private_numbers().private_value
         priv_raw = priv_int.to_bytes(32, 'big')
         priv_b64  = base64.urlsafe_b64encode(priv_raw).decode().rstrip('=')

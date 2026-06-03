@@ -58,7 +58,7 @@ def trigger_db_cleanup() -> _uuid.UUID:
 
 def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
     import django.db
-    # Import models first — these are always available once Django is set up.
+    # Import models first - these are always available once Django is set up.
     # All other imports (orchestrator, stages, logbook) happen inside the
     # try/finally so that an ImportError or SyntaxError in any stage module
     # still lets the finally block mark the run as failed instead of leaving
@@ -99,7 +99,7 @@ def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
                     defaults={'status': status, 'order': order, 'started_at': timestamp},
                 )
             else:
-                # Stage finished (success or failed) — clear the thread-local so
+                # Stage finished (success or failed) - clear the thread-local so
                 # any inter-stage log lines don't get attributed to the last stage.
                 set_current_stage('')
                 StageExecution.objects.filter(run_id=run_id, name=stage_name).update(

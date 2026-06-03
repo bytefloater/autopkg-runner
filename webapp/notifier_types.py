@@ -2,14 +2,14 @@
 Registry of supported notifier types.
 
 To add a new notifier type, add an entry to NOTIFIER_TYPES:
-  label  — human-readable name shown in the UI
-  fields — ordered list of field descriptors:
-    key      — the dict key in Notifier.config
-    label    — display label (English fallback)
-    t_key    — NOTIFICATIONS_VIEW translation key for the label
-    type     — 'text' | 'password' | 'bool'
-    required — whether the field must be non-empty to save (default False)
-    default  — value to pre-fill when type is first selected (optional)
+  label  - human-readable name shown in the UI
+  fields - ordered list of field descriptors:
+    key      - the dict key in Notifier.config
+    label    - display label (English fallback)
+    t_key    - NOTIFICATIONS_VIEW translation key for the label
+    type     - 'text' | 'password' | 'bool'
+    required - whether the field must be non-empty to save (default False)
+    default  - value to pre-fill when type is first selected (optional)
 """
 
 NOTIFIER_TYPES: dict[str, dict] = {
@@ -30,7 +30,7 @@ NOTIFIER_TYPES: dict[str, dict] = {
     },
     'webpush': {
         'label': 'Web Push',
-        # No configuration fields — subscriptions are managed per-device via
+        # No configuration fields - subscriptions are managed per-device via
         # the browser's Push API.  The notifier edit page shows a dedicated
         # subscription-management UI when this type is selected.
         'fields': [],
@@ -68,7 +68,7 @@ NOTIFIER_TYPES: dict[str, dict] = {
     },
     'systemnotify': {
         'label': 'System Notification',
-        # No configuration — fires osascript (macOS) or notify-send (Linux)
+        # No configuration - fires osascript (macOS) or notify-send (Linux)
         # on the host running AutoPkg Runner.
         'fields': [],
     },

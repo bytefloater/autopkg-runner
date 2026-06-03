@@ -1,7 +1,7 @@
 {% extends "webapp/base_desktop.html" %}
 {% load webapp_extras %}
 
-{% block title %}{{ t.RECIPES_VIEW.SUBTAB_RECIPES }} — {{ t.APP.NAME }}{% endblock %}
+{% block title %}{{ t.RECIPES_VIEW.SUBTAB_RECIPES }} - {{ t.APP.NAME }}{% endblock %}
 
 {% block content %}
 <div x-data="recipeList()">
@@ -23,7 +23,7 @@
   <form method="post" id="recipe-form" @submit="onSubmit($event)">
     {% csrf_token %}
 
-    {# Toolbar — search, counts, checked-first, select-none, save #}
+    {# Toolbar - search, counts, checked-first, select-none, save #}
     <div class="flex flex-wrap items-center gap-3 mb-3">
 
       {# Search #}
@@ -220,7 +220,7 @@
             {% lucide "chevron-left" "w-4 h-4" %}
           </button>
 
-          {# Numbered pages — one element per item, no nested x-if #}
+          {# Numbered pages - one element per item, no nested x-if #}
           <template x-for="item in pageNumbers" :key="item.key">
             <button type="button"
                     :disabled="item.type === 'gap'"
@@ -288,7 +288,7 @@ function recipeList() {
       fetch('{% url "recipes-list-data" %}')
         .then(r => {
           if (r.status === 202) {
-            // Cache still building in background — poll again shortly
+            // Cache still building in background - poll again shortly
             setTimeout(() => this._fetchData(), 1500);
             return null;
           }

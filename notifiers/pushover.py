@@ -22,7 +22,7 @@ def send(
         message:   Body content of notification.
         title:     Notification title (optional).
         url:       Supplementary URL shown below the message (optional).
-                   Pushover opens this URL when the notification is tapped —
+                   Pushover opens this URL when the notification is tapped -
                    use a share link so the in-app browser opens the report.
         url_title: Display label for *url* (optional; defaults to "View report").
     """

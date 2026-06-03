@@ -1,5 +1,5 @@
 """
-WebPush notifier — sends a push notification to all subscribed devices.
+WebPush notifier - sends a push notification to all subscribed devices.
 
 Requires pywebpush and VAPID keys configured in the application settings.
 VAPID keys can be generated from the django management shell:
@@ -27,7 +27,7 @@ def send(configuration: dict, message: str, title: str | None = None,
     Send a push notification to all WebPushSubscription rows attached to
     the calling Notifier.
 
-    ``configuration`` is the notifier's decrypted_config dict — for WebPush
+    ``configuration`` is the notifier's decrypted_config dict - for WebPush
     this is always empty (subscriptions are stored in the DB, not here).  The
     notifier_pk is injected by NotifyOnCompletion when calling this function.
 
@@ -85,7 +85,7 @@ def send(configuration: dict, message: str, title: str | None = None,
             )
             sent += 1
         except WebPushException as exc:
-            # A 410 Gone means the subscription is no longer valid — remove it.
+            # A 410 Gone means the subscription is no longer valid - remove it.
             if exc.response is not None and exc.response.status_code == 410:
                 sub.delete()
             else:

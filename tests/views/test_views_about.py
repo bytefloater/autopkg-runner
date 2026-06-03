@@ -1,4 +1,4 @@
-"""Tests for webapp.views.about — helper functions and AboutView."""
+"""Tests for webapp.views.about - helper functions and AboutView."""
 from __future__ import annotations
 
 import json

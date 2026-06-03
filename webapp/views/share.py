@@ -4,7 +4,7 @@ webapp/views/share.py
 Unauthenticated share-link view for completed run reports.
 
 The URL /share/<token>/ maps to RunShareView.  The token is a cryptographically
-random string stored in RunShareToken — it is the *only* access control.
+random string stored in RunShareToken - it is the *only* access control.
 
 The rendered page intentionally omits:
   - Log entries (LogEntry records)
@@ -64,14 +64,14 @@ class RunShareView(TemplateView):
                     if age > timedelta(days=expiry_days):
                         raise Http404('This share link has expired.')
             except ValueError:
-                pass  # invalid setting value — treat as no expiry
+                pass  # invalid setting value - treat as no expiry
 
         run = token_obj.run
 
-        # Stages — status + duration only, no log content.
+        # Stages - status + duration only, no log content.
         stages = list(run.stage_executions.order_by('order'))
 
-        # Recipe results — strip tracebacks for security.
+        # Recipe results - strip tracebacks for security.
         results = []
         for rr in run.recipe_results.all():
             results.append({

@@ -29,11 +29,11 @@ class TestApiTokensView:
         if resp.status_code == 302:
             follow_resp = client.get(resp['Location'])
             assert follow_resp.context.get('new_token') is not None
-            # On a second request the session key is cleared — token gone.
+            # On a second request the session key is cleared - token gone.
             resp2 = client.get(self.url)
             assert resp2.context.get('new_token') is None
         else:
-            # View may render directly (no redirect) — token still in context.
+            # View may render directly (no redirect) - token still in context.
             assert resp.context.get('new_token') is not None
 
     def test_revoke_token(self, client, user, api_token):

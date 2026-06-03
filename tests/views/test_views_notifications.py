@@ -1,4 +1,4 @@
-"""Tests for webapp.views.notifications — all notification views."""
+"""Tests for webapp.views.notifications - all notification views."""
 from __future__ import annotations
 
 import json
@@ -108,7 +108,7 @@ class TestNotifierEditView:
         # Set a real password first
         notifier.config = {'app_token': 'original'}
         notifier.save()
-        # POST with blank password — should not clear it
+        # POST with blank password - should not clear it
         resp = client.post(self._url(notifier.pk), {
             'name': notifier.name,
             'app_token': '',       # blank → preserve existing

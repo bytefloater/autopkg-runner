@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge)](LICENSE)<br>
 ![Version 3.0.0](https://img.shields.io/badge/version-3.0.0-green?style=for-the-badge)
 
-A web-based management interface for [AutoPkg](https://github.com/autopkg/autopkg) — the macOS software packaging automation tool. AutoPkg Runner wraps your AutoPkg workflows in a Django web application with real-time run monitoring, a REST API, a mobile PWA, and scheduled execution, replacing fragile cron scripts and log trawling with a proper operations dashboard.
+A web-based management interface for [AutoPkg](https://github.com/autopkg/autopkg) - the macOS software packaging automation tool. AutoPkg Runner wraps your AutoPkg workflows in a Django web application with real-time run monitoring, a REST API, a mobile PWA, and scheduled execution, replacing fragile cron scripts and log trawling with a proper operations dashboard.
 
 ---
 
@@ -11,19 +11,19 @@ A web-based management interface for [AutoPkg](https://github.com/autopkg/autopk
 
 ### Web UI
 
-- **Dashboard** — last run summary, 30-day success rate, next scheduled run, and a one-click manual trigger
-- **Run detail** — GitHub Actions-style stage timeline with live log streaming; stage status icons and the log panel update in real time without a page refresh
-- **Run history** — paginated list of all pipeline executions with status badges and duration
-- **Schedule** — cron-based scheduling with an enable/disable toggle; changes apply immediately without a server restart
-- **Configuration** — full pipeline configuration through the browser; no config files to edit
-- **API tokens** — create and revoke per-user tokens for REST API access
+- **Dashboard** - last run summary, 30-day success rate, next scheduled run, and a one-click manual trigger
+- **Run detail** - GitHub Actions-style stage timeline with live log streaming; stage status icons and the log panel update in real time without a page refresh
+- **Run history** - paginated list of all pipeline executions with status badges and duration
+- **Schedule** - cron-based scheduling with an enable/disable toggle; changes apply immediately without a server restart
+- **Configuration** - full pipeline configuration through the browser; no config files to edit
+- **API tokens** - create and revoke per-user tokens for REST API access
 
 ### Mobile PWA
 
 - Installable progressive web app with an iOS-native look and feel
 - Bottom tab bar navigation with SPA-style page transitions
 - Real-time stage status updates and live log streaming on run detail
-- Install directly from Safari — no App Store required
+- Install directly from Safari - no App Store required
 
 <img src="docs/images/sc_mobile_dashboard.png" alt="Mobile dashboard" width="300">
 
@@ -35,7 +35,7 @@ Three notification providers are supported. Multiple notifiers can be configured
 |----------|-------|
 | **Pushover** | Push notification to iPhone/iPad/Mac via the Pushover app |
 | **Discord** | Message to a Discord channel via an incoming webhook |
-| **WebPush** | Native browser push notification — works with the installed PWA or any subscribed browser session |
+| **WebPush** | Native browser push notification - works with the installed PWA or any subscribed browser session |
 
 Notifications are always dispatched at the end of a run regardless of whether earlier pipeline stages succeeded or failed.
 
@@ -47,8 +47,8 @@ All endpoints support both JSON (`Accept: application/json`) and XML (`Accept: a
 |--------|----------|-------------|
 | `POST` | `/api/auth/get_token/` | Exchange username + password for an API token |
 | `GET` | `/api/auth/check_token/` | Validate a token |
-| `POST` | `/api/tasks/trigger_run/` | Start a pipeline run — returns a task UUID |
-| `POST` | `/api/tasks/trigger_db_cleanup/` | Start a DB cleanup task — returns a task UUID |
+| `POST` | `/api/tasks/trigger_run/` | Start a pipeline run - returns a task UUID |
+| `POST` | `/api/tasks/trigger_db_cleanup/` | Start a DB cleanup task - returns a task UUID |
 | `GET` | `/api/tasks/get_task_status/?uuid=` | Poll the status of a task |
 | `GET` | `/api/history/get_run_data/?uuid=` | Full run detail including stages, logs, and recipe results |
 | `GET` | `/api/history/list_runs/` | List runs; optional `start_date` / `end_date` query filters |
@@ -57,14 +57,14 @@ All endpoints support both JSON (`Accept: application/json`) and XML (`Accept: a
 
 The pipeline runs these stages in order:
 
-1. **Environment Check** — validates the AutoPkg binary and recipe list exist and are readable
-2. **Update Repos** — runs `autopkg repo-update all` to pull the latest recipe repos (optional, can be disabled per run)
-3. **Trust Verification** — runs `autopkg verify-trust-info` on all recipes and updates trust as needed
-4. **Mount Repository** — connects to the Munki repository over SMB or SFTP
-5. **Run AutoPkg** — batch executes all configured recipes and writes a report plist
-6. **Generate Report** — renders a timestamped HTML report from a Django template
-7. **Garbage Collector** — prunes old cache files, temp files, and stale HTML reports using `repoclean`
-8. **Send Notifications** — dispatches alerts to all configured notifiers
+1. **Environment Check** - validates the AutoPkg binary and recipe list exist and are readable
+2. **Update Repos** - runs `autopkg repo-update all` to pull the latest recipe repos (optional, can be disabled per run)
+3. **Trust Verification** - runs `autopkg verify-trust-info` on all recipes and updates trust as needed
+4. **Mount Repository** - connects to the Munki repository over SMB or SFTP
+5. **Run AutoPkg** - batch executes all configured recipes and writes a report plist
+6. **Generate Report** - renders a timestamped HTML report from a Django template
+7. **Garbage Collector** - prunes old cache files, temp files, and stale HTML reports using `repoclean`
+8. **Send Notifications** - dispatches alerts to all configured notifiers
 
 ---
 
@@ -121,7 +121,7 @@ All settings are stored in the database and managed through the **Configuration*
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DJANGO_SECRET_KEY` | (auto-generated) | Django secret key — set a stable value in production |
+| `DJANGO_SECRET_KEY` | (auto-generated) | Django secret key - set a stable value in production |
 | `DJANGO_DEBUG` | `true` | Set to `false` in production |
 | `DJANGO_ALLOWED_HOSTS` | `localhost 127.0.0.1` | Space-separated list of allowed hostnames |
 
@@ -129,7 +129,7 @@ All settings are stored in the database and managed through the **Configuration*
 
 ## Scheduling
 
-Scheduled runs are configured on the **Schedule** page. Enable the toggle and set the cron fields (minute, hour, day of week, day of month, month). Changes apply immediately — no server restart required.
+Scheduled runs are configured on the **Schedule** page. Enable the toggle and set the cron fields (minute, hour, day of week, day of month, month). Changes apply immediately - no server restart required.
 
 ---
 
@@ -201,4 +201,4 @@ chmod 600 db.sqlite3
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+Apache 2.0 - see [LICENSE](LICENSE).

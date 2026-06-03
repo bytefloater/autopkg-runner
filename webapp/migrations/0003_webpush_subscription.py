@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('endpoint', models.TextField(unique=True)),
                 ('p256dh', models.CharField(max_length=300)),
                 ('auth', models.CharField(max_length=100)),
-                ('device_label', models.CharField(blank=True, help_text='Human-readable label, e.g. "iPhone 15 Pro — Safari"', max_length=100)),
+                ('device_label', models.CharField(blank=True, help_text='Human-readable label, e.g. "iPhone 15 Pro - Safari"', max_length=100)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('notifier', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='webpush_subscriptions', to='webapp.notifier')),
             ],

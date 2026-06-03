@@ -19,7 +19,7 @@ class Setting(models.Model):
 
     Keys listed in SENSITIVE_KEYS are transparently encrypted at rest using
     Fernet symmetric encryption (see webapp/encryption.py).  The plaintext is
-    always what callers see — encryption/decryption happens only in get/set.
+    always what callers see - encryption/decryption happens only in get/set.
     """
 
     # Keys whose values are encrypted before being written to the database.
@@ -206,7 +206,7 @@ class Schedule(models.Model):
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs) -> tuple[int, dict[str, int]]:
-        # Singleton row — deletion is intentionally a no-op.
+        # Singleton row - deletion is intentionally a no-op.
         return 0, {}
 
     @classmethod
@@ -242,7 +242,7 @@ class Run(models.Model):
     completed_at    = models.DateTimeField(null=True, blank=True)
     config_snapshot = models.JSONField(default=dict)
 
-    # Reverse relations — declared for type checkers (django-stubs does not
+    # Reverse relations - declared for type checkers (django-stubs does not
     # synthesise related managers from related_name automatically).
     if TYPE_CHECKING:
         stage_executions : models.Manager[StageExecution]
@@ -349,7 +349,7 @@ class RunShareToken(models.Model):
     The token is a cryptographically random URL-safe string.  It is generated
     on first use (at notification dispatch time) and deleted automatically when
     its parent Run is deleted.  The share report intentionally omits log entries
-    and stack traces — it shows only stage statuses and AutoPkg output.
+    and stack traces - it shows only stage statuses and AutoPkg output.
     """
 
     token      = models.CharField(max_length=86, unique=True, db_index=True)
@@ -390,7 +390,7 @@ class WebPushSubscription(models.Model):
     p256dh       = models.CharField(max_length=300)
     auth         = models.CharField(max_length=100)
     device_label = models.CharField(max_length=100, blank=True,
-                                    help_text='Human-readable label, e.g. "iPhone 15 Pro — Safari"')
+                                    help_text='Human-readable label, e.g. "iPhone 15 Pro - Safari"')
     created_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:

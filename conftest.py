@@ -1,4 +1,4 @@
-"""Root conftest — sets required env vars before Django settings are imported.
+"""Root conftest - sets required env vars before Django settings are imported.
 
 ``pytest_configure`` is called during the Config initialisation phase, which
 happens before ``pytest_load_initial_conftests`` (the phase where

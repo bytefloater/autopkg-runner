@@ -5,7 +5,7 @@ Protocol-agnostic host abstractions for remote repository mounting.
 
 Classes
 -------
-BaseHost            ABC — common interface for all host types.
+BaseHost            ABC - common interface for all host types.
 SmbHost             SMB/CIFS via macOS mount_smbfs.
 SftpHost            SFTP via sshfs (requires macFUSE + sshfs-mac).
 RemoteRepositoryMounter
@@ -50,7 +50,7 @@ class BaseHost(ABC):
     def disconnect(self, mount_point: Path, logger) -> None:
         """Unmount the remote share.
 
-        Must not raise — log warnings instead so cleanup always completes.
+        Must not raise - log warnings instead so cleanup always completes.
         """
 
 
@@ -319,5 +319,5 @@ class RemoteRepositoryMounter:
             self.logger.warning("Mount point was not found!")
         except OSError:
             self.logger.error(
-                "The mount point is not empty — please delete it manually."
+                "The mount point is not empty - please delete it manually."
             )

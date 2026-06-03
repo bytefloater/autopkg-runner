@@ -69,7 +69,7 @@ def send(
 
     subject = title or "AutoPkg Runner Notification"
 
-    # Build body — plain and HTML variants
+    # Build body - plain and HTML variants
     body_html = message
     body_plain = _strip_html(message) if re.search(r'<[a-zA-Z]', message) else message
 
@@ -97,7 +97,7 @@ def send(
         try:
             smtp.starttls(context=ctx)
         except smtplib.SMTPNotSupportedError:
-            # Server does not advertise STARTTLS — continue without it.
+            # Server does not advertise STARTTLS - continue without it.
             pass
 
     try:
@@ -143,4 +143,4 @@ if __name__ == "__main__":
         "password":     args.password,
     }
 
-    send(configuration=config, message="Test notification", title="AutoPkg Runner — Test")
+    send(configuration=config, message="Test notification", title="AutoPkg Runner - Test")

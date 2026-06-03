@@ -1,4 +1,4 @@
-"""Tests for stages/notify.py — helper functions and NotifyOnCompletion stage."""
+"""Tests for stages/notify.py - helper functions and NotifyOnCompletion stage."""
 from __future__ import annotations
 
 import uuid
@@ -40,7 +40,7 @@ class TestRender:
         assert self._call('', {}) == ''
 
     def test_malformed_format_string_returns_as_is(self):
-        # A positional placeholder without a valid key — shouldn't crash
+        # A positional placeholder without a valid key - shouldn't crash
         result = self._call('{0} value', {})
         assert isinstance(result, str)
 
@@ -72,7 +72,7 @@ class TestRender:
         assert result == ''
 
     def test_share_link_missing_share_url_key_collapses_to_empty(self):
-        # share_url not in ctx at all — should still collapse cleanly
+        # share_url not in ctx at all - should still collapse cleanly
         result = self._call('{share_link:"Report"}', {})
         assert result == ''
 
@@ -104,10 +104,10 @@ class TestRender:
 
     def test_share_link_custom_text_preserved_exactly(self):
         result = self._call(
-            '{share_link:"AutoPkg Run Report — June 2025"}',
+            '{share_link:"AutoPkg Run Report - June 2025"}',
             {'share_url': 'https://push.example.com/share/tok/'},
         )
-        assert 'AutoPkg Run Report — June 2025' in result
+        assert 'AutoPkg Run Report - June 2025' in result
         assert 'href="https://push.example.com/share/tok/"' in result
 
 

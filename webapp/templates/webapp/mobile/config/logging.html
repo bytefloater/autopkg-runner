@@ -1,7 +1,7 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}{{ t.CONFIG_VIEW.TAB_LOGGING }} — {{ t.APP.NAME }}{% endblock %}
+{% block title %}{{ t.CONFIG_VIEW.TAB_LOGGING }} - {{ t.APP.NAME }}{% endblock %}
 {% block nav_title %}{{ t.CONFIG_VIEW.TAB_LOGGING }}{% endblock %}
 
 {% block nav_left %}
@@ -29,7 +29,7 @@
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.TAB_LOGGING }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
-    {# Log level — iOS-style navigation row; selection subpage at /config/logging/level/ #}
+    {# Log level - iOS-style navigation row; selection subpage at /config/logging/level/ #}
     <input type="hidden" name="logging.level" value="{{ s|lookup:'logging.level' }}">
     <a href="{% url 'config-logging-level' %}?current={{ s|lookup:'logging.level' }}"
        class="flex items-center justify-between px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
@@ -54,7 +54,7 @@
 
   </div>
 
-  {# Log file path — only when writing to file #}
+  {# Log file path - only when writing to file #}
   <div x-show="toFile" x-transition>
     <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_LOG_FILE }}</p>
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">

@@ -1,7 +1,7 @@
 {% extends "webapp/base_mobile.html" %}
 {% load webapp_extras %}
 
-{% block title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }} — {{ t.APP.NAME }}{% endblock %}
+{% block title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }} - {{ t.APP.NAME }}{% endblock %}
 {% block nav_title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}{% endblock %}
 
 {% block nav_left %}
@@ -72,7 +72,7 @@
         </button>
       </div>
 
-      {# Row content — slides left on swipe #}
+      {# Row content - slides left on swipe #}
       <div class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1c1c1e] relative"
            :style="{ transform: 'translateX(' + dx + 'px)', transition: tracking ? 'none' : 'transform 0.2s ease' }">
 

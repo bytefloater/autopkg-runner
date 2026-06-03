@@ -54,6 +54,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'  │  Username : {user.username:<{width - 17}}│'))
         self.stdout.write(self.style.SUCCESS(f'  │  Password : {password:<{width - 17}}│'))
         self.stdout.write(self.style.SUCCESS('  │' + ' ' * (width - 4) + '│'))
-        self.stdout.write(self.style.SUCCESS('  │  Save this password — it is not stored in plain text.' + ' ' * (width - 58) + '│'))
+        self.stdout.write(self.style.SUCCESS('  │  Save this password - it is not stored in plain text.' + ' ' * (width - 58) + '│'))
         self.stdout.write(self.style.SUCCESS('  └' + '─' * (width - 4) + '┘'))
         self.stdout.write('')

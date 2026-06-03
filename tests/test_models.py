@@ -229,7 +229,7 @@ class TestNotifier:
             notifier_type='discord',
             config={'webhook_id': 'my-id', 'webhook_token': 'tok123'},
         )
-        # webhook_id is text type — should not be encrypted
+        # webhook_id is text type - should not be encrypted
         assert not is_encrypted(n.config['webhook_id'])
-        # webhook_token is password type — should be encrypted
+        # webhook_token is password type - should be encrypted
         assert is_encrypted(n.config['webhook_token'])

@@ -51,7 +51,7 @@ class Command(BaseCommand):
         width = 56
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('═' * width))
-        self.stdout.write(self.style.SUCCESS('  AutoPkg Runner — First-Time Setup'))
+        self.stdout.write(self.style.SUCCESS('  AutoPkg Runner - First-Time Setup'))
         self.stdout.write(self.style.SUCCESS('═' * width))
         self.stdout.write('')
 
@@ -76,14 +76,14 @@ class Command(BaseCommand):
 
         # ── Step 3: Admin account ─────────────────────────────────
         if skip_superuser:
-            self._step('3', 'Admin account  (skipped — run: python manage.py setup)')
+            self._step('3', 'Admin account  (skipped - run: python manage.py setup)')
         else:
             self._step('3', 'Admin account')
             from django.contrib.auth import get_user_model
             User = get_user_model()
 
             if User.objects.filter(is_superuser=True).exists():
-                self._ok('A superuser already exists — skipping')
+                self._ok('A superuser already exists - skipping')
                 self._warn(
                     'Forgotten your password? Run:\n'
                     '      python manage.py resetpassword'
@@ -106,7 +106,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'  │  Username : {username:<{width - 17}}│'))
                 self.stdout.write(self.style.SUCCESS(f'  │  Password : {password:<{width - 17}}│'))
                 self.stdout.write(self.style.SUCCESS('  │' + ' ' * (width - 4) + '│'))
-                self.stdout.write(self.style.SUCCESS('  │  Save this password — it is not stored in plain text.' + ' ' * (width - 58) + '│'))
+                self.stdout.write(self.style.SUCCESS('  │  Save this password - it is not stored in plain text.' + ' ' * (width - 58) + '│'))
                 self.stdout.write(self.style.SUCCESS('  └' + '─' * (width - 4) + '┘'))
                 self.stdout.write('')
 

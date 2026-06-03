@@ -1,4 +1,4 @@
-"""Tests for webapp.db_logger — thread-local helpers and DBLogHandler."""
+"""Tests for webapp.db_logger - thread-local helpers and DBLogHandler."""
 from __future__ import annotations
 
 import threading
