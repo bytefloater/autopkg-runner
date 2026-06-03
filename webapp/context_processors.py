@@ -18,9 +18,11 @@ def nav_tabs(request):
     tabs = list(_BASE_TABS)
     if request.user.is_authenticated and request.user.is_superuser:
         tabs += _ADMIN_TABS
+    # Recipes and Tokens are accessible via Config on mobile — exclude from tab bar
+    _MOBILE_EXCLUDED = {'recipes', 'tokens'}
     return {
         'nav_tabs': tabs,
-        'mobile_nav_tabs': list(_BASE_TABS),
+        'mobile_nav_tabs': [t for t in _BASE_TABS if t['name'] not in _MOBILE_EXCLUDED],
     }
 
 
