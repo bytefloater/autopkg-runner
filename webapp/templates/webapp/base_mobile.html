@@ -606,6 +606,7 @@
           const isDark = this.theme === 'dark' ||
             (this.theme === 'auto' && window.matchMedia('(prefers-color-scheme:dark)').matches);
           document.documentElement.classList.toggle('dark', isDark);
+          _applyIos26TabBubble();
         },
 
         init() {
@@ -616,8 +617,10 @@
 
           // Follow System: keep dark class in sync when OS preference changes
           window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', e => {
-            if (this.theme === 'auto')
+            if (this.theme === 'auto') {
               document.documentElement.classList.toggle('dark', e.matches);
+              _applyIos26TabBubble();
+            }
           });
 
           // iOS Safari: passive touchstart enables :active CSS states everywhere
