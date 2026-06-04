@@ -35,6 +35,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'webapp.middleware.DatabaseWriteGuardMiddleware',
     # WhiteNoise serves static files when running under gunicorn.
     # The Django dev server handles static files itself, so WhiteNoise is
     # excluded when launched via manage.py to avoid unnecessary overhead.
@@ -72,6 +73,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {'timeout': 20},
     }
 }
 
