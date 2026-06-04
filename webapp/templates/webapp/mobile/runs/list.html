@@ -70,7 +70,7 @@
     </p>
 
     {% if page_obj.object_list %}
-    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       {% for run in page_obj %}
       <div class="flex items-center gap-3 px-4 py-3 transition-colors duration-75 cursor-pointer select-none"
            :class="selected.includes('{{ run.id }}')
@@ -139,7 +139,7 @@
     {# Pagination #}
     {% if page_obj.has_other_pages %}
     <div class="h-4"></div>
-    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       {% if page_obj.has_previous %}
       <a href="?page={{ page_obj.previous_page_number }}"
          class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
@@ -163,7 +163,7 @@
     {% endif %}
 
     {% else %}
-    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden">
       <div class="flex flex-col items-center justify-center py-20">
         {% lucide "list" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
         <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.RUNS_VIEW.EMPTY_NO_RUNS_SHORT }}</p>

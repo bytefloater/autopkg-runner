@@ -42,7 +42,7 @@
 
   {# -- Stages ---------------------------------------------------------------- #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_STAGES }}</p>
-  <div id="stages-list" class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div id="stages-list" class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% for stage in stages %}
     <div id="stage-row-{{ stage.order }}"
          x-data="{ open: {% if stage.status == 'failed' %}true{% else %}false{% endif %} }">
@@ -145,7 +145,7 @@
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
     {{ result.result_type|cut:"_"|capfirst }}
   </p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% if result.data %}
     {% for row in result.data %}
     {% for key, val in row.items %}
@@ -165,7 +165,7 @@
 
   {# -- Run metadata --------------------------------------------------------- #}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_DETAILS }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     <div class="flex items-center justify-between px-4 py-3">
       <span class="text-[16px] text-gray-900 dark:text-white">{{ t.RUN_DETAIL_VIEW.META_TRIGGERED_BY }}</span>
       <span class="text-[16px] text-gray-500 dark:text-gray-400">{{ run.triggered_by|capfirst }}</span>

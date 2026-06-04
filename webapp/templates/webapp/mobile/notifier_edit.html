@@ -46,7 +46,7 @@
 
   {# -- Name & status ------------------------------------------------------ #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_NOTIFIER }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
     <div class="px-4 py-3">
       <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.FIELD_NAME }}</label>
@@ -75,7 +75,7 @@
   {# -- Type-specific fields ----------------------------------------------- #}
   {% if fields %}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
     {% for field in fields %}
 
@@ -139,7 +139,7 @@
 
     {% else %}
 
-    <div class="bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
       {% if webpush_subscriptions %}
         {% for sub in webpush_subscriptions %}
@@ -212,7 +212,7 @@
 
   {# -- Message template ---------------------------------------------------- #}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_MESSAGE_TEMPLATE }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
        x-data="{ showVars: false }">
 
     <div class="px-4 py-3">

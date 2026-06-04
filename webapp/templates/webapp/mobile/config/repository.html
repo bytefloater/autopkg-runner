@@ -32,7 +32,7 @@
 
   {# -- Type selector -------------------------------------------------------- #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_REPO_TYPE }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
     <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
       <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.REPOTYPE_LOCAL }}</span>
@@ -49,7 +49,7 @@
   {# -- Local path ----------------------------------------------------------- #}
   <div x-show="repoType === 'local'" x-transition>
     <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_LOCAL_REPO }}</p>
-    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       <div class="px-4 py-3">
         <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_LOCAL_REPO_PATH }}</label>
         <input type="text" name="repository.local_path" value="{{ s|lookup:'repository.local_path' }}"
@@ -64,7 +64,7 @@
 
     {# Connection type #}
     <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_CONNECTION_TYPE }}</p>
-    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
         <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.CONNECTION_TYPE_SMB }}</span>
         <input type="radio" name="repository.connection_type" value="smb" x-model="connType" class="w-5 h-5 accent-blue-600">
@@ -92,7 +92,7 @@
 
     {# Credentials - shown for all remote types #}
     <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_CREDENTIALS }}</p>
-    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
          x-data="{ showPw: false }">
 
       <div class="px-4 py-3">
@@ -120,7 +120,7 @@
     {# SMB-specific settings #}
     <div x-show="connType === 'smb'" x-transition>
       <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_SMB_SERVER }}</p>
-      <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
         <div class="px-4 py-3">
           <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_HOST }}</label>

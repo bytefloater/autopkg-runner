@@ -33,7 +33,7 @@
   {# -- New token credential banner (shown once after creation) ------------ #}
   {% if new_token %}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_NEW_TOKEN_CREATED }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     <div class="px-4 py-4">
       <p class="text-[15px] font-semibold text-green-600 dark:text-green-400 mb-2">
         {{ t.TOKENS_VIEW.HINT_COPY_NOW }}
@@ -61,7 +61,7 @@
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_API_TOKENS }}</p>
 
   {% if tokens %}
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% for token in tokens %}
     <div class="flex items-center gap-3 px-4 py-3">
       {% lucide "key" "w-[18px] h-[18px] text-gray-400 dark:text-gray-500 flex-shrink-0" %}
@@ -82,7 +82,7 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden">
     <div class="flex flex-col items-center justify-center py-16">
       {% lucide "key" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
       <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.TOKENS_VIEW.EMPTY_NO_TOKENS }}</p>
@@ -92,7 +92,7 @@
 
   {# -- API Endpoints -------------------------------------------------------- #}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_ENDPOINTS }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% for method, path, desc in api_endpoints %}
     <div class="flex items-center gap-3 px-4 py-3">
       <span class="inline-flex items-center justify-center flex-shrink-0
@@ -140,7 +140,7 @@
           <form method="post" @submit="showCreate = false">
             {% csrf_token %}
             <input type="hidden" name="action" value="create">
-            <div class="mx-0 bg-white dark:bg-[#2c2c2e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-4">
+            <div class="mx-0 bg-white dark:bg-[#2c2c2e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-4">
               <div class="px-4 py-3">
                 <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.TOKENS_VIEW.FIELD_TOKEN_NAME }}</label>
                 <input type="text" name="name" x-model="newName"

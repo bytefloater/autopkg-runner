@@ -9,7 +9,7 @@
 
 {# -- Section 1: Pipeline --------------------------------------------------- #}
 <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_PIPELINE }}</p>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
   <a href="{% url 'config-autopkg' %}"
      class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
@@ -51,7 +51,7 @@
 
 {# -- Section 2: System ----------------------------------------------------- #}
 <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_SYSTEM }}</p>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
   <a href="{% url 'config-notifications' %}"
      class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
@@ -85,7 +85,7 @@
 {# -- Section: Administration ----------------------------------------------- #}
 {% if request.user.is_superuser %}
 <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_ADMINISTRATION }}</p>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
   <a href="{% url 'users' %}"
      class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
@@ -101,7 +101,7 @@
 
 {# -- Section 3: App -------------------------------------------------------- #}
 <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.TAB_WEBINTERFACE }}</p>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
   <a href="{% url 'config-ui' %}"
      class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">

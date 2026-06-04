@@ -26,7 +26,7 @@
   {% csrf_token %}
 
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SHARING }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     <div class="px-4 py-3">
       <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_APP_URL }}</label>
       <input type="url" name="notify.pwa_base_url" value="{{ pwa_base_url }}"

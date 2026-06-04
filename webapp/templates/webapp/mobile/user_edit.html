@@ -50,7 +50,7 @@
 
   {# -- Identity ------------------------------------------------------------- #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_ACCOUNT }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
 
     <div class="flex items-center gap-3 px-4 py-3">
       <span class="w-9 h-9 rounded-full bg-blue-600/15 border border-blue-500/20 flex items-center justify-center text-[14px] font-bold text-blue-600 dark:text-blue-400 uppercase select-none flex-shrink-0">
@@ -81,7 +81,7 @@
   <input type="hidden" name="is_superuser" :value="isAdmin ? 'on' : ''">
 
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_ROLE_STATUS }}</p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
 
     <div class="flex items-center justify-between px-4 py-3">
       <span class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.TABLE_CAT_ACTIVE }}</span>
@@ -118,7 +118,7 @@
 {# -- Danger zone (non-self only) -------------------------------------------- #}
 {% if not is_self %}
 <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_ACTIONS }}</p>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6"
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6"
      x-data="{ showDelete: false }">
 
   {# Reset password - direct submit, no confirmation needed (result shown on next page) #}

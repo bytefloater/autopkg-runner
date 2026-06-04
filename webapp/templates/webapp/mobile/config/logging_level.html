@@ -16,7 +16,7 @@
 <div class="h-4"></div>
 
 <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_LOG_LEVEL }}</p>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
   {% for val, label in log_levels %}
   <a href="{% url 'config-logging' %}?level={{ val }}"

@@ -8,7 +8,7 @@
 <div class="h-4"></div>
 
 {# -- 30-day stats ---------------------------------------------------------- #}
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
   <div class="grid grid-cols-2 divide-x divide-gray-200/70 dark:divide-[#38383a]">
     <div class="px-4 py-4">
       <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_RUN_COUNT_30D }}</p>
@@ -28,7 +28,7 @@
 
 {# -- Next scheduled run + Trigger Run -------------------------------------- #}
 <div class="h-4"></div>
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
   <div class="flex items-center justify-between px-4 py-3">
     <span class="text-[16px] text-gray-900 dark:text-white">{{ t.DASHBOARD_VIEW.HEADER_NEXT_RUN_SHORT }}</span>
     <span class="text-[16px] text-gray-500 dark:text-gray-400">
@@ -82,7 +82,7 @@
 <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.SECTION_RECENT_RUNS }}</p>
 
 {% if recent_runs %}
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
   {% for run in recent_runs %}
   <a href="{% url 'run-detail' run.id %}"
      class="flex items-center gap-3 px-4 py-3 active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
@@ -112,7 +112,7 @@
   </a>
 </div>
 {% else %}
-<div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden">
   <div class="flex flex-col items-center justify-center py-20">
     {% lucide "list" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
     <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.DASHBOARD_VIEW.EMPTY_NO_RUNS_MOBILE }}</p>

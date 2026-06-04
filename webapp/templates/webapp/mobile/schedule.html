@@ -19,7 +19,7 @@
 
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.APP.VIEWS_SCHEDULES }}</p>
 
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
     {# Enable / disable toggle #}
     <div class="flex items-center justify-between px-4 py-[13px]">
@@ -39,7 +39,7 @@
   <div x-show="enabled" x-transition>
     <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.SCHEDULE_VIEW.SECTION_CRON_EXPRESSION }}</p>
     <p class="px-4 pb-2 text-[12px] text-gray-400 dark:text-gray-500">{{ t.SCHEDULE_VIEW.CRON_TZ_PREFIX }} {{ system_tz_name }} ({{ system_tz_abbr }})</p>
-    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       {% for label, name, value, hint in cron_fields %}
       <div class="flex items-center justify-between px-4 py-3">
         <div class="flex-1 min-w-0 pr-4">
