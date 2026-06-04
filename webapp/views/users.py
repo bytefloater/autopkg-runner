@@ -31,7 +31,7 @@ class UsersView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['active_tab'] = 'users'
+        ctx['active_tab'] = 'config' if getattr(self.request, 'is_mobile', False) else 'users'
         users = list(User.objects.order_by('username'))
         current_pk = self.request.user.pk
         for u in users:
@@ -156,7 +156,7 @@ class UserEditView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         edit_user = get_object_or_404(User, pk=kwargs['pk'])
-        ctx['active_tab']  = 'users'
+        ctx['active_tab']  = 'config'
         ctx['edit_user']   = edit_user
         ctx['is_self']     = (edit_user.pk == self.request.user.pk)
         ctx['reset_creds'] = self.request.session.pop('reset_creds', None)
