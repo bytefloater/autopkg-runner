@@ -263,21 +263,32 @@ def _recipe_search_dirs() -> list:
     return [str(Path(d).expanduser()) for d in dirs]
 
 
-_IDENT_RE = re.compile(r'<key>Identifier</key>\s*<string>([^<]+)</string>')
+_IDENT_RE_XML  = re.compile(r'<key>Identifier</key>\s*<string>([^<]+)</string>')
+_IDENT_RE_YAML = re.compile(r'^Identifier:\s*([^\s#][^\n]*)', re.MULTILINE)
+
+
+def _recipe_stem(path: Path) -> str:
+    """Return the base name, stripping .recipe or .recipe.yaml suffixes."""
+    name = path.name
+    if name.endswith('.recipe.yaml'):
+        return name[: -len('.recipe.yaml')]
+    return path.stem
 
 
 def _read_recipe_identifier(path: Path) -> str:
-    """Extract the Identifier value from a recipe plist using a fast regex.
+    """Extract the Identifier value from a recipe file (XML plist or YAML).
 
-    Falls back to the file stem if the key is absent or the file is unreadable.
+    Falls back to the base stem if the key is absent or the file is unreadable.
     """
     try:
-        m = _IDENT_RE.search(path.read_text(encoding='utf-8', errors='replace'))
+        text = path.read_text(encoding='utf-8', errors='replace')
+        pattern = _IDENT_RE_YAML if path.suffix == '.yaml' else _IDENT_RE_XML
+        m = pattern.search(text)
         if m:
             return m.group(1).strip()
     except OSError:
         pass
-    return path.stem
+    return _recipe_stem(path)
 
 
 _RECIPES_CACHE: dict = {'data': None, 'ts': 0.0}
@@ -313,18 +324,21 @@ def _start_cache_build():
     def _build():
         global _RECIPES_BUILDING
         try:
-            # Phase 1 - collect unique recipe file paths (sequential; deduplicates stems)
+            # Phase 1 - collect unique recipe file paths (sequential; deduplicates stems).
+            # Scans both .recipe (XML plist) and .recipe.yaml (YAML) formats.
+            # XML is preferred over YAML when both exist for the same base stem.
             all_files: list = []
             seen_stems: set = set()
             for search_dir in _recipe_search_dirs():
                 p = Path(search_dir)
                 if not p.is_dir():
                     continue
-                for recipe_file in p.rglob('*.recipe'):
-                    stem = recipe_file.stem
-                    if stem not in seen_stems:
-                        seen_stems.add(stem)
-                        all_files.append(recipe_file)
+                for pattern in ('*.recipe', '*.recipe.yaml'):
+                    for recipe_file in p.rglob(pattern):
+                        stem = _recipe_stem(recipe_file)
+                        if stem not in seen_stems:
+                            seen_stems.add(stem)
+                            all_files.append(recipe_file)
 
             # Phase 2 - read Identifier from each file in parallel
             stem_to_ident: dict = {}
@@ -334,11 +348,12 @@ def _start_cache_build():
                               for f in all_files}
                 for fut in as_completed(future_map):
                     f = future_map[fut]
+                    stem = _recipe_stem(f)
                     try:
                         ident = fut.result()
                     except Exception:
-                        ident = f.stem
-                    stem_to_ident[f.stem] = ident
+                        ident = stem
+                    stem_to_ident[stem] = ident
 
             results = [{'stem': s, 'identifier': i}
                        for s, i in stem_to_ident.items()]
