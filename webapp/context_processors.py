@@ -6,7 +6,6 @@ _BASE_TABS = [
     {'name': 'schedule',  't_key': 'VIEWS_SCHEDULES', 'label': 'Schedule',  'url_name': 'schedule',      'icon': 'calendar'},
     {'name': 'recipes',   't_key': 'VIEWS_RECIPES',  'label': 'Recipes',   'url_name': 'recipes-repos', 'icon': 'package'},
     {'name': 'config',    't_key': 'VIEWS_CONFIG',    'label': 'Config',    'url_name': 'config',        'icon': 'settings'},
-    {'name': 'tokens',    't_key': 'VIEWS_TOKENS',    'label': 'Tokens',    'url_name': 'api-tokens', 'icon': 'key'},
 ]
 
 _ADMIN_TABS = [
@@ -18,8 +17,8 @@ def nav_tabs(request):
     tabs = list(_BASE_TABS)
     if request.user.is_authenticated and request.user.is_superuser:
         tabs += _ADMIN_TABS
-    # Recipes and Tokens are accessible via Config on mobile — exclude from tab bar
-    _MOBILE_EXCLUDED = {'recipes', 'tokens'}
+    # Recipes is accessible via Config on mobile — exclude from tab bar
+    _MOBILE_EXCLUDED = {'recipes'}
     return {
         'nav_tabs': tabs,
         'mobile_nav_tabs': [t for t in _BASE_TABS if t['name'] not in _MOBILE_EXCLUDED],

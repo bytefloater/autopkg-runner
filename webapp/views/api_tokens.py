@@ -25,7 +25,7 @@ class ApiTokensView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         from webapp.models import APIToken
         ctx = super().get_context_data(**kwargs)
-        ctx['active_tab']     = 'tokens' if not self.request.is_mobile else 'config'
+        ctx['active_tab']     = 'config'
         ctx['tokens']         = APIToken.objects.filter(user=self.request.user)
         ctx['new_token']      = self.request.session.pop('new_token_value', None)
         ctx['new_token_name'] = self.request.session.pop('new_token_name', None)

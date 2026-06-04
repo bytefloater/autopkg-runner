@@ -56,31 +56,26 @@
               hx-vals='{"repo_path": "{{ repo.path|escapejs }}", "repo_url": "{{ repo.url|escapejs }}"}'
               hx-target="closest tr"
               hx-swap="outerHTML"
-              class="relative inline-flex items-center gap-1.5 h-7 px-3 text-xs font-medium rounded-lg
-                     bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300
-                     hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+              class="relative inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
+                     bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300
+                     hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
         <span class="htmx-indicator absolute inset-0 flex items-center justify-center rounded-lg
-                     bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-gray-500">
+                     bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-500">
           {% lucide "loader-circle" "w-3.5 h-3.5 animate-spin" %}
         </span>
         {% lucide "refresh-cw" "w-3.5 h-3.5 flex-shrink-0" %}
         {{ t.RECIPES_VIEW.ACTION_UPDATE }}
       </button>
 
-      {# Delete #}
-      <form method="post" action="{% url 'recipes-repo-delete' %}"
-            onsubmit="return confirm('Remove this repository?');">
-        {% csrf_token %}
-        <input type="hidden" name="url" value="{{ repo.url }}">
-        <button type="submit"
-                class="inline-flex items-center justify-center h-7 w-7 rounded-lg
-                       text-red-500 dark:text-red-400
-                       hover:bg-red-100 dark:hover:bg-red-900/30
-                       hover:text-red-700 dark:hover:text-red-300
-                       transition-colors">
-          {% lucide "trash-2" "w-3.5 h-3.5" %}
-        </button>
-      </form>
+      {# Delete — opens confirm modal in the parent Alpine component #}
+      <button type="button"
+              @click="deleteUrl = '{{ repo.url|escapejs }}'; showDelete = true"
+              class="inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium
+                     bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/70
+                     text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800
+                     transition-colors">
+        {% lucide "trash-2" "w-3.5 h-3.5" %}
+      </button>
     </div>
   </td>
 </tr>

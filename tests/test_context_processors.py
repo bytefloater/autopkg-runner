@@ -47,7 +47,7 @@ class TestNavTabs:
         request.user = user
         ctx = nav_tabs(request)
         names = {t['name'] for t in ctx['nav_tabs']}
-        for expected in ('dashboard', 'runs', 'schedule', 'config', 'tokens'):
+        for expected in ('dashboard', 'runs', 'schedule', 'config'):
             assert expected in names
 
 

@@ -94,6 +94,18 @@
       {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-400 dark:group-hover:text-gray-500 flex-shrink-0 transition-colors" %}
     </a>
 
+    <a href="{% url 'api-tokens' %}"
+       class="flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors group">
+      <span class="w-8 h-8 rounded-lg bg-yellow-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+        {% lucide "key" "w-4 h-4 text-white" %}
+      </span>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t.APP.VIEWS_TOKENS }}</p>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ t.TOKENS_VIEW.SUBTITLE }}</p>
+      </div>
+      {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-gray-400 dark:group-hover:text-gray-500 flex-shrink-0 transition-colors" %}
+    </a>
+
   </div>
 
   {# -- App ----------------------------------------------------------------- #}

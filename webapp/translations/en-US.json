@@ -156,6 +156,7 @@
     },
     "TOKENS_VIEW": {
         "TITLE": "API Tokens",
+        "SUBTITLE": "Manage API keys for external access",
         "ACTION_ADD": "@:APP.ACTION_ADD",
 
         "SECTION_API_TOKENS": "API Tokens",
@@ -441,6 +442,8 @@
         "SUBTAB_LIST": "Run List",
         "SUBTAB_OVERRIDES": "Overrides",
         "REPOS_EMPTY": "No repositories configured.",
+        "DELETE_REPO_TITLE": "Remove Repository",
+        "DELETE_REPO_DESC": "Are you sure you want to remove this repository?",
         "REPO_STATUS_UPTODATE": "Up to date",
         "REPO_STATUS_BEHIND": "commits behind",
         "REPO_STATUS_UNKNOWN": "Unknown",

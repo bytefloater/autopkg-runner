@@ -156,9 +156,9 @@
                 <td class="px-4 py-2 align-middle text-right whitespace-nowrap">
                   <template x-if="recipe.override_fname">
                     <a :href="'/recipes/overrides/' + recipe.override_fname + '/edit/'"
-                       class="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-lg
-                              bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300
-                              hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+                       class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
+                              bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300
+                              hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
                       {% lucide "pencil" "w-3 h-3 flex-shrink-0" %}
                       {{ t.RECIPES_VIEW.ACTION_EDIT_OVERRIDE }}
                     </a>
@@ -166,9 +166,9 @@
                   <template x-if="!recipe.override_fname">
                     <button type="button"
                             @click="createOverride(recipe.identifier)"
-                            class="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium rounded-lg
-                                   bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400
-                                   hover:bg-gray-200 dark:hover:bg-slate-600 hover:text-gray-700 dark:hover:text-gray-200
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
+                                   bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400
+                                   hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-gray-200
                                    transition-colors">
                       {% lucide "plus" "w-3 h-3 flex-shrink-0" %}
                       {{ t.RECIPES_VIEW.ACTION_CREATE_OVERRIDE }}
