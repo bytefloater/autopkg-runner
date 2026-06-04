@@ -75,7 +75,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// ── Web Push ──────────────────────────────────────────────────────────────────
+// -- Web Push ------------------------------------------------------------------
 
 // Receive a push message from the server and display a notification.
 self.addEventListener('push', (event) => {

@@ -11,7 +11,7 @@ from webapp.views.config import LogLevelPickerView
 urlpatterns = [
     path('', RedirectView.as_view(url='/dashboard/'), name='home'),
 
-    # ── Core views ────────────────────────────────────────────────────────────
+    # -- Core views ------------------------------------------------------------
     path('dashboard/', dashboard.DashboardView.as_view(), name='dashboard'),
     path('runs/',         runs.RunListView.as_view(),   name='run-list'),
     path('runs/trigger/', runs.TriggerRunView.as_view(), name='trigger-run'),
@@ -22,10 +22,10 @@ urlpatterns = [
     path('schedule/', schedule.ScheduleView.as_view(), name='schedule'),
     path('about/',    about.AboutView.as_view(),        name='about'),
 
-    # ── Configuration root ────────────────────────────────────────────────────
+    # -- Configuration root ----------------------------------------------------
     path('config/', config.ConfigRootView.as_view(), name='config'),
 
-    # ── Configuration sections ────────────────────────────────────────────────
+    # -- Configuration sections ------------------------------------------------
     path('config/autopkg/',
          config.ConfigSectionView.as_view(section='autopkg'),    name='config-autopkg'),
     path('config/workflow/',
@@ -39,7 +39,7 @@ urlpatterns = [
     path('config/ui/',
          config.ConfigSectionView.as_view(section='ui'),         name='config-ui'),
 
-    # ── Notifications ─────────────────────────────────────────────────────────
+    # -- Notifications ---------------------------------------------------------
     path('config/notifications/',
          notifications.NotificationsView.as_view(), name='config-notifications'),
     path('config/notifications/new/',
@@ -63,7 +63,7 @@ urlpatterns = [
     path('config/logging/level/',
          LogLevelPickerView.as_view(), name='config-logging-level'),
 
-    # ── Recipes ───────────────────────────────────────────────────────────────
+    # -- Recipes ---------------------------------------------------------------
     path('recipes/', RedirectView.as_view(url='/recipes/repos/'), name='recipes'),
     path('recipes/repos/',
          recipes.ReposView.as_view(), name='recipes-repos'),
@@ -82,12 +82,12 @@ urlpatterns = [
     path('recipes/overrides/<path:fname>/edit/',
          recipes.OverrideEditView.as_view(), name='recipes-override-edit'),
 
-    # ── Other ─────────────────────────────────────────────────────────────────
+    # -- Other -----------------------------------------------------------------
     path('api-tokens/', api_tokens.ApiTokensView.as_view(), name='api-tokens'),
     path('users/',      users.UsersView.as_view(),          name='users'),
     path('users/<int:pk>/', users.UserEditView.as_view(),   name='user-edit'),
     path('account/change-password/', account.ChangePasswordView.as_view(), name='change-password'),
-    # ── Share links (unauthenticated) ─────────────────────────────────────────
+    # -- Share links (unauthenticated) -----------------------------------------
     path('share/<str:token>/', share.RunShareView.as_view(), name='run-share'),
 
     path('favicon.ico',   RedirectView.as_view(url='/static/logos/favicon.ico', permanent=True), name='favicon'),

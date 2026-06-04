@@ -17,7 +17,7 @@
   <title>Sign in - AutoPkg Runner</title>
 
   <style>
-    /* ── Reset ── */
+    /* -- Reset -- */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -25,7 +25,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── Design tokens (light) ── */
+    /* -- Design tokens (light) -- */
     :root {
       --bg:              #f2f2f7;
       --card-bg:         #ffffff;
@@ -42,7 +42,7 @@
       --error-text:      #d70015;
     }
 
-    /* ── Design tokens (dark) ── */
+    /* -- Design tokens (dark) -- */
     @media (prefers-color-scheme: dark) {
       :root {
         --bg:              #000000;
@@ -61,7 +61,7 @@
       }
     }
 
-    /* ── Layout ── */
+    /* -- Layout -- */
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
                    Helvetica, Arial, sans-serif;
@@ -80,7 +80,7 @@
                max(env(safe-area-inset-left, 0px), 24px);
     }
 
-    /* ── Content wrapper ── */
+    /* -- Content wrapper -- */
     .login-wrap {
       width: 100%;
       max-width: 360px;
@@ -95,7 +95,7 @@
       to   { opacity: 1; transform: none; }
     }
 
-    /* ── App identity ── */
+    /* -- App identity -- */
     .app-icon {
       width: 76px;
       height: 76px;
@@ -119,7 +119,7 @@
       margin-bottom: 36px;
     }
 
-    /* ── Error banner ── */
+    /* -- Error banner -- */
     .error-banner {
       width: 100%;
       padding: 11px 16px;
@@ -133,7 +133,7 @@
       margin-bottom: 16px;
     }
 
-    /* ── Form ── */
+    /* -- Form -- */
     form { width: 100%; }
 
     /* iOS Settings-style grouped input rows */
@@ -190,7 +190,7 @@
       transition: background-color 5000s ease-in-out 0s;
     }
 
-    /* ── Sign In button ── */
+    /* -- Sign In button -- */
     .btn-signin {
       width: 100%;
       min-height: 50px;

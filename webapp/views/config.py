@@ -9,7 +9,7 @@ from webapp import translations as trans
 
 _LOG_LEVELS = [('DEBUG', 'DEBUG'), ('INFO', 'INFO'), ('WARNING', 'WARNING'), ('ERROR', 'ERROR')]
 
-# ── Sections shown on the root config page ─────────────────────────────────────
+# -- Sections shown on the root config page -------------------------------------
 CONFIG_SECTIONS = [
     {'key': 'autopkg',     'url_name': 'config-autopkg',     'icon': 'package'},
     {'key': 'workflow',    'url_name': 'config-workflow',    'icon': 'git-branch'},

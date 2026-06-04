@@ -49,11 +49,11 @@ class Command(BaseCommand):
 
         width = 56
         self.stdout.write('')
-        self.stdout.write(self.style.SUCCESS('  ┌' + '─' * (width - 4) + '┐'))
+        self.stdout.write(self.style.SUCCESS('  ┌' + '-' * (width - 4) + '┐'))
         self.stdout.write(self.style.SUCCESS(f'  │  Password reset' + ' ' * (width - 20) + '│'))
         self.stdout.write(self.style.SUCCESS(f'  │  Username : {user.username:<{width - 17}}│'))
         self.stdout.write(self.style.SUCCESS(f'  │  Password : {password:<{width - 17}}│'))
         self.stdout.write(self.style.SUCCESS('  │' + ' ' * (width - 4) + '│'))
         self.stdout.write(self.style.SUCCESS('  │  Save this password - it is not stored in plain text.' + ' ' * (width - 58) + '│'))
-        self.stdout.write(self.style.SUCCESS('  └' + '─' * (width - 4) + '┘'))
+        self.stdout.write(self.style.SUCCESS('  └' + '-' * (width - 4) + '┘'))
         self.stdout.write('')

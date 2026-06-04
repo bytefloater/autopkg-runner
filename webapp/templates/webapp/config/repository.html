@@ -27,7 +27,7 @@
         class="space-y-6">
     {% csrf_token %}
 
-    {# ── Repository type ──────────────────────────────────────────────────── #}
+    {# -- Repository type ---------------------------------------------------- #}
     <div>
       <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
         {{ t.CONFIG_VIEW.OPT_REPO_TYPE }}
@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    {# ── Local path ───────────────────────────────────────────────────────── #}
+    {# -- Local path --------------------------------------------------------- #}
     <div x-show="repoType === 'local'" x-transition>
       <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
         {{ t.CONFIG_VIEW.SECTION_LOCAL_REPO }}
@@ -68,7 +68,7 @@
       </div>
     </div>
 
-    {# ── Remote section ───────────────────────────────────────────────────── #}
+    {# -- Remote section ----------------------------------------------------- #}
     <div x-show="repoType === 'remote'" x-transition class="space-y-6">
 
       {# Connection type #}
@@ -94,7 +94,7 @@
         </div>
       </div>
 
-      {# ── SFTP dependency warning ──────────────────────────────────────────── #}
+      {# -- SFTP dependency warning -------------------------------------------- #}
       <div x-show="connType === 'sftp' && !sftpAvailable" x-transition x-cloak>
         <div class="flex items-start gap-3 px-4 py-3.5 rounded-xl
                     bg-amber-50 dark:bg-amber-950/40

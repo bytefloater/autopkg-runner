@@ -1,6 +1,6 @@
 """
 libs/hosts.py
-─────────────
+-------------
 Protocol-agnostic host abstractions for remote repository mounting.
 
 Classes
@@ -25,7 +25,7 @@ from libs.mdns import ZeroConfigResolver, is_ipv4
 from libs.run_command import run_cmd
 
 
-# ── Base interface ────────────────────────────────────────────────────────────
+# -- Base interface ------------------------------------------------------------
 
 class BaseHost(ABC):
     """Common interface that every remote-host type must implement."""
@@ -54,7 +54,7 @@ class BaseHost(ABC):
         """
 
 
-# ── SMB ───────────────────────────────────────────────────────────────────────
+# -- SMB -----------------------------------------------------------------------
 
 class SmbHost(BaseHost):
     """SMB/CIFS repository host.
@@ -73,7 +73,7 @@ class SmbHost(BaseHost):
         self.username = username
         self.password = password
 
-    # ── BaseHost interface ────────────────────────────────────────────────────
+    # -- BaseHost interface ----------------------------------------------------
 
     def resolve(self, logger) -> str:
         if is_ipv4(self.host):
@@ -120,7 +120,7 @@ class SmbHost(BaseHost):
         except subprocess.CalledProcessError as err:
             logger.warning(str(err))
 
-    # ── Helpers ──────────────────────────────────────────────────────────────
+    # -- Helpers --------------------------------------------------------------
 
     def _check_port(self, addr_str: str, logger, timeout: int = 10) -> bool:
         addr = ipaddress.ip_address(addr_str)
@@ -154,7 +154,7 @@ class SmbHost(BaseHost):
         return urllib.parse.quote(repo_url, safe="/:@")
 
 
-# ── SFTP ──────────────────────────────────────────────────────────────────────
+# -- SFTP ----------------------------------------------------------------------
 
 class SftpHost(BaseHost):
     """SFTP repository host.
@@ -188,7 +188,7 @@ class SftpHost(BaseHost):
         self.password = password
         self.port     = port
 
-    # ── BaseHost interface ────────────────────────────────────────────────────
+    # -- BaseHost interface ----------------------------------------------------
 
     def resolve(self, logger) -> str:
         if is_ipv4(self.host):
@@ -243,7 +243,7 @@ class SftpHost(BaseHost):
         except subprocess.CalledProcessError as err:
             logger.warning(str(err))
 
-    # ── Helpers ──────────────────────────────────────────────────────────────
+    # -- Helpers --------------------------------------------------------------
 
     def _check_port(self, addr_str: str, logger, timeout: int = 10) -> bool:
         logger.info(f"Checking server availability... ({addr_str}:{self.port})")
@@ -269,7 +269,7 @@ class SftpHost(BaseHost):
         return False
 
 
-# ── Mounter ───────────────────────────────────────────────────────────────────
+# -- Mounter -------------------------------------------------------------------
 
 class RemoteRepositoryMounter:
     """Protocol-agnostic coordinator for remote repository mounting.

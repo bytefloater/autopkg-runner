@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
 
-# ── Human-readable cron description ──────────────────────────────────────────
+# -- Human-readable cron description ------------------------------------------
 
 _DOW_NAMES = {
     '0': 'Sunday', '1': 'Monday', '2': 'Tuesday', '3': 'Wednesday',

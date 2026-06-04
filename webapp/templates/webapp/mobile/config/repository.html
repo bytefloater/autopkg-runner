@@ -30,7 +30,7 @@
       }">
   {% csrf_token %}
 
-  {# ── Type selector ──────────────────────────────────────────────────────── #}
+  {# -- Type selector -------------------------------------------------------- #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_REPO_TYPE }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
@@ -46,7 +46,7 @@
 
   </div>
 
-  {# ── Local path ─────────────────────────────────────────────────────────── #}
+  {# -- Local path ----------------------------------------------------------- #}
   <div x-show="repoType === 'local'" x-transition>
     <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_LOCAL_REPO }}</p>
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
@@ -59,7 +59,7 @@
     </div>
   </div>
 
-  {# ── Remote settings ────────────────────────────────────────────────────── #}
+  {# -- Remote settings ------------------------------------------------------ #}
   <div x-show="repoType === 'remote'" x-transition>
 
     {# Connection type #}
@@ -75,7 +75,7 @@
       </label>
     </div>
 
-    {# ── SFTP dependency warning ────────────────────────────────────────────── #}
+    {# -- SFTP dependency warning ---------------------------------------------- #}
     <div x-show="connType === 'sftp' && !sftpAvailable" x-transition x-cloak>
       <div class="mx-4 mt-3 flex items-start gap-3 px-4 py-3.5 rounded-xl
                   bg-amber-50 dark:bg-amber-950/40

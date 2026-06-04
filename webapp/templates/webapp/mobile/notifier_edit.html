@@ -44,7 +44,7 @@
       }">
   {% csrf_token %}
 
-  {# ── Name & status ────────────────────────────────────────────────────── #}
+  {# -- Name & status ------------------------------------------------------ #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_NOTIFIER }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
 
@@ -72,7 +72,7 @@
 
   </div>
 
-  {# ── Type-specific fields ─────────────────────────────────────────────── #}
+  {# -- Type-specific fields ----------------------------------------------- #}
   {% if fields %}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
@@ -124,7 +124,7 @@
   </div>
   {% endif %}
 
-  {# ── WebPush subscriptions (webpush type only) ──────────────────────────── #}
+  {# -- WebPush subscriptions (webpush type only) ---------------------------- #}
   {% if notifier.notifier_type == 'webpush' %}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SUBSCRIBED_DEVICES }}</p>
   <div class="mx-4" x-data="webPushManager('{{ notifier.pk }}', '{{ vapid_public_key }}')">
@@ -210,7 +210,7 @@
   </div>
   {% endif %}
 
-  {# ── Message template ──────────────────────────────────────────────────── #}
+  {# -- Message template ---------------------------------------------------- #}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_MESSAGE_TEMPLATE }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
        x-data="{ showVars: false }">
@@ -247,7 +247,7 @@
 
   </div>
 
-  {# ── Send Test button ────────────────────────────────────────────────────── #}
+  {# -- Send Test button ------------------------------------------------------ #}
   <div class="mx-4 mt-5">
     <button type="button" @click="sendTest()"
             :disabled="testing"
@@ -265,7 +265,7 @@
     </button>
   </div>
 
-  {# ── Test result banner ──────────────────────────────────────────────────── #}
+  {# -- Test result banner ---------------------------------------------------- #}
   <div x-show="testResult !== null" x-transition x-cloak class="mx-4 mt-3">
     <div :class="testResult?.success
                    ? 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800'
@@ -297,7 +297,7 @@
 
 </form>
 
-{# ── Danger zone ──────────────────────────────────────────────────────────── #}
+{# -- Danger zone ------------------------------------------------------------ #}
 <div class="mt-6 mb-8" x-data="{ showDelete: false }">
   <button type="button" @click="showDelete = true"
           class="mx-4 w-[calc(100%-2rem)] py-[14px] bg-white dark:bg-[#1c1c1e] text-red-500 dark:text-red-400 text-[16px] font-semibold rounded-xl active:opacity-70 transition-opacity duration-75">

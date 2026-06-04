@@ -55,7 +55,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('═' * width))
         self.stdout.write('')
 
-        # ── Step 1: Migrations ────────────────────────────────────
+        # -- Step 1: Migrations ------------------------------------
         self._step('1', 'Running database migrations')
         try:
             call_command('migrate', '--run-syncdb', verbosity=1, interactive=False)
@@ -64,7 +64,7 @@ class Command(BaseCommand):
             sys.exit(1)
         self._ok('Migrations applied')
 
-        # ── Step 2: Singleton defaults ────────────────────────────
+        # -- Step 2: Singleton defaults ----------------------------
         self._step('2', 'Creating default schedule row')
         try:
             from webapp.models import Schedule
@@ -74,7 +74,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f'  Failed to create defaults: {exc}'))
             sys.exit(1)
 
-        # ── Step 3: Admin account ─────────────────────────────────
+        # -- Step 3: Admin account ---------------------------------
         if skip_superuser:
             self._step('3', 'Admin account  (skipped - run: python manage.py setup)')
         else:
@@ -101,16 +101,16 @@ class Command(BaseCommand):
                     sys.exit(1)
 
                 self.stdout.write('')
-                self.stdout.write(self.style.SUCCESS('  ┌' + '─' * (width - 4) + '┐'))
+                self.stdout.write(self.style.SUCCESS('  ┌' + '-' * (width - 4) + '┐'))
                 self.stdout.write(self.style.SUCCESS(f'  │  Admin account created' + ' ' * (width - 27) + '│'))
                 self.stdout.write(self.style.SUCCESS(f'  │  Username : {username:<{width - 17}}│'))
                 self.stdout.write(self.style.SUCCESS(f'  │  Password : {password:<{width - 17}}│'))
                 self.stdout.write(self.style.SUCCESS('  │' + ' ' * (width - 4) + '│'))
                 self.stdout.write(self.style.SUCCESS('  │  Save this password - it is not stored in plain text.' + ' ' * (width - 58) + '│'))
-                self.stdout.write(self.style.SUCCESS('  └' + '─' * (width - 4) + '┘'))
+                self.stdout.write(self.style.SUCCESS('  └' + '-' * (width - 4) + '┘'))
                 self.stdout.write('')
 
-        # ── Done ──────────────────────────────────────────────────
+        # -- Done --------------------------------------------------
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('═' * width))
         self.stdout.write(self.style.SUCCESS('  Setup complete!'))
@@ -132,7 +132,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.MIGRATE_HEADING('    chmod 600 db.sqlite3'))
         self.stdout.write('')
 
-    # ── Helpers ───────────────────────────────────────────────────
+    # -- Helpers ---------------------------------------------------
 
     def _step(self, number, description):
         self.stdout.write(f'\n  {self.style.MIGRATE_HEADING(f"[{number}]")} {description}')

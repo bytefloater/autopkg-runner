@@ -30,7 +30,7 @@
   revokeTokenName: '',
 }" @open-add-token.window="showCreate = true">
 
-  {# ── New token credential banner (shown once after creation) ──────────── #}
+  {# -- New token credential banner (shown once after creation) ------------ #}
   {% if new_token %}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_NEW_TOKEN_CREATED }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
@@ -57,7 +57,7 @@
   <div class="h-4"></div>
   {% endif %}
 
-  {# ── API Tokens list ────────────────────────────────────────────────────── #}
+  {# -- API Tokens list ------------------------------------------------------ #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_API_TOKENS }}</p>
 
   {% if tokens %}
@@ -90,7 +90,7 @@
   </div>
   {% endif %}
 
-  {# ── API Endpoints ──────────────────────────────────────────────────────── #}
+  {# -- API Endpoints -------------------------------------------------------- #}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.TOKENS_VIEW.SECTION_ENDPOINTS }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% for method, path, desc in api_endpoints %}

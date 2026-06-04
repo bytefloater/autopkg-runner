@@ -6,7 +6,7 @@
 {% block content %}
 <div class="space-y-4" x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})">
 
-  {# ── Breadcrumb + run header ── #}
+  {# -- Breadcrumb + run header -- #}
   <div class="flex items-center gap-3 flex-wrap">
     <a href="{% url 'run-list' %}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1">
       {% lucide "chevron-left" "w-4 h-4" %} {{ t.RUNS_VIEW.NAV_ALL_RUNS }}
@@ -20,7 +20,7 @@
     </span>
   </div>
 
-  {# ── Meta row ── #}
+  {# -- Meta row -- #}
   <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-4 flex-wrap items-center">
     <span>{{ t.RUN_DETAIL_VIEW.META_TRIGGERED_BY }} <strong class="text-gray-700 dark:text-gray-300">{{ run.triggered_by }}</strong></span>
     <span>{{ t.RUN_DETAIL_VIEW.META_STARTED }} <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|date:"d M Y, H:i:s" }}</strong></span>
@@ -35,7 +35,7 @@
   {# ══════════════════════════════════════════════════════════════ #}
   <div class="space-y-2">
 
-    {# ── Server-rendered stages (completed or partially started) ── #}
+    {# -- Server-rendered stages (completed or partially started) -- #}
     {% for stage in stages %}
     <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
 
@@ -120,7 +120,7 @@
     </div>
     {% empty %}
 
-    {# ── No server stages yet: Alpine-driven placeholders (live run) ── #}
+    {# -- No server stages yet: Alpine-driven placeholders (live run) -- #}
     <template x-for="stage in dynamicStages" :key="stage.name">
       <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
         <button type="button" @click="openStage = openStage === stage.name ? null : stage.name"
@@ -178,7 +178,7 @@
 
     {% endfor %}
 
-    {# ── General logs (no stage name) ── #}
+    {# -- General logs (no stage name) -- #}
     {% with general_logs=logs_by_stage|lookup:"__general__" %}
     {% if general_logs %}
     <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
@@ -207,7 +207,7 @@
 
   </div>{# end accordion #}
 
-  {# ── Recipe results ── #}
+  {# -- Recipe results -- #}
   {% for result in results %}
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
     <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-800">

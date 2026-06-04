@@ -43,7 +43,7 @@
         class="space-y-6">
     {% csrf_token %}
 
-    {# ── Name & status ──────────────────────────────────────────────────────── #}
+    {# -- Name & status -------------------------------------------------------- #}
     <div>
       <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_NOTIFIER }}</h3>
       <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
@@ -79,7 +79,7 @@
       </div>
     </div>
 
-    {# ── Type-specific fields ────────────────────────────────────────────────── #}
+    {# -- Type-specific fields -------------------------------------------------- #}
     {% if fields %}
     <div>
       <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</h3>
@@ -144,7 +144,7 @@
     </div>
     {% endif %}
 
-    {# ── WebPush subscriptions (webpush type only) ─────────────────────────── #}
+    {# -- WebPush subscriptions (webpush type only) --------------------------- #}
     {% if notifier.notifier_type == 'webpush' %}
     <div x-data="webPushManager('{{ notifier.pk }}', '{{ vapid_public_key }}')">
       <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_SUBSCRIBED_DEVICES }}</h3>
@@ -213,7 +213,7 @@
     </div>
     {% endif %}
 
-    {# ── Message template ───────────────────────────────────────────────────── #}
+    {# -- Message template ----------------------------------------------------- #}
     <div x-data="{ showVars: false }">
       <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_MESSAGE_TEMPLATE }}</h3>
       <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
@@ -261,7 +261,7 @@
       </div>
     </div>
 
-    {# ── Test result banner ─────────────────────────────────────────────────── #}
+    {# -- Test result banner --------------------------------------------------- #}
     <div x-show="testResult !== null" x-transition x-cloak
          :class="testResult?.success
            ? 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
@@ -285,7 +285,7 @@
       </button>
     </div>
 
-    {# ── Save + Danger zone ─────────────────────────────────────────────────── #}
+    {# -- Save + Danger zone --------------------------------------------------- #}
     <div class="flex items-center justify-between gap-4">
 
       {# Delete button - triggers modal #}
@@ -324,7 +324,7 @@
   </form>
 </div>
 
-{# ── Delete confirmation modal ─────────────────────────────────────────────── #}
+{# -- Delete confirmation modal ----------------------------------------------- #}
 <div x-data="{ open: false }"
      @open-delete-modal.window="open = true">
   <template x-teleport="body">

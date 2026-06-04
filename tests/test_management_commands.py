@@ -9,7 +9,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 
-# ── generate_vapid_keys ───────────────────────────────────────────────────────
+# -- generate_vapid_keys -------------------------------------------------------
 
 @pytest.mark.django_db
 class TestGenerateVapidKeys:
@@ -90,7 +90,7 @@ class TestGenerateVapidKeys:
         assert Setting.get('webpush.vapid_contact') == 'mailto:admin@example.com'
 
 
-# ── resetpassword ─────────────────────────────────────────────────────────────
+# -- resetpassword -------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestResetPassword:
@@ -116,7 +116,7 @@ class TestResetPassword:
         assert superuser.username in out.getvalue()
 
 
-# ── serve ─────────────────────────────────────────────────────────────────────
+# -- serve ---------------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestServeCommand:
@@ -184,7 +184,7 @@ class TestServeCommand:
         assert any('migrate' in c for c in calls)
 
 
-# ── setup ─────────────────────────────────────────────────────────────────────
+# -- setup ---------------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestSetupCommand:
@@ -232,7 +232,7 @@ class TestSetupCommand:
         assert Schedule.objects.filter(pk=1).exists()
 
 
-# ── install_sftp_deps ─────────────────────────────────────────────────────────
+# -- install_sftp_deps ---------------------------------------------------------
 
 @pytest.mark.django_db
 class TestInstallSftpDeps:

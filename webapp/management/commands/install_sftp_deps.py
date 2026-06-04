@@ -1,6 +1,6 @@
 """
 manage.py install_sftp_deps
-────────────────────────────
+----------------------------
 Install the system dependencies required for SFTP repository connections
 on macOS: macFUSE (FUSE framework) and sshfs-mac (via the gromgit/fuse tap).
 
@@ -35,12 +35,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS("─" * _WIDTH))
+        self.stdout.write(self.style.SUCCESS("-" * _WIDTH))
         self.stdout.write(self.style.SUCCESS("  SFTP Dependency Installer"))
-        self.stdout.write(self.style.SUCCESS("─" * _WIDTH))
+        self.stdout.write(self.style.SUCCESS("-" * _WIDTH))
         self.stdout.write("")
 
-        # ── Step 1: Check for sshfs ───────────────────────────────────────────
+        # -- Step 1: Check for sshfs -------------------------------------------
         self._step("1", "Checking for sshfs")
         if shutil.which("sshfs"):
             self._ok("sshfs is already installed - nothing to do.")
@@ -49,7 +49,7 @@ class Command(BaseCommand):
 
         self.stdout.write("      sshfs not found - will install via Homebrew.")
 
-        # ── Step 2: Ensure Homebrew ───────────────────────────────────────────
+        # -- Step 2: Ensure Homebrew -------------------------------------------
         self._step("2", "Checking for Homebrew")
         if shutil.which("brew"):
             self._ok("Homebrew is already installed.")
@@ -74,7 +74,7 @@ class Command(BaseCommand):
                 sys.exit(1)
             self._ok("Homebrew installed.")
 
-        # ── Step 3: macFUSE ───────────────────────────────────────────────────
+        # -- Step 3: macFUSE ---------------------------------------------------
         self._step("3", "Installing macFUSE (FUSE kernel extension)")
         self.stdout.write("")
         try:
@@ -92,7 +92,7 @@ class Command(BaseCommand):
             sys.exit(1)
         self._ok("macFUSE installed.")
 
-        # ── Step 4: sshfs-mac ─────────────────────────────────────────────────
+        # -- Step 4: sshfs-mac -------------------------------------------------
         self._step("4", "Tapping gromgit/fuse and installing sshfs-mac")
         self.stdout.write("")
         try:
@@ -108,11 +108,11 @@ class Command(BaseCommand):
             sys.exit(1)
         self._ok("sshfs-mac installed.")
 
-        # ── Done ──────────────────────────────────────────────────────────────
+        # -- Done --------------------------------------------------------------
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS("─" * _WIDTH))
+        self.stdout.write(self.style.SUCCESS("-" * _WIDTH))
         self.stdout.write(self.style.SUCCESS("  Installation complete!"))
-        self.stdout.write(self.style.SUCCESS("─" * _WIDTH))
+        self.stdout.write(self.style.SUCCESS("-" * _WIDTH))
         self.stdout.write("")
         self._warn(
             "macFUSE requires a system reboot after first install."
@@ -128,7 +128,7 @@ class Command(BaseCommand):
         )
         self.stdout.write("")
 
-    # ── Helpers ───────────────────────────────────────────────────────────────
+    # -- Helpers ---------------------------------------------------------------
 
     def _step(self, number: str, description: str) -> None:
         self.stdout.write(

@@ -84,7 +84,7 @@ class Command(BaseCommand):
             )
             self.stdout.write('')
 
-        # ── Migration check ───────────────────────────────────────────────────
+        # -- Migration check ---------------------------------------------------
         # Run any unapplied migrations before the server starts so the DB is
         # always in sync.  Prints nothing and exits cleanly if up to date.
         from django.db import connection

@@ -55,7 +55,7 @@
 <body class="h-full bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100"
       x-data="appShell()">
 
-  {# ── Toast stack (bottom-right) ── #}
+  {# -- Toast stack (bottom-right) -- #}
   <div class="fixed bottom-5 right-5 z-[200] flex flex-col-reverse gap-2 pointer-events-none w-80" aria-live="polite">
     <template x-for="toast in toasts" :key="toast.id">
       <div x-show="toast.visible"
@@ -87,7 +87,7 @@
   </script>
   {% endif %}
 
-  {# ── TOPBAR - horizontal nav, full-width ── #}
+  {# -- TOPBAR - horizontal nav, full-width -- #}
   <header class="z-40 bg-white dark:bg-slate-900
                  border-b border-gray-200 dark:border-slate-800">
     <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -221,7 +221,7 @@
     </div>
   </header>
 
-  {# ── MOBILE DRAWER - slides in from left below md breakpoint ── #}
+  {# -- MOBILE DRAWER - slides in from left below md breakpoint -- #}
 
   {# Scrim #}
   <div x-show="open" x-cloak @click="open=false"
@@ -336,7 +336,7 @@
     </div>
   </div>
 
-  {# ── PAGE CONTENT ── #}
+  {# -- PAGE CONTENT -- #}
   <main class="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     {% block content %}{% endblock %}
   </main>

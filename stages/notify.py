@@ -1,10 +1,10 @@
 """
 stages/notify.py
-────────────────
+----------------
 Dispatches notifications to all configured notifiers after a pipeline run.
 
 Message content
-───────────────
+---------------
 Each notifier can define a *title_template* and *message_template* using
 simple ``{variable}`` placeholders (rendered via ``str.format_map``).
 
@@ -12,7 +12,7 @@ If *message_template* is blank the stage falls back to an auto-generated
 plain-text or HTML message matching the notifier's ``supports_html`` flag.
 
 Available template variables
-─────────────────────────────
+-----------------------------
   {status}       "succeeded" | "failed"
   {status_emoji} "✅" | "❌"
   {imports}      count of Munki imports
@@ -26,7 +26,7 @@ Available template variables
   {time}         run start time, e.g. "14:30"
 
 HTML link shorthand (HTML notifiers only)
-─────────────────────────────────────────
+-----------------------------------------
   {share_link:"Custom Text"}   →  <a href="URL">Custom Text</a>
   {share_link:'Custom Text'}   →  <a href="URL">Custom Text</a>
 
@@ -41,7 +41,7 @@ import re
 from libs.stage import Stage
 
 
-# ── Template helpers ──────────────────────────────────────────────────────────
+# -- Template helpers ----------------------------------------------------------
 
 # Matches {share_link:"Custom Text"} and {share_link:'Custom Text'}.
 # This syntax is intentionally not valid Python format-string syntax (the colon
@@ -65,7 +65,7 @@ def _render(template: str, ctx: dict) -> str:
     * When a share URL is present: replaced with ``<a href="URL">Custom Text</a>``.
     * When no share URL is configured: replaced with an empty string.
     """
-    # ── 1. Handle {share_link:"text"} / {share_link:'text'} ──────────────────
+    # -- 1. Handle {share_link:"text"} / {share_link:'text'} ------------------
     share_url = ctx.get('share_url', '')
 
     def _expand_share_link(m: re.Match) -> str:
@@ -76,14 +76,14 @@ def _render(template: str, ctx: dict) -> str:
 
     template = _SHARE_LINK_RE.sub(_expand_share_link, template)
 
-    # ── 2. Standard variable substitution ────────────────────────────────────
+    # -- 2. Standard variable substitution ------------------------------------
     try:
         return template.format_map(_SafeDict(ctx))
     except (ValueError, KeyError):
         return template   # malformed format string - return as-is
 
 
-# ── Stage ─────────────────────────────────────────────────────────────────────
+# -- Stage ---------------------------------------------------------------------
 
 class NotifyOnCompletion(Stage):
     name = "Send notification(s) to user"
@@ -93,7 +93,7 @@ class NotifyOnCompletion(Stage):
         self.notifiers: list = config.notifiers
         self.ctx: dict = ctx
 
-    # ── Stage interface ───────────────────────────────────────────────────────
+    # -- Stage interface -------------------------------------------------------
 
     def run(self):
         if not self.notifiers:
@@ -126,11 +126,11 @@ class NotifyOnCompletion(Stage):
             cfg['_notifier_pk'] = str(notifier.pk)
             supports_html = bool(cfg.get("supports_html", False))
 
-            # ── Title ─────────────────────────────────────────────────────────
+            # -- Title ---------------------------------------------------------
             raw_title = getattr(notifier, 'title_template', '') or ''
             title = _render(raw_title, tpl_ctx).strip() if raw_title.strip() else "AutoPkg Runner"
 
-            # ── Message ───────────────────────────────────────────────────────
+            # -- Message -------------------------------------------------------
             raw_msg = getattr(notifier, 'message_template', '') or ''
             if raw_msg.strip():
                 message = _render(raw_msg, tpl_ctx)
@@ -142,7 +142,7 @@ class NotifyOnCompletion(Stage):
             else:
                 message = self._gen_html_msg(summary) if supports_html else self._gen_plain_msg(summary)
 
-            # ── Share URL ─────────────────────────────────────────────────────
+            # -- Share URL -----------------------------------------------------
             share_url = tpl_ctx.get("share_url") or None
 
             try:
@@ -156,7 +156,7 @@ class NotifyOnCompletion(Stage):
             except Exception:
                 self.logger.error(f"Failed to send notification via '{notifier.name}'")
 
-    # ── Summary builders ──────────────────────────────────────────────────────
+    # -- Summary builders ------------------------------------------------------
 
     def _build_summary(self, run_id) -> dict:
         """Query the DB for run outcome and recipe result counts."""
@@ -239,7 +239,7 @@ class NotifyOnCompletion(Stage):
             "time":         time_str,
         }
 
-    # ── Default message generators (used when no template is set) ─────────────
+    # -- Default message generators (used when no template is set) -------------
 
     def _gen_plain_msg(self, summary: dict) -> str:
         parts = ["AutoPkg run complete."]

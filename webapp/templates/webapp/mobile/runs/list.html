@@ -4,7 +4,7 @@
 {% block title %}Runs - AutoPkg Runner{% endblock %}
 {% block nav_title %}Runs{% endblock %}
 
-{# ── Left nav slot: Delete button (manage mode only) ──────────────────────── #}
+{# -- Left nav slot: Delete button (manage mode only) ------------------------ #}
 {% block nav_left %}
 <div x-data="{ managing: false, selCount: 0 }"
      @toggle-manage-runs.window="managing = !managing; selCount = 0"
@@ -24,7 +24,7 @@
 </div>
 {% endblock %}
 
-{# ── Right nav slot: Manage / Done toggle ─────────────────────────────────── #}
+{# -- Right nav slot: Manage / Done toggle ----------------------------------- #}
 {% block nav_right %}
 <button type="button"
         x-data

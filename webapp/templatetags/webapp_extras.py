@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 
 register = template.Library()
 
-# ── Inline-SVG icon cache ──────────────────────────────────────────────────────
+# -- Inline-SVG icon cache ------------------------------------------------------
 _SVG_CACHE: dict[str, str] = {}
 
 
@@ -22,7 +22,7 @@ def _read_svg(name: str) -> str:
     return _SVG_CACHE[name]
 
 
-# ── Filters ────────────────────────────────────────────────────────────────────
+# -- Filters --------------------------------------------------------------------
 
 @register.filter
 def duration(start, end):

@@ -1,6 +1,6 @@
 """
 webapp/views/share.py
-─────────────────────
+---------------------
 Unauthenticated share-link view for completed run reports.
 
 The URL /share/<token>/ maps to RunShareView.  The token is a cryptographically

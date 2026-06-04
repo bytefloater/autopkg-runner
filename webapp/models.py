@@ -9,7 +9,7 @@ from django.conf import settings
 from django.db import models
 
 
-# ── Key-value settings store ───────────────────────────────────────────────────
+# -- Key-value settings store ---------------------------------------------------
 
 class Setting(models.Model):
     """
@@ -75,7 +75,7 @@ class Setting(models.Model):
     def __str__(self):
         return f'{self.key} = {self.value[:60]}'
 
-    # ── Class-level helpers ────────────────────────────────────────────────────
+    # -- Class-level helpers ----------------------------------------------------
 
     @classmethod
     def get(cls, key: str, default: str | None = None) -> str:
@@ -120,7 +120,7 @@ class Setting(models.Model):
         return result
 
 
-# ── Notifiers ──────────────────────────────────────────────────────────────────
+# -- Notifiers ------------------------------------------------------------------
 
 def _notifier_sensitive_keys(notifier_type: str) -> frozenset[str]:
     """Return the set of config keys that are 'password' type for *notifier_type*."""
@@ -219,7 +219,7 @@ class Schedule(models.Model):
         return f'Schedule ({status}: {self.minute} {self.hour} {self.day_of_week} {self.day_of_month} {self.month})'
 
 
-# ── Pipeline runs ──────────────────────────────────────────────────────────────
+# -- Pipeline runs --------------------------------------------------------------
 
 class Run(models.Model):
     PENDING   = 'pending'
@@ -431,7 +431,7 @@ class Task(models.Model):
         return f'Task {self.id} [{self.task_type}:{self.status}]'
 
 
-# ── API tokens ─────────────────────────────────────────────────────────────────
+# -- API tokens -----------------------------------------------------------------
 
 class APIToken(models.Model):
     """Named API token for a user. Multiple tokens per user are supported."""

@@ -20,7 +20,7 @@
   {# Sub-tab bar #}
   {% include "webapp/recipes/_subtabs.html" %}
 
-  {# ── Repository table ───────────────────────────────────────────────────── #}
+  {# -- Repository table ----------------------------------------------------- #}
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
     <table class="w-full text-left">
       <thead>
@@ -45,7 +45,7 @@
     </table>
   </div>
 
-  {# ── Add Repository modal ────────────────────────────────────────────────── #}
+  {# -- Add Repository modal -------------------------------------------------- #}
   <div x-show="showAdd" x-cloak
        class="fixed inset-0 z-50 flex items-center justify-center p-4"
        x-transition:enter="transition ease-out duration-200"

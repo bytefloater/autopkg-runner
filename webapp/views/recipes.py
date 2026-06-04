@@ -24,7 +24,7 @@ from django.template.response import TemplateResponse
 from django.views.generic import TemplateView, View
 
 
-# ── Shared helpers ────────────────────────────────────────────────────────────
+# -- Shared helpers ------------------------------------------------------------
 
 _SUBTABS = [
     {'name': 'repos', 't_key': 'SUBTAB_REPOS',    'url_name': 'recipes-repos'},
@@ -118,7 +118,7 @@ def _list_repos() -> list:
     return repos
 
 
-# ── Repository views ──────────────────────────────────────────────────────────
+# -- Repository views ----------------------------------------------------------
 
 class ReposView(LoginRequiredMixin, TemplateView):
     template_name = 'webapp/recipes/repos.html'
@@ -227,7 +227,7 @@ class RepoUpdateView(LoginRequiredMixin, View):
         return HttpResponse(html)
 
 
-# ── Recipe list helpers ───────────────────────────────────────────────────────
+# -- Recipe list helpers -------------------------------------------------------
 
 def _sort_run_list(identifiers: list) -> list:
     """Sort alphabetically; any MakeCatalogs variant goes last."""
@@ -424,7 +424,7 @@ def _build_recipe_entries(run_list_set: set) -> tuple:
     return entries, load_error
 
 
-# ── Recipe list views ─────────────────────────────────────────────────────────
+# -- Recipe list views ---------------------------------------------------------
 
 class RecipeListView(LoginRequiredMixin, TemplateView):
     """Renders the page shell immediately; recipe data is fetched asynchronously."""
@@ -462,7 +462,7 @@ class RecipeDataView(LoginRequiredMixin, View):
         return JsonResponse({'recipes': entries, 'load_error': load_error})
 
 
-# ── Override views ────────────────────────────────────────────────────────────
+# -- Override views ------------------------------------------------------------
 
 class OverrideCreateView(LoginRequiredMixin, View):
     def post(self, request):

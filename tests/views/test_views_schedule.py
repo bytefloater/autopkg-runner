@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
-# ── Helper function unit tests ───────────────────────────────────────────────
+# -- Helper function unit tests -----------------------------------------------
 
 class TestDescribeCron:
     def _make_schedule(self, minute='0', hour='2', dow='*', dom='*', month='*'):

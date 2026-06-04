@@ -32,7 +32,7 @@ class NotificationsView(LoginRequiredMixin, TemplateView):
         return ctx
 
     def post(self, request):
-        # ── Settings save (pwa_base_url form) ─────────────────────────────────
+        # -- Settings save (pwa_base_url form) ---------------------------------
         if request.POST.get('_action') == 'save_settings':
             from webapp.models import Setting
             Setting.set('notify.pwa_base_url', request.POST.get('notify.pwa_base_url', '').strip())
@@ -41,7 +41,7 @@ class NotificationsView(LoginRequiredMixin, TemplateView):
             messages.success(request, 'Notification settings saved.')
             return redirect('config-notifications')
 
-        # ── Quick-create a new notifier (name + type only) ─────────────────────
+        # -- Quick-create a new notifier (name + type only) ---------------------
         from webapp.models import Notifier
         name  = request.POST.get('name', '').strip()
         ntype = request.POST.get('notifier_type', '')

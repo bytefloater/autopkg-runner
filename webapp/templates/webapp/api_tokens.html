@@ -6,7 +6,7 @@
 {% block content %}
 <div class="space-y-6" x-data="tokenPage()">
 
-  {# ── Page header - consistent with Dashboard / Runs #}
+  {# -- Page header - consistent with Dashboard / Runs #}
   <div class="flex items-center justify-between">
     <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.TOKENS_VIEW.SECTION_API_TOKENS }}</h1>
     <button @click="showCreate = true"
@@ -16,7 +16,7 @@
     </button>
   </div>
 
-  {# ── Revealed-token banner (shown once, session-backed) ── #}
+  {# -- Revealed-token banner (shown once, session-backed) -- #}
   {% if new_token %}
   <div class="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-xl p-4">
     <p class="text-sm font-semibold text-green-800 dark:text-green-300 mb-2">
@@ -32,7 +32,7 @@
   </div>
   {% endif %}
 
-  {# ── Token list ── #}
+  {# -- Token list -- #}
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
 
     {% if tokens %}
@@ -73,7 +73,7 @@
     {% endif %}
   </div>
 
-  {# ── API reference ── #}
+  {# -- API reference -- #}
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
     <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-800">
       <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ t.TOKENS_VIEW.SECTION_API_REFERENCE }}</h2>
@@ -90,7 +90,7 @@
     </div>
   </div>
 
-  {# ── Create token modal ── #}
+  {# -- Create token modal -- #}
   <div x-show="showCreate" x-cloak
        class="fixed inset-0 z-[100] flex items-center justify-center p-4"
        x-transition:enter="transition ease-out duration-200"

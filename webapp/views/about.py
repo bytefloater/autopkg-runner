@@ -1,6 +1,6 @@
 """
 webapp/views/about.py
-─────────────────────
+---------------------
 About page - shows application version, AutoPkg version (with update check),
 and MunkiTools version.
 
@@ -104,7 +104,7 @@ class AboutView(LoginRequiredMixin, TemplateView):
         ctx['app_name']    = FRIENDLY_APP_NAME
         ctx['app_version'] = APP_VERSION_STR
 
-        # ── AutoPkg ───────────────────────────────────────────────────────────
+        # -- AutoPkg -----------------------------------------------------------
         autopkg_bin    = Setting.get('autopkg.bin_path', '/usr/local/bin/autopkg')
         autopkg_ver    = _autopkg_version(autopkg_bin)
         autopkg_latest = _autopkg_latest_release() if autopkg_ver else None
@@ -116,7 +116,7 @@ class AboutView(LoginRequiredMixin, TemplateView):
             and _parse_version(autopkg_latest) > _parse_version(autopkg_ver)
         )
 
-        # ── MunkiTools ────────────────────────────────────────────────────────
+        # -- MunkiTools --------------------------------------------------------
         ctx['munki_version'] = _munki_version()          # None = not installed
 
         return ctx

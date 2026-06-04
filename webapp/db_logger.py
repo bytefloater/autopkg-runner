@@ -5,7 +5,7 @@ import logbook
 _local = threading.local()
 
 
-# ── Thread-local run / stage tracking ─────────────────────────────────────────
+# -- Thread-local run / stage tracking -----------------------------------------
 
 def set_run_id(run_id):
     _local.run_id = run_id
@@ -24,7 +24,7 @@ def get_current_stage() -> str:
     return getattr(_local, 'stage_name', '')
 
 
-# ── Handler ───────────────────────────────────────────────────────────────────
+# -- Handler -------------------------------------------------------------------
 
 class DBLogHandler(logbook.Handler):
     """Logbook handler that persists log records to the LogEntry model.

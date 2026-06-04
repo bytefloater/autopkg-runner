@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
-# ── _SafeDict ─────────────────────────────────────────────────────────────────
+# -- _SafeDict -----------------------------------------------------------------
 
 class TestSafeDict:
     def test_missing_key_returns_placeholder(self):
@@ -23,7 +23,7 @@ class TestSafeDict:
         assert d['status'] == 'ok'
 
 
-# ── _render ───────────────────────────────────────────────────────────────────
+# -- _render -------------------------------------------------------------------
 
 class TestRender:
     def _call(self, template, ctx):
@@ -51,7 +51,7 @@ class TestRender:
         })
         assert result == '✅ succeeded'
 
-    # ── {share_link:"text"} HTML shorthand ────────────────────────────────────
+    # -- {share_link:"text"} HTML shorthand ------------------------------------
 
     def test_share_link_double_quotes_with_url(self):
         result = self._call(
@@ -111,7 +111,7 @@ class TestRender:
         assert 'href="https://push.example.com/share/tok/"' in result
 
 
-# ── NotifyOnCompletion helper methods ─────────────────────────────────────────
+# -- NotifyOnCompletion helper methods -----------------------------------------
 
 def _make_stage(notifiers=None, ctx=None):
     """Build a NotifyOnCompletion instance with mocked dependencies."""
@@ -176,7 +176,7 @@ class TestGenHtmlMsg:
         assert '·' in msg
 
 
-# ── _build_summary ────────────────────────────────────────────────────────────
+# -- _build_summary ------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestBuildSummary:
@@ -215,7 +215,7 @@ class TestBuildSummary:
         assert not summary['share_url']
 
 
-# ── _build_template_context ───────────────────────────────────────────────────
+# -- _build_template_context ---------------------------------------------------
 
 @pytest.mark.django_db
 class TestBuildTemplateContext:
@@ -246,7 +246,7 @@ class TestBuildTemplateContext:
         assert ctx['status_emoji'] == '❌'
 
 
-# ── NotifyOnCompletion.run() ──────────────────────────────────────────────────
+# -- NotifyOnCompletion.run() --------------------------------------------------
 
 @pytest.mark.django_db
 class TestNotifyRun:

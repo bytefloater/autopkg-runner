@@ -7,7 +7,7 @@
 {% block content %}
 <div class="h-4"></div>
 
-{# ── 30-day stats ────────────────────────────────────────────────────────── #}
+{# -- 30-day stats ---------------------------------------------------------- #}
 <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
   <div class="grid grid-cols-2 divide-x divide-gray-200/70 dark:divide-[#38383a]">
     <div class="px-4 py-4">
@@ -26,7 +26,7 @@
   </div>
 </div>
 
-{# ── Next scheduled run + Trigger Run ────────────────────────────────────── #}
+{# -- Next scheduled run + Trigger Run -------------------------------------- #}
 <div class="h-4"></div>
 <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
   <div class="flex items-center justify-between px-4 py-3">
@@ -71,7 +71,7 @@
   </div>
 </div>
 
-{# ── Recent Runs ─────────────────────────────────────────────────────────── #}
+{# -- Recent Runs ----------------------------------------------------------- #}
 <div id="recent-runs-section"
      hx-get="{% url 'dashboard' %}"
      hx-trigger="every 10s"

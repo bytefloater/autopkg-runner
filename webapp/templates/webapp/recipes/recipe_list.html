@@ -19,7 +19,7 @@
 
   {% include "webapp/recipes/_subtabs.html" %}
 
-  {# ── Recipe form ─────────────────────────────────────────────────────────── #}
+  {# -- Recipe form ----------------------------------------------------------- #}
   <form method="post" id="recipe-form" @submit="onSubmit($event)">
     {% csrf_token %}
 
@@ -199,7 +199,7 @@
       </table>
     </div>
 
-    {# ── Pagination bar ──────────────────────────────────────────────────────── #}
+    {# -- Pagination bar -------------------------------------------------------- #}
     <template x-if="!loading && totalPages > 1">
       <div class="flex items-center justify-between mt-3 px-1">
 

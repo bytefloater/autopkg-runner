@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/static/logos/icon-192.png">
 
-  {# ── iOS splash screens ──────────────────────────────────────────────────── #}
+  {# -- iOS splash screens ---------------------------------------------------- #}
   {# Portrait #}
   <link rel="apple-touch-startup-image" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/static/splash_screens/iPhone_17_Pro_Max__iPhone_16_Pro_Max_portrait.png">
   <link rel="apple-touch-startup-image" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/static/splash_screens/iPhone_17_Pro__iPhone_17__iPhone_16_Pro_portrait.png">
@@ -96,11 +96,11 @@
   <style>
     [x-cloak] { display: none !important; }
 
-    /* ── Chrome separator - matches divide-gray-200/70 / divide-[#38383a] ── */
+    /* -- Chrome separator - matches divide-gray-200/70 / divide-[#38383a] -- */
     :root        { --chrome-sep: rgba(229,231,235,0.70); }
     .dark        { --chrome-sep: #38383a; }
 
-    /* ── Native-feel resets ── */
+    /* -- Native-feel resets -- */
     *, *::before, *::after { -webkit-tap-highlight-color: transparent; }
     body { overscroll-behavior: none; }
 
@@ -128,7 +128,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 0.8s linear infinite; }
 
-    /* ── iOS 26 Glass Chrome ── */
+    /* -- iOS 26 Glass Chrome -- */
     /* Use hardware-accelerated backdrop-filter (WebKit native) instead of
        WebGL/html2canvas — same visual result, zero main-thread cost.       */
 
@@ -240,7 +240,7 @@
 <body class="bg-[#f2f2f7] dark:bg-black text-gray-900 dark:text-gray-100 min-h-screen flex flex-col"
       x-data="mobileApp()">
 
-  {# ── Navigation bar ──────────────────────────────────────────────────────── #}
+  {# -- Navigation bar -------------------------------------------------------- #}
   {# fixed + left/right:0 keeps it pinned; padding-top fills the status-bar    #}
   {# safe area. Fixed (not sticky) means it is outside the scroll chain, so    #}
   {# the header never moves during rubber-band overscroll.                     #}
@@ -263,13 +263,13 @@
     </div>
   </header>
 
-  {# ── Page content ────────────────────────────────────────────────────────── #}
+  {# -- Page content ---------------------------------------------------------- #}
   {# pb-28 keeps content clear of the fixed bottom tab bar                     #}
   {# {% block scripts %} lives here so page-specific JS is included in the     #}
   {# SPA content swap - re-executed before Alpine.initTree() on each navigate  #}
   <main class="flex-1 overflow-y-auto pb-28 page-enter" id="page-content"
         style="padding-top:calc(44px + env(safe-area-inset-top,0px))">
-    {# ── Flash messages (inside main so SPA navigation clears them) ─────────── #}
+    {# -- Flash messages (inside main so SPA navigation clears them) ----------- #}
     {% if messages %}
     <div x-data="{ visible: true }"
          x-show="visible"
@@ -292,7 +292,7 @@
     {% block scripts %}{% endblock %}
   </main>
 
-  {# ── Bottom tab bar ──────────────────────────────────────────────────────── #}
+  {# -- Bottom tab bar -------------------------------------------------------- #}
   {# 5 base tabs max so the bar never overflows a 375 pt iPhone viewport.      #}
   {# box-shadow replaces border-t - avoids the 3-device-pixel line on 3× DPR. #}
   <nav id="app-tabbar"
@@ -447,7 +447,7 @@
     </div>
   </div>
   <script>
-    // ── iOS 26 tab selection bubble ─────────────────────────────────────────
+    // -- iOS 26 tab selection bubble -----------------------------------------
     // Inserts an absolutely-positioned <div> as the first child of #tab-bar
     // so overflow:hidden + border-radius clips it to the pill shape.
     // Tab <a> elements are promoted to z-index:1 so they paint above it.
@@ -511,7 +511,7 @@
       bar.insertBefore(bubble, bar.firstChild);
     }
 
-    // ── SPA router ──────────────────────────────────────────────────────────
+    // -- SPA router ----------------------------------------------------------
     // Intercepts same-origin link taps and swaps #page-content via fetch(),
     // preventing full-page loads that cause iOS to reveal browser chrome.
     // Active unconditionally on mobile (not just when installed as PWA).
@@ -584,7 +584,7 @@
       }
     }
 
-    // ── App-level Alpine component ───────────────────────────────────────────
+    // -- App-level Alpine component -------------------------------------------
     function mobileApp() {
       return {
         showUserSheet: false,
@@ -637,7 +637,7 @@
             _x0 = null;
           }, { passive: true });
 
-          // ── SPA navigation ────────────────────────────────────────────────
+          // -- SPA navigation ------------------------------------------------
           // Stamp the initial history entry so popstate fires reliably
           history.replaceState({}, '', location.href);
 

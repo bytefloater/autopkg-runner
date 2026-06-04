@@ -30,7 +30,7 @@
   {% csrf_token %}
   <input type="hidden" name="action" value="update">
 
-  {# ── Password reset banner ──────────────────────────────────────────────── #}
+  {# -- Password reset banner ------------------------------------------------ #}
   {% if reset_creds %}
   <div class="mx-4 mb-4 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-xl p-4">
     <p class="text-[13px] font-semibold text-green-800 dark:text-green-300 mb-2">{{ t.USER_VIEW.CREDS_BANNER_RESET }}</p>
@@ -48,7 +48,7 @@
   </div>
   {% endif %}
 
-  {# ── Identity ───────────────────────────────────────────────────────────── #}
+  {# -- Identity ------------------------------------------------------------- #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_ACCOUNT }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
 
@@ -75,7 +75,7 @@
 
   </div>
 
-  {# ── Role & status (hidden for self-edit) ──────────────────────────────── #}
+  {# -- Role & status (hidden for self-edit) -------------------------------- #}
   {% if not is_self %}
   <input type="hidden" name="is_active" :value="isActive ? 'on' : ''">
   <input type="hidden" name="is_superuser" :value="isAdmin ? 'on' : ''">
@@ -115,7 +115,7 @@
 
 </form>
 
-{# ── Danger zone (non-self only) ──────────────────────────────────────────── #}
+{# -- Danger zone (non-self only) -------------------------------------------- #}
 {% if not is_self %}
 <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_ACTIONS }}</p>
 <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6"
@@ -141,7 +141,7 @@
     </button>
   </form>
 
-  {# ── Delete confirmation bottom sheet ────────────────────────────────── #}
+  {# -- Delete confirmation bottom sheet ---------------------------------- #}
   <template x-teleport="body">
     <div x-show="showDelete" x-cloak class="fixed inset-0 z-[100]"
          x-transition:enter="transition ease-out duration-200"

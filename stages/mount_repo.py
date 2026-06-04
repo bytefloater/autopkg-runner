@@ -47,7 +47,7 @@ class MountRepository(Stage):
                 logger=logger,
             )
 
-    # ── Helpers ──────────────────────────────────────────────────────────────
+    # -- Helpers --------------------------------------------------------------
 
     def _is_local(self) -> bool:
         return self.repo_type == "local"
@@ -62,7 +62,7 @@ class MountRepository(Stage):
         self.logger.info("Local repository path is accessible.")
         return True
 
-    # ── Stage interface ───────────────────────────────────────────────────────
+    # -- Stage interface -------------------------------------------------------
 
     def pre_check(self) -> bool:
         if self._is_local():

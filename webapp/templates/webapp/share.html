@@ -28,7 +28,7 @@
 
 <body class="bg-gray-50 dark:bg-black min-h-screen text-gray-900 dark:text-white">
 
-  {# ── Top bar - branding only, no navigation ────────────────────────────── #}
+  {# -- Top bar - branding only, no navigation ------------------------------ #}
   <header class="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-[#38383a]">
     <div class="max-w-2xl mx-auto px-4 h-12 flex items-center gap-2.5">
       <svg class="w-5 h-5 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -41,7 +41,7 @@
 
   <main class="max-w-2xl mx-auto px-4 py-5 space-y-5">
 
-    {# ── Run header ──────────────────────────────────────────────────────── #}
+    {# -- Run header -------------------------------------------------------- #}
     <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] px-5 py-4">
 
       {# Status badge #}
@@ -88,7 +88,7 @@
       </dl>
     </div>
 
-    {# ── Stages ──────────────────────────────────────────────────────────── #}
+    {# -- Stages ------------------------------------------------------------ #}
     {% if stages %}
     <section>
       <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ t.SHARE_VIEW.SECTION_STAGES }}</h2>
@@ -138,7 +138,7 @@
     </section>
     {% endif %}
 
-    {# ── Recipe results ──────────────────────────────────────────────────── #}
+    {# -- Recipe results ---------------------------------------------------- #}
     {% if results %}
     <section>
       <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ t.SHARE_VIEW.SECTION_AUTOPKG_OUTPUT }}</h2>
@@ -209,14 +209,14 @@
     </section>
     {% endif %}
 
-    {# ── Empty state (no results and no stages) ──────────────────────────── #}
+    {# -- Empty state (no results and no stages) ---------------------------- #}
     {% if not stages and not results %}
     <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] p-10 text-center">
       <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.EMPTY_NO_RUN_DATA }}</p>
     </div>
     {% endif %}
 
-    {# ── Footer ──────────────────────────────────────────────────────────── #}
+    {# -- Footer ------------------------------------------------------------ #}
     <p class="text-center text-xs text-gray-300 dark:text-gray-600 pb-2">
       {{ t.SHARE_VIEW.FOOTER }}
     </p>

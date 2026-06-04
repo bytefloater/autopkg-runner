@@ -9,7 +9,7 @@ load_dotenv()  # Load .env before Django reads settings
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'autopkgrunner.settings')
 
-# ── Static-file collection ────────────────────────────────────────────────────
+# -- Static-file collection ----------------------------------------------------
 # Must happen *before* get_wsgi_application() so that WhiteNoise finds the
 # files when it scans STATIC_ROOT during middleware initialisation.
 # This also means files are ready before the first request is served.
@@ -44,7 +44,7 @@ if not _via_manage:
 
     atexit.register(_cleanup_static)
 
-# ── WSGI application ──────────────────────────────────────────────────────────
+# -- WSGI application ----------------------------------------------------------
 # WhiteNoise middleware initialises here and scans the now-populated STATIC_ROOT.
 
 from django.core.wsgi import get_wsgi_application

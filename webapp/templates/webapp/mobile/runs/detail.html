@@ -40,7 +40,7 @@
 
 <div x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})" >
 
-  {# ── Stages ──────────────────────────────────────────────────────────────── #}
+  {# -- Stages ---------------------------------------------------------------- #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_STAGES }}</p>
   <div id="stages-list" class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% for stage in stages %}
@@ -115,7 +115,7 @@
     {% endfor %}
   </div>
 
-  {# ── Live log (only shown while run is active) ─────────────────────────── #}
+  {# -- Live log (only shown while run is active) --------------------------- #}
   {% if run.status == 'running' or run.status == 'pending' %}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_LIVE_OUTPUT }}</p>
   <div class="bg-gray-950 dark:bg-black mx-4 rounded-xl overflow-hidden" id="live-log-panel">
@@ -140,7 +140,7 @@
   </div>
   {% endif %}
 
-  {# ── Recipe results ─────────────────────────────────────────────────────── #}
+  {# -- Recipe results ------------------------------------------------------- #}
   {% for result in results %}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
     {{ result.result_type|cut:"_"|capfirst }}
@@ -163,7 +163,7 @@
   </div>
   {% endfor %}
 
-  {# ── Run metadata ───────────────────────────────────────────────────────── #}
+  {# -- Run metadata --------------------------------------------------------- #}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_DETAILS }}</p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     <div class="flex items-center justify-between px-4 py-3">
