@@ -1,7 +1,9 @@
 """Tests for stages.garbage_collector.GarbageCollector."""
 from __future__ import annotations
 
+import os
 import subprocess
+import time
 from datetime import timedelta
 from typing import cast
 from unittest.mock import MagicMock
@@ -123,3 +125,79 @@ class TestCleanRepo:
              patch('stages.garbage_collector.run_cmd', side_effect=subprocess.CalledProcessError(1, 'repoclean')):
             gc.clean_repo()  # should not raise
         cast(MagicMock, gc.logger).error.assert_called()
+
+
+class TestClearAutopkgCache:
+    def test_removes_expired_directories(self, tmp_path):
+        gc = _make_gc()
+        gc.cache_dir = tmp_path
+
+        old_dir = tmp_path / 'OldRecipe'
+        old_dir.mkdir()
+        stale = time.time() - (10 * 86400)  # 10 days ago
+        os.utime(old_dir, (stale, stale))
+
+        new_dir = tmp_path / 'NewRecipe'
+        new_dir.mkdir()
+
+        gc.clear_autopkg_cache('7d')
+
+        assert not old_dir.exists()
+        assert new_dir.exists()
+
+    def test_skips_files_not_dirs(self, tmp_path):
+        gc = _make_gc()
+        gc.cache_dir = tmp_path
+
+        old_file = tmp_path / 'stale.plist'
+        old_file.write_text('data')
+        stale = time.time() - (10 * 86400)
+        os.utime(old_file, (stale, stale))
+
+        gc.clear_autopkg_cache('7d')
+
+        # Non-directory entries must not be removed
+        assert old_file.exists()
+
+    def test_nothing_removed_when_all_fresh(self, tmp_path):
+        gc = _make_gc()
+        gc.cache_dir = tmp_path
+
+        fresh = tmp_path / 'FreshRecipe'
+        fresh.mkdir()
+        # default mtime is now — within the 7d window
+
+        gc.clear_autopkg_cache('7d')
+        assert fresh.exists()
+
+
+class TestGarbageCollectorRun:
+    def test_calls_clear_temp_when_flag_true(self):
+        gc = _make_gc()
+        gc.will_clear_temp = True
+        gc.will_clean_repo = False
+        with patch.object(gc, 'clear_temp_files') as mock_temp, \
+             patch.object(gc, 'clean_repo') as mock_clean:
+            gc.run()
+        mock_temp.assert_called_once()
+        mock_clean.assert_not_called()
+
+    def test_calls_clean_repo_when_flag_true(self):
+        gc = _make_gc()
+        gc.will_clear_temp = False
+        gc.will_clean_repo = True
+        with patch.object(gc, 'clear_temp_files') as mock_temp, \
+             patch.object(gc, 'clean_repo') as mock_clean:
+            gc.run()
+        mock_clean.assert_called_once()
+        mock_temp.assert_not_called()
+
+    def test_calls_both_when_both_flags_true(self):
+        gc = _make_gc()
+        gc.will_clear_temp = True
+        gc.will_clean_repo = True
+        with patch.object(gc, 'clear_temp_files') as mock_temp, \
+             patch.object(gc, 'clean_repo') as mock_clean:
+            gc.run()
+        mock_temp.assert_called_once()
+        mock_clean.assert_called_once()

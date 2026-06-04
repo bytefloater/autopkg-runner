@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 import subprocess
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock, patch, call
 
 import pytest
@@ -68,3 +69,28 @@ class TestUpdateRepos:
             stage.run()
         # Should have attempted both URLs despite first failure
         assert call_count[0] >= 2
+
+    def test_repo_list_failure_logs_error(self):
+        stage = _make_stage()
+        with patch('stages.update_repos.run_cmd',
+                   side_effect=subprocess.CalledProcessError(1, 'autopkg')):
+            stage.run()  # must not raise
+        cast(MagicMock, stage.logger).error.assert_called()
+
+
+class TestPostCheck:
+    def test_returns_true_when_update_disabled(self):
+        stage = _make_stage(update_before_each_run=False)
+        assert stage.post_check() is True
+
+    def test_returns_true_when_no_errors(self):
+        stage = _make_stage(update_before_each_run=True)
+        stage.error_flag = False
+        assert stage.post_check() is True
+        cast(MagicMock, stage.logger).info.assert_called()
+
+    def test_returns_false_when_error_flag_set(self):
+        stage = _make_stage(update_before_each_run=True)
+        stage.error_flag = True
+        assert stage.post_check() is False
+        cast(MagicMock, stage.logger).error.assert_called()
