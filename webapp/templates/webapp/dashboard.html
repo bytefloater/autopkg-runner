@@ -1,5 +1,5 @@
 {% extends "webapp/base_desktop.html" %}
-{% load webapp_extras %}
+{% load webapp_extras tz %}
 
 {% block title %}Dashboard - AutoPkg Runner{% endblock %}
 
@@ -57,7 +57,7 @@
       </span>
       <div class="text-sm text-gray-600 dark:text-gray-300">
         {{ t.DASHBOARD_VIEW.META_TRIGGERED_BY }} <strong>{{ last_run.triggered_by }}</strong>
-        &nbsp;·&nbsp; {{ last_run.started_at|date:"d M Y, H:i" }}
+        &nbsp;·&nbsp; {{ last_run.started_at|timezone:local_tz|date:"d M Y, H:i" }}
         {% if last_run.duration %}
           &nbsp;·&nbsp; {{ last_run.started_at|duration:last_run.completed_at }}
         {% endif %}

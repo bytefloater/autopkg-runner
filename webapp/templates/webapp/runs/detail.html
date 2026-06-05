@@ -1,5 +1,5 @@
 {% extends "webapp/base_desktop.html" %}
-{% load webapp_extras %}
+{% load webapp_extras tz %}
 
 {% block title %}Run {{ run.id|truncatechars:8 }} - AutoPkg Runner{% endblock %}
 
@@ -23,7 +23,7 @@
   {# -- Meta row -- #}
   <div class="text-sm text-gray-500 dark:text-gray-400 flex gap-4 flex-wrap items-center">
     <span>{{ t.RUN_DETAIL_VIEW.META_TRIGGERED_BY }} <strong class="text-gray-700 dark:text-gray-300">{{ run.triggered_by }}</strong></span>
-    <span>{{ t.RUN_DETAIL_VIEW.META_STARTED }} <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|date:"d M Y, H:i:s" }}</strong></span>
+    <span>{{ t.RUN_DETAIL_VIEW.META_STARTED }} <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|timezone:local_tz|date:"d M Y, H:i:s" }}</strong></span>
     {% if run.completed_at %}
     <span>{{ t.RUN_DETAIL_VIEW.META_DURATION }} <strong class="text-gray-700 dark:text-gray-300">{{ run.started_at|duration:run.completed_at }}</strong></span>
     {% endif %}
@@ -94,7 +94,7 @@
           {% if stage_logs %}
           {% for entry in stage_logs %}
           <div class="log-line flex gap-2 px-1 py-0.5">
-            <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16">{{ entry.timestamp|date:"H:i:s" }}</span>
+            <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16">{{ entry.timestamp|timezone:local_tz|date:"H:i:s" }}</span>
             <span class="flex-shrink-0 w-14 text-right text-xs {{ entry.level|level_color }}">{{ entry.level }}</span>
             <span class="text-gray-300 text-xs break-all">{{ entry.message }}</span>
           </div>
@@ -194,7 +194,7 @@
         <div class="p-3 space-y-0.5 max-h-80 overflow-y-auto">
           {% for entry in general_logs %}
           <div class="log-line flex gap-2 px-1 py-0.5">
-            <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16">{{ entry.timestamp|date:"H:i:s" }}</span>
+            <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16">{{ entry.timestamp|timezone:local_tz|date:"H:i:s" }}</span>
             <span class="flex-shrink-0 w-14 text-right text-xs {{ entry.level|level_color }}">{{ entry.level }}</span>
             <span class="text-gray-300 text-xs break-all">{{ entry.message }}</span>
           </div>
@@ -271,7 +271,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
         if (data.type === 'log') {
           if (this.currentStatus !== 'running' && this.currentStatus !== 'pending') return;
           const d = new Date(data.timestamp);
-          const time = d.toTimeString().slice(0, 8);
+          const time = d.toLocaleTimeString('en-GB', { timeZone: '{{ local_tz }}', hour12: false });
           const key = data.stage || '__general__';
           // Replace the whole stageLogs object so Alpine 3's Proxy detects the change.
           this.stageLogs = {

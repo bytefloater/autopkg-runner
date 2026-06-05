@@ -1,5 +1,5 @@
 {% extends "webapp/base_mobile.html" %}
-{% load webapp_extras %}
+{% load webapp_extras tz %}
 
 {% block title %}Run - AutoPkg Runner{% endblock %}
 
@@ -95,7 +95,7 @@
           <div class="px-3 py-2 space-y-0.5">
             {% for entry in stage_logs %}
             <div class="log-line flex gap-2 py-0.5">
-              <span class="text-gray-600 flex-shrink-0 tabular-nums w-14">{{ entry.timestamp|date:"H:i:s" }}</span>
+              <span class="text-gray-600 flex-shrink-0 tabular-nums w-14">{{ entry.timestamp|timezone:local_tz|date:"H:i:s" }}</span>
               <span class="flex-shrink-0 w-14 text-right {{ entry.level|level_color }}">{{ entry.level }}</span>
               <span class="text-gray-300 break-all">{{ entry.message }}</span>
             </div>
@@ -172,7 +172,7 @@
     </div>
     <div class="flex items-center justify-between px-4 py-3">
       <span class="text-[16px] text-gray-900 dark:text-white">{{ t.RUN_DETAIL_VIEW.META_STARTED }}</span>
-      <span class="text-[16px] text-gray-500 dark:text-gray-400 tabular-nums">{{ run.started_at|date:"d M Y, H:i:s" }}</span>
+      <span class="text-[16px] text-gray-500 dark:text-gray-400 tabular-nums">{{ run.started_at|timezone:local_tz|date:"d M Y, H:i:s" }}</span>
     </div>
     {% if run.completed_at %}
     <div class="flex items-center justify-between px-4 py-3">
@@ -219,7 +219,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
         if (data.type === 'log') {
           // Guard: ignore entries delivered by a reconnect after completion
           if (this.runComplete) return;
-          const t = new Date(data.timestamp).toTimeString().slice(0, 8);
+          const t = new Date(data.timestamp).toLocaleTimeString('en-GB', { timeZone: '{{ local_tz }}', hour12: false });
           this.liveEntries.push({ time: t, level: data.level, stage: data.stage, message: data.message });
           this.$nextTick(() => {
             const c = this.$refs.logContainer;

@@ -1,4 +1,4 @@
-{% load webapp_extras %}<!DOCTYPE html>
+{% load webapp_extras tz %}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -73,7 +73,7 @@
       <dl class="space-y-1.5 text-sm">
         <div class="flex gap-2">
           <dt class="w-28 flex-shrink-0 text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.META_STARTED }}</dt>
-          <dd class="text-gray-800 dark:text-gray-200 font-medium">{{ run.started_at|date:"d M Y, H:i:s" }}</dd>
+          <dd class="text-gray-800 dark:text-gray-200 font-medium">{{ run.started_at|timezone:local_tz|date:"d M Y, H:i:s" }}</dd>
         </div>
         {% if run.completed_at %}
         <div class="flex gap-2">

@@ -1,5 +1,5 @@
 {% extends "webapp/base_desktop.html" %}
-{% load webapp_extras %}
+{% load webapp_extras tz %}
 
 {% block title %}Runs - AutoPkg Runner{% endblock %}
 
@@ -132,7 +132,7 @@
               {% if run.status == 'success' %}{{ t.APP.STATE_SUCCESS }}{% elif run.status == 'running' %}{{ t.APP.STATE_RUNNING }}{% elif run.status == 'failed' %}{{ t.APP.STATE_FAILED }}{% elif run.status == 'cancelled' %}{{ t.APP.STATE_CANCELLED }}{% elif run.status == 'pending' %}{{ t.APP.STATE_PENDING }}{% else %}{{ run.get_status_display }}{% endif %}
             </span>
           </td>
-          <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ run.started_at|date:"d M Y, H:i:s" }}</td>
+          <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ run.started_at|timezone:local_tz|date:"d M Y, H:i:s" }}</td>
           <td class="px-4 py-3 text-gray-500 dark:text-gray-400 tabular-nums">
             {{ run.started_at|duration:run.completed_at }}
           </td>

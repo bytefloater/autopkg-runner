@@ -1,5 +1,16 @@
 from webapp import translations as _trans
 
+# Cached server timezone key — determined once at first request then reused.
+_local_tz_key = None  # str once resolved, None until first request
+
+
+def _get_local_tz_key() -> str:
+    global _local_tz_key
+    if _local_tz_key is None:
+        from webapp.scheduler import get_system_timezone
+        _local_tz_key = get_system_timezone().key
+    return _local_tz_key
+
 _BASE_TABS = [
     {'name': 'dashboard', 't_key': 'VIEWS_DASHBOARD', 'label': 'Dashboard', 'url_name': 'dashboard',  'icon': 'house'},
     {'name': 'runs',      't_key': 'VIEWS_RUNS',      'label': 'Runs',      'url_name': 'run-list',   'icon': 'list'},
@@ -22,6 +33,7 @@ def nav_tabs(request):
     return {
         'nav_tabs': tabs,
         'mobile_nav_tabs': [t for t in _BASE_TABS if t['name'] not in _MOBILE_EXCLUDED],
+        'local_tz': _get_local_tz_key(),
     }
 
 
