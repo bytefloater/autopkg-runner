@@ -3,7 +3,7 @@ from __future__ import annotations
 import binascii
 import os
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from django.conf import settings
 from django.db import models
@@ -78,7 +78,7 @@ class Setting(models.Model):
     # -- Class-level helpers ----------------------------------------------------
 
     @classmethod
-    def get(cls, key: str, default: str | None = None) -> str:
+    def get(cls, key: str, default: Optional[str]=None) -> str:
         try:
             raw = cls.objects.get(key=key).value
         except cls.DoesNotExist:

@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Union
 
 TRANSLATIONS_DIR = Path(__file__).parent / 'translations'
 FALLBACK_LANG = 'en-US'
@@ -60,7 +61,7 @@ class TranslationProxy(dict):
 def _resolve_ref(value: str, root: dict) -> str:
     """Dereference a single @: pointer against the root translation dict."""
     key_path = value[2:]          # strip '@:'
-    current: dict | str = root
+    current: Union[dict, str] = root
     for part in key_path.split('.'):
         if not isinstance(current, dict):
             return value          # broken reference - return as-is
