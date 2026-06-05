@@ -436,7 +436,12 @@ def _build_recipe_entries(run_list_set: set) -> tuple:
             }
 
     entries = sorted(entries_by_key.values(), key=lambda e: e['name'].lower())
-    return entries, load_error
+
+    # Identifiers that are in the run list but have no matching recipe file.
+    all_known_identifiers = {e['identifier'] for e in entries_by_key.values()}
+    orphaned = sorted(run_list_set - all_known_identifiers)
+
+    return entries, load_error, orphaned
 
 
 # -- Recipe list views ---------------------------------------------------------
@@ -473,8 +478,12 @@ class RecipeDataView(LoginRequiredMixin, View):
         if not _is_cache_ready():
             return JsonResponse({'building': True}, status=202)
         run_list_set = set(_read_run_list())
-        entries, load_error = _build_recipe_entries(run_list_set)
-        return JsonResponse({'recipes': entries, 'load_error': load_error})
+        entries, load_error, orphaned = _build_recipe_entries(run_list_set)
+        return JsonResponse({
+            'recipes': entries,
+            'load_error': load_error,
+            'orphaned_run_list': orphaned,
+        })
 
 
 # -- Override views ------------------------------------------------------------

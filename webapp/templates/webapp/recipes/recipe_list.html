@@ -54,6 +54,31 @@
         {{ t.RECIPES_VIEW.ACTION_CHECKED_FIRST }}
       </button>
 
+      {# Orphaned run-list warning — shows when identifiers in recipe_list.txt have no matching recipe file #}
+      <div class="relative group flex-shrink-0" x-show="!loading && orphanedRunList.length > 0"
+           x-cloak style="display:none">
+        <button type="button" tabindex="-1"
+                class="flex items-center text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 transition-colors cursor-help"
+                :title="orphanedRunList.length + ' {{ t.RECIPES_VIEW.WARNING_ORPHANED_LABEL }}'">
+          {% lucide "triangle-alert" "w-5 h-5" %}
+        </button>
+        {# Tooltip #}
+        <div class="absolute left-0 top-full mt-2 w-96 z-50 pointer-events-none
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-150
+                    bg-gray-900 dark:bg-gray-950 rounded-xl shadow-xl
+                    border border-gray-700 dark:border-gray-800 p-3.5">
+          <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-400 mb-2.5">
+            {% lucide "triangle-alert" "w-3.5 h-3.5 flex-shrink-0" %}
+            <span>{{ t.RECIPES_VIEW.WARNING_ORPHANED_TITLE }}</span>
+          </p>
+          <div class="space-y-1">
+            <template x-for="id in orphanedRunList" :key="id">
+              <p class="font-mono text-xs text-gray-300 dark:text-gray-400 break-all leading-snug" x-text="id"></p>
+            </template>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     {# Recipe table #}
@@ -265,6 +290,7 @@
 function recipeList() {
   return {
     recipes: [],
+    orphanedRunList: [],
     loading: true,
     loadError: false,
     selected: {},
@@ -298,6 +324,7 @@ function recipeList() {
         .then(data => {
           if (!data) return;
           this.recipes = data.recipes;
+          this.orphanedRunList = data.orphaned_run_list || [];
           if (data.load_error) this.loadError = true;
           this.recipes.forEach(r => {
             if (r.in_run_list) this.selected[r.identifier] = true;
@@ -310,13 +337,31 @@ function recipeList() {
         });
     },
 
+    // Returns true when the query looks like a full/partial identifier (reverse-domain prefix).
+    // In that case we search the raw identifier; otherwise we strip the common GitHub prefix first.
+    _isIdentifierQuery(q) {
+      return /^(?:com|io|org|net)\./i.test(q);
+    },
+
+    // Strip com.github.<anything>. or io.github.<anything>. from an identifier
+    // so that searching "Firefox" matches "com.github.autopkg.download.Firefox"
+    // without also matching every other "com.github.*" recipe.
+    _searchableIdentifier(id) {
+      return id.replace(/^(?:com|io)\.github\.[^.]+\./i, '');
+    },
+
     get filtered() {
-      if (!this.search.trim()) return this.recipes;
-      const q = this.search.toLowerCase();
-      return this.recipes.filter(r =>
-        r.name.toLowerCase().includes(q) ||
-        r.identifier.toLowerCase().includes(q)
-      );
+      const raw = this.search.trimStart();         // ignore leading whitespace
+      if (!raw) return this.recipes;
+      const q = raw.toLowerCase();
+      const fullIdSearch = this._isIdentifierQuery(q);
+      return this.recipes.filter(r => {
+        if (r.name.toLowerCase().includes(q)) return true;
+        const idToSearch = fullIdSearch
+          ? r.identifier.toLowerCase()            // query looks like an identifier — search as-is
+          : this._searchableIdentifier(r.identifier.toLowerCase()); // strip GitHub prefix first
+        return idToSearch.includes(q);
+      });
     },
 
     get sorted() {

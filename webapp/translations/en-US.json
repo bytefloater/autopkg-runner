@@ -473,6 +473,8 @@
         "LIST_AVAILABLE": "Available Recipes",
         "LIST_LOAD_ERROR": "Could not load recipe list from autopkg.",
         "OVERRIDE_CREATE_IDENTIFIER_PLACEHOLDER": "e.g. Firefox.pkg.recipe",
-        "REPO_URL_PLACEHOLDER": "e.g. https://github.com/autopkg/recipes"
+        "REPO_URL_PLACEHOLDER": "e.g. https://github.com/autopkg/recipes",
+        "WARNING_ORPHANED_LABEL": "run list entries with no matching recipe found",
+        "WARNING_ORPHANED_TITLE": "These identifiers are in your run list but no recipe file was found for them:"
     }
 }
