@@ -77,6 +77,8 @@ urlpatterns = [
          recipes.RecipeListView.as_view(), name='recipes-list'),
     path('recipes/list/data/',
          recipes.RecipeDataView.as_view(), name='recipes-list-data'),
+    path('recipes/list/cache-reset/',
+         recipes.RecipeCacheResetView.as_view(), name='recipes-cache-reset'),
     path('recipes/overrides/create/',
          recipes.OverrideCreateView.as_view(), name='recipes-override-create'),
     path('recipes/overrides/<path:fname>/edit/',

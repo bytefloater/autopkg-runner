@@ -54,35 +54,65 @@
         {{ t.RECIPES_VIEW.ACTION_CHECKED_FIRST }}
       </button>
 
-      {# Orphaned run-list warning — shows when identifiers in recipe_list.txt have no matching recipe file #}
-      <div class="relative group flex-shrink-0" x-show="!loading && orphanedRunList.length > 0"
+      {# Warning icon — shown when there are orphaned run-list entries OR recipes with missing parents #}
+      <div class="relative group flex-shrink-0"
+           x-show="!loading && (orphanedRunList.length > 0 || missingParentList.length > 0)"
            x-cloak style="display:none">
         <button type="button" tabindex="-1"
-                class="flex items-center text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 transition-colors cursor-help"
-                :title="orphanedRunList.length + ' {{ t.RECIPES_VIEW.WARNING_ORPHANED_LABEL }}'">
+                class="flex items-center text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 transition-colors cursor-help">
           {% lucide "triangle-alert" "w-5 h-5" %}
         </button>
         {# Tooltip #}
         <div class="absolute left-0 top-full mt-2 w-96 z-50 pointer-events-none
                     opacity-0 group-hover:opacity-100 transition-opacity duration-150
-                    bg-gray-900 dark:bg-gray-950 rounded-xl shadow-xl
-                    border border-gray-700 dark:border-gray-800 p-3.5">
-          <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-400 mb-2.5">
-            {% lucide "triangle-alert" "w-3.5 h-3.5 flex-shrink-0" %}
-            <span>{{ t.RECIPES_VIEW.WARNING_ORPHANED_TITLE }}</span>
-          </p>
-          <div class="space-y-1">
-            <template x-for="id in orphanedRunList" :key="id">
-              <p class="font-mono text-xs text-gray-300 dark:text-gray-400 break-all leading-snug" x-text="id"></p>
-            </template>
-          </div>
+                    bg-white dark:bg-gray-950 rounded-xl shadow-lg
+                    border border-gray-200 dark:border-gray-800 p-3.5 space-y-3.5">
+
+          {# Section 1: orphaned run-list entries #}
+          <template x-if="orphanedRunList.length > 0">
+            <div>
+              <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">
+                {% lucide "triangle-alert" "w-3.5 h-3.5 flex-shrink-0" %}
+                <span>{{ t.RECIPES_VIEW.WARNING_ORPHANED_TITLE }}</span>
+              </p>
+              <div class="space-y-1">
+                <template x-for="id in orphanedRunList" :key="id">
+                  <p class="font-mono text-xs text-gray-600 dark:text-gray-400 break-all leading-snug" x-text="id"></p>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          {# Divider between sections when both are present #}
+          <template x-if="orphanedRunList.length > 0 && missingParentList.length > 0">
+            <hr class="border-gray-200 dark:border-gray-800">
+          </template>
+
+          {# Section 2: recipes with missing parent recipes #}
+          <template x-if="missingParentList.length > 0">
+            <div>
+              <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">
+                {% lucide "triangle-alert" "w-3.5 h-3.5 flex-shrink-0" %}
+                <span>{{ t.RECIPES_VIEW.WARNING_MISSING_PARENT_TITLE }}</span>
+              </p>
+              <div class="space-y-1.5">
+                <template x-for="r in missingParentList" :key="r.identifier">
+                  <div>
+                    <p class="font-mono text-xs text-gray-800 dark:text-gray-200 leading-snug" x-text="r.name"></p>
+                    <p class="font-mono text-xs text-gray-400 dark:text-gray-500 break-all leading-snug pl-2" x-text="'↳ ' + r.parent_recipe"></p>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+
         </div>
       </div>
 
     </div>
 
     {# Recipe table #}
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
       <table class="w-full text-left">
         <thead>
           <tr class="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30">
@@ -177,8 +207,26 @@
                   </template>
                 </td>
 
-                {# Actions: Edit override or Create override #}
+                {# Actions: missing-parent warning + Edit/Create override #}
                 <td class="px-4 py-2 align-middle text-right whitespace-nowrap">
+                  {# Row-level warning when this recipe's parent is not installed #}
+                  <span x-show="recipe.missing_parent"
+                        class="relative group/warn inline-flex items-center mr-2 align-middle
+                               text-amber-500 dark:text-amber-400 cursor-help">
+                    {% lucide "triangle-alert" "w-3.5 h-3.5" %}
+                    <span class="absolute right-0 bottom-full mb-2 w-64 z-50 pointer-events-none
+                                 opacity-0 group-hover/warn:opacity-100 transition-opacity duration-150
+                                 bg-white dark:bg-gray-950 rounded-lg shadow-lg text-left whitespace-normal
+                                 border border-gray-200 dark:border-gray-800 p-2.5">
+                      <span class="flex items-center gap-1.5 text-xs font-semibold
+                                   text-amber-600 dark:text-amber-400 mb-1.5">
+                        {% lucide "triangle-alert" "w-3 h-3 flex-shrink-0" %}
+                        {{ t.RECIPES_VIEW.WARNING_MISSING_PARENT_ROW }}
+                      </span>
+                      <span class="block font-mono text-xs text-gray-600 dark:text-gray-400
+                                   break-all leading-snug" x-text="recipe.parent_recipe"></span>
+                    </span>
+                  </span>
                   <template x-if="recipe.override_fname">
                     <a :href="'/recipes/overrides/' + recipe.override_fname + '/edit/'"
                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
@@ -335,6 +383,12 @@ function recipeList() {
           this.loading = false;
           this.loadError = true;
         });
+    },
+
+    get missingParentList() {
+      // Only include recipes that are both missing a parent AND currently ticked —
+      // these are the ones that will actually fail when the run list is executed.
+      return this.recipes.filter(r => r.missing_parent && this.isSelected(r.identifier));
     },
 
     // Returns true when the query looks like a full/partial identifier (reverse-domain prefix).

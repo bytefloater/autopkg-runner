@@ -249,10 +249,19 @@ def _autopkg_prefs() -> dict:
 
 
 def _recipe_search_dirs() -> list:
-    """Return the directories autopkg searches for recipes.
+    """Return the directories autopkg searches for recipes, excluding the
+    RecipeOverrides directory.
 
-    Reads RECIPE_SEARCH_DIRS from autopkg preferences, falling back to all
-    subdirectories of ~/Library/AutoPkg/RecipeRepos/ if the key is absent.
+    AutoPkg puts RecipeOverrides first in RECIPE_SEARCH_DIRS so that override
+    files shadow parent recipes when autopkg itself resolves recipes.  Our
+    background scan must NOT include that directory: overrides are already
+    read separately (via _overrides_dir()), and if they were scanned here the
+    stem-based deduplication would cause any parent recipe that shares a
+    filename with an override to be silently skipped, hiding its identifier
+    from all_scanned_identifiers and producing false missing-parent warnings.
+
+    Falls back to all subdirectories of ~/Library/AutoPkg/RecipeRepos/ if
+    RECIPE_SEARCH_DIRS is absent from autopkg preferences.
     """
     prefs = _autopkg_prefs()
     dirs = [d for d in prefs.get('RECIPE_SEARCH_DIRS', []) if d and d != '.']
@@ -260,11 +269,29 @@ def _recipe_search_dirs() -> list:
         repos_root = Path('~/Library/AutoPkg/RecipeRepos').expanduser()
         if repos_root.exists():
             dirs = [str(d) for d in repos_root.iterdir() if d.is_dir()]
-    return [str(Path(d).expanduser()) for d in dirs]
+
+    # Resolve the overrides directory once so we can exclude it by path.
+    try:
+        overrides_resolved = str(_overrides_dir().resolve())
+    except Exception:
+        overrides_resolved = str(_overrides_dir())
+
+    result = []
+    for d in dirs:
+        expanded = Path(d).expanduser()
+        try:
+            resolved = str(expanded.resolve())
+        except Exception:
+            resolved = str(expanded)
+        if resolved != overrides_resolved:
+            result.append(str(expanded))
+    return result
 
 
 _IDENT_RE_XML  = re.compile(r'<key>Identifier</key>\s*<string>([^<]+)</string>')
 _IDENT_RE_YAML = re.compile(r'^Identifier:\s*([^\s#][^\n]*)', re.MULTILINE)
+_PARENT_RE_XML = re.compile(r'<key>ParentRecipe</key>\s*<string>([^<]+)</string>')
+_PARENT_RE_YAML = re.compile(r'^ParentRecipe:\s*([^\s#][^\n]*)', re.MULTILINE)
 
 
 def _recipe_stem(path: Path) -> str:
@@ -275,20 +302,29 @@ def _recipe_stem(path: Path) -> str:
     return path.stem
 
 
-def _read_recipe_identifier(path: Path) -> str:
-    """Extract the Identifier value from a recipe file (XML plist or YAML).
+def _read_recipe_info(path: Path) -> dict:
+    """Extract Identifier and ParentRecipe (if present) from a recipe file.
 
-    Falls back to the base stem if the key is absent or the file is unreadable.
+    Returns a dict with keys 'identifier' (str) and 'parent' (str or None).
+    Falls back to the base stem for identifier if the key is absent or unreadable.
     """
+    stem = _recipe_stem(path)
     try:
         text = path.read_text(encoding='utf-8', errors='replace')
-        pattern = _IDENT_RE_YAML if path.suffix == '.yaml' else _IDENT_RE_XML
-        m = pattern.search(text)
-        if m:
-            return m.group(1).strip()
+        is_yaml = path.suffix == '.yaml'
+        m_id     = (_IDENT_RE_YAML  if is_yaml else _IDENT_RE_XML).search(text)
+        m_parent = (_PARENT_RE_YAML if is_yaml else _PARENT_RE_XML).search(text)
+        return {
+            'identifier': m_id.group(1).strip()     if m_id     else stem,
+            'parent':     m_parent.group(1).strip()  if m_parent else None,
+        }
     except OSError:
-        pass
-    return _recipe_stem(path)
+        return {'identifier': stem, 'parent': None}
+
+
+def _read_recipe_identifier(path: Path) -> str:
+    """Thin wrapper around _read_recipe_info for callers that only need the identifier."""
+    return _read_recipe_info(path)['identifier']
 
 
 _RECIPES_CACHE: dict = {'data': None, 'ts': 0.0}
@@ -324,39 +360,45 @@ def _start_cache_build():
     def _build():
         global _RECIPES_BUILDING
         try:
-            # Phase 1 - collect unique recipe file paths (sequential; deduplicates stems).
-            # Scans both .recipe (XML plist) and .recipe.yaml (YAML) formats.
-            # XML is preferred over YAML when both exist for the same base stem.
+            # Phase 1 — collect every recipe file path across all search dirs.
+            # No deduplication here: two repos can both contain Firefox.munki.recipe
+            # yet have different Identifier values.  We resolve duplicates in
+            # Phase 2 by identifier, not by filename.
             all_files: list = []
-            seen_stems: set = set()
             for search_dir in _recipe_search_dirs():
                 p = Path(search_dir)
                 if not p.is_dir():
                     continue
                 for pattern in ('*.recipe', '*.recipe.yaml'):
                     for recipe_file in p.rglob(pattern):
-                        stem = _recipe_stem(recipe_file)
-                        if stem not in seen_stems:
-                            seen_stems.add(stem)
-                            all_files.append(recipe_file)
+                        all_files.append(recipe_file)
 
-            # Phase 2 - read Identifier from each file in parallel
-            stem_to_ident: dict = {}
+            # Phase 2 — read Identifier + ParentRecipe from each file in parallel.
+            # Deduplicate by identifier so that two repos providing the same recipe
+            # (same Identifier value, same filename) produce a single entry while
+            # two repos providing different recipes with the same filename but
+            # different Identifier values both appear in the list.
+            seen_identifiers: set = set()
+            results: list = []
             workers = min(16, max(1, len(all_files)))
             with ThreadPoolExecutor(max_workers=workers) as pool:
-                future_map = {pool.submit(_read_recipe_identifier, f): f
+                future_map = {pool.submit(_read_recipe_info, f): f
                               for f in all_files}
                 for fut in as_completed(future_map):
                     f = future_map[fut]
-                    stem = _recipe_stem(f)
                     try:
-                        ident = fut.result()
+                        info = fut.result()
                     except Exception:
-                        ident = stem
-                    stem_to_ident[stem] = ident
+                        info = {'identifier': _recipe_stem(f), 'parent': None}
+                    ident = info['identifier']
+                    if ident not in seen_identifiers:
+                        seen_identifiers.add(ident)
+                        results.append({
+                            'stem':       _recipe_stem(f),
+                            'identifier': ident,
+                            'parent':     info['parent'],
+                        })
 
-            results = [{'stem': s, 'identifier': i}
-                       for s, i in stem_to_ident.items()]
             results.sort(key=lambda r: r['stem'].lower())
             _RECIPES_CACHE['data'] = results
             _RECIPES_CACHE['ts'] = time.monotonic()
@@ -373,74 +415,122 @@ def _invalidate_recipe_cache():
 
 
 def _build_recipe_entries(run_list_set: set) -> tuple:
-    """Return (entries, load_error).
+    """Return (entries, load_error, orphaned).
 
     Each entry is a dict:
-        identifier    – run-list identifier
-                        (XML Identifier for overrides; file stem for parents)
-        name          – short display name including type suffix, e.g. "Firefox.munki"
-        is_override   – True when sourced from the overrides directory
-        override_fname – filename in overrides dir (or None)
-        in_run_list   – True when currently in the run list
+        identifier      – recipe identifier (XML Identifier value)
+        name            – base stem used as display name, e.g. "Firefox.munki"
+        is_override     – True when sourced from the overrides directory
+        override_fname  – filename in overrides dir (or None)
+        parent_recipe   – ParentRecipe identifier from the file (or None)
+        missing_parent  – True when parent_recipe is set but not found on disk
+        in_run_list     – True when currently in the run list
+
+    Both the parent recipe AND any override for it are emitted as separate rows,
+    so a user can see all recipes even when multiple overrides exist for one
+    parent.  Overrides are matched to parents by identifier (the override's
+    ParentRecipe field) rather than by filename stem, so two repos that both
+    ship a file named e.g. Firefox.munki.recipe but with different Identifier
+    values are handled correctly.
     """
-    # Collect overrides: stem → {'fname', 'identifier'}
-    # We read the XML Identifier from each override file (few in number, fast regex).
+    # Collect overrides: fname_stem → {'stem', 'fname', 'identifier', 'parent'}
     override_map: dict = {}
     od = _overrides_dir()
     if od.exists():
         for f in od.glob('*.recipe'):
-            ov_id = _read_recipe_identifier(f)
-            override_map[f.stem] = {'fname': f.name, 'identifier': ov_id}
+            info = _read_recipe_info(f)
+            override_map[f.stem] = {
+                'stem':       f.stem,
+                'fname':      f.name,
+                'identifier': info['identifier'],
+                'parent':     info['parent'],
+            }
 
-    # Collect parent recipes by globbing + reading Identifier from each file (cached)
     load_error = False
-    parent_recipes = _list_parent_recipes()  # list of {'stem', 'identifier'}
+    parent_recipes = _list_parent_recipes()
 
-    # Build unified map keyed by stem.
-    # Override file stems match parent stems → deduplication aligns naturally.
-    # Each logical recipe appears once: override row supersedes parent row.
-    entries_by_key: dict = {}
+    # Lookup tables built from the scan:
+    #   all_scanned_identifiers – every recipe identifier found on disk.  Used to
+    #       decide whether a ParentRecipe reference is satisfied locally.
+    #   identifier_to_parent    – maps each scanned identifier to its own
+    #       ParentRecipe so we can walk one level further up the chain for
+    #       overrides whose direct parent IS present.
+    all_scanned_identifiers = {r['identifier'] for r in parent_recipes}
+    identifier_to_parent = {r['identifier']: r.get('parent') for r in parent_recipes}
+
+    # Map each override to its parent by identifier (override's ParentRecipe field),
+    # not by filename stem.  One parent can have multiple overrides.
+    parent_id_to_overrides: dict = {}
+    for stem, o_info in override_map.items():
+        pid = o_info.get('parent')
+        if pid:
+            parent_id_to_overrides.setdefault(pid, []).append(o_info)
+
+    entries: list = []
+    matched_override_fnames: set = set()
 
     for recipe in parent_recipes:
         stem = recipe['stem']
         parent_id = recipe['identifier']
-        o_info = override_map.get(stem)
-        if o_info:
+
+        # Always emit the parent recipe row.
+        entries.append({
+            'identifier':    parent_id,
+            'name':          stem,
+            'is_override':   False,
+            'override_fname': None,
+            'parent_recipe': recipe.get('parent'),
+            'in_run_list':   parent_id in run_list_set,
+        })
+
+        # Emit a separate row for each override that explicitly targets this parent.
+        # The override's own ParentRecipe is the base recipe (confirmed present here),
+        # so we expose the base recipe's OWN dependency as parent_recipe so the
+        # missing-parent check reflects whether the full execution chain is available.
+        # Use the override file's own stem as the display name so that e.g.
+        # FileZilla-Arm.munki.recipe shows as "FileZilla-Arm.munki", not "FileZilla.munki".
+        for o_info in parent_id_to_overrides.get(parent_id, []):
             ov_id = o_info['identifier']
-            entries_by_key[stem] = {
+            matched_override_fnames.add(o_info['fname'])
+            entries.append({
                 'identifier':    ov_id,
-                'name':          stem,
+                'name':          o_info['stem'],
                 'is_override':   True,
                 'override_fname': o_info['fname'],
+                'parent_recipe': recipe.get('parent'),
                 'in_run_list':   ov_id in run_list_set,
-            }
-        else:
-            entries_by_key[stem] = {
-                'identifier':    parent_id,
-                'name':          stem,
-                'is_override':   False,
-                'override_fname': None,
-                'in_run_list':   parent_id in run_list_set,
-            }
+            })
 
-    # Orphan overrides - no matching parent stem found in the search dirs
+    # Orphan overrides: not matched to any scanned parent by identifier.
+    # The override's ParentRecipe might be a recipe that IS installed (base present,
+    # check its own parent) or one that IS NOT (the base itself is what's missing).
     for stem, o_info in override_map.items():
-        if stem not in entries_by_key:
+        if o_info['fname'] not in matched_override_fnames:
             ov_id = o_info['identifier']
-            entries_by_key[stem] = {
+            base_id = o_info.get('parent')
+            if base_id and base_id in all_scanned_identifiers:
+                effective_parent = identifier_to_parent.get(base_id)
+            else:
+                effective_parent = base_id
+            entries.append({
                 'identifier':    ov_id,
                 'name':          stem,
                 'is_override':   True,
                 'override_fname': o_info['fname'],
+                'parent_recipe': effective_parent,
                 'in_run_list':   ov_id in run_list_set,
-            }
+            })
 
-    entries = sorted(entries_by_key.values(), key=lambda e: e['name'].lower())
+    # Annotate missing_parent using all_scanned_identifiers (recipe files on disk).
+    for entry in entries:
+        p = entry['parent_recipe']
+        entry['missing_parent'] = bool(p and p not in all_scanned_identifiers)
 
-    # Identifiers that are in the run list but have no matching recipe file.
-    all_known_identifiers = {e['identifier'] for e in entries_by_key.values()}
+    # Orphaned run-list: identifiers in the run list with no matching entry.
+    all_known_identifiers = {e['identifier'] for e in entries}
     orphaned = sorted(run_list_set - all_known_identifiers)
 
+    entries.sort(key=lambda e: (e['name'].lower(), e['is_override']))
     return entries, load_error, orphaned
 
 
@@ -484,6 +574,14 @@ class RecipeDataView(LoginRequiredMixin, View):
             'load_error': load_error,
             'orphaned_run_list': orphaned,
         })
+
+
+class RecipeCacheResetView(LoginRequiredMixin, View):
+    """POST → bust the recipe cache and start a fresh background rebuild."""
+
+    def post(self, request):
+        _invalidate_recipe_cache()
+        return HttpResponse(status=204)
 
 
 # -- Override views ------------------------------------------------------------

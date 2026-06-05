@@ -475,6 +475,9 @@
         "OVERRIDE_CREATE_IDENTIFIER_PLACEHOLDER": "e.g. Firefox.pkg.recipe",
         "REPO_URL_PLACEHOLDER": "e.g. https://github.com/autopkg/recipes",
         "WARNING_ORPHANED_LABEL": "run list entries with no matching recipe found",
-        "WARNING_ORPHANED_TITLE": "These identifiers are in your run list but no recipe file was found for them:"
+        "WARNING_ORPHANED_TITLE": "These identifiers are in your run list but no recipe file was found for them:",
+        "WARNING_MISSING_PARENT_LABEL": "recipes with a missing parent recipe",
+        "WARNING_MISSING_PARENT_TITLE": "These recipes reference a parent that is not installed:",
+        "WARNING_MISSING_PARENT_ROW": "Missing parent recipe"
     }
 }
