@@ -52,6 +52,7 @@
 
       {# Update - spinner lives inside the button; covered by htmx-indicator overlay when loading #}
       <button type="button"
+              data-repo-update-btn
               hx-post="{% url 'recipes-repo-update' %}"
               hx-vals='{"repo_path": "{{ repo.path|escapejs }}", "repo_url": "{{ repo.url|escapejs }}"}'
               hx-target="closest tr"

@@ -4,17 +4,75 @@
 {% block title %}{{ t.RECIPES_VIEW.SUBTAB_REPOS }} - {{ t.APP.NAME }}{% endblock %}
 
 {% block content %}
-<div x-data="{ showAdd: false, addUrl: '', showDelete: false, deleteUrl: '' }">
+<div x-data="{
+  showAdd: false, addUrl: '',
+  showDelete: false, deleteUrl: '',
+  updatingAll: false,
+  csrf: '{{ csrf_token }}',
+
+  async updateAll() {
+    if (this.updatingAll) return;
+    this.updatingAll = true;
+    try {
+      const buttons = [
+        ...document.getElementById('repos-tbody').querySelectorAll('[data-repo-update-btn]')
+      ];
+      for (const btn of buttons) {
+        // Light up this row's existing spinner
+        btn.classList.add('htmx-request');
+        const vals = JSON.parse(btn.getAttribute('hx-vals') || '{}');
+        try {
+          const resp = await fetch(btn.getAttribute('hx-post'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-CSRFToken': this.csrf,
+            },
+            body: new URLSearchParams(vals),
+          });
+          const html = await resp.text();
+          // Replace the row; btn is still attached to its original tr at this point
+          btn.closest('tr').outerHTML = html;
+        } catch (_) {
+          btn.classList.remove('htmx-request');
+        }
+      }
+    } finally {
+      this.updatingAll = false;
+    }
+  }
+}">
 
   {# Page header #}
   <div class="flex items-center justify-between min-h-9 mb-4">
     <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.RECIPES_VIEW.TITLE }}</h1>
-    <button type="button" @click="showAdd = true; $nextTick(() => $refs.addInput.focus())"
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
-                   bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm">
-      {% lucide "plus" "w-4 h-4" %}
-      {{ t.RECIPES_VIEW.ACTION_ADD_REPO }}
-    </button>
+    <div class="flex items-center gap-2">
+      {# Update All button #}
+      <button type="button"
+              @click="updateAll()"
+              :disabled="updatingAll"
+              class="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
+                     border border-gray-300 dark:border-slate-700
+                     text-gray-700 dark:text-gray-300
+                     hover:bg-gray-50 dark:hover:bg-slate-800
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-colors shadow-sm">
+        <span x-show="updatingAll" style="display:none"
+              class="absolute inset-0 flex items-center justify-center rounded-lg
+                     bg-white/90 dark:bg-slate-900/90">
+          {% lucide "loader-circle" "w-4 h-4 animate-spin text-gray-500 dark:text-gray-400" %}
+        </span>
+        {% lucide "refresh-cw" "w-4 h-4" %}
+        {{ t.RECIPES_VIEW.ACTION_UPDATE_ALL }}
+      </button>
+      {# Add Repository button #}
+      <button type="button" @click="showAdd = true; $nextTick(() => $refs.addInput.focus())"
+              class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
+                     bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm">
+        {% lucide "plus" "w-4 h-4" %}
+        {{ t.RECIPES_VIEW.ACTION_ADD_REPO }}
+      </button>
+    </div>
   </div>
 
   {# Sub-tab bar #}
@@ -30,7 +88,7 @@
           <th class="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
+      <tbody id="repos-tbody" class="divide-y divide-gray-50 dark:divide-slate-800">
         {% for repo in repos %}
           {% include "webapp/partials/repo_row.html" with repo=repo error_msg=None %}
         {% empty %}

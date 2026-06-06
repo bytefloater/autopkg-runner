@@ -448,6 +448,7 @@
         "REPO_STATUS_BEHIND": "commits behind",
         "REPO_STATUS_UNKNOWN": "Unknown",
         "ACTION_UPDATE": "Update",
+        "ACTION_UPDATE_ALL": "Update All",
         "ACTION_ADD_REPO": "Add Repository",
         "ACTION_REMOVE": "Remove",
         "ACTION_CREATE_OVERRIDE": "Create Override",
