@@ -96,7 +96,7 @@
           <div class="log-line flex gap-2 px-1 py-0.5">
             <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16">{{ entry.timestamp|timezone:local_tz|date:"H:i:s" }}</span>
             <span class="flex-shrink-0 w-14 text-right text-xs {{ entry.level|level_color }}">{{ entry.level }}</span>
-            <span class="text-gray-300 text-xs break-all">{{ entry.message }}</span>
+            <span class="text-gray-300 text-xs break-all whitespace-pre-line">{{ entry.message }}</span>
           </div>
           {% endfor %}
           {% endif %}
@@ -107,7 +107,7 @@
             <div class="log-line flex gap-2 px-1 py-0.5">
               <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16" x-text="entry.time"></span>
               <span class="flex-shrink-0 w-14 text-right text-xs" :class="levelClass(entry.level)" x-text="entry.level"></span>
-              <span class="text-gray-300 text-xs break-all" x-text="entry.message"></span>
+              <span class="text-gray-300 text-xs break-all whitespace-pre-line" x-text="entry.message"></span>
             </div>
           </template>
 
@@ -120,7 +120,17 @@
     </div>
     {% empty %}
 
-    {# -- No server stages yet: Alpine-driven placeholders (live run) -- #}
+    {# Waiting placeholder before any SSE stages arrive (only shown when no server stages exist) #}
+    <template x-if="dynamicStages.length === 0">
+      <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-8 text-center shadow-sm">
+        <svg class="w-6 h-6 text-blue-400 animate-spin mx-auto mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+        <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.RUN_DETAIL_VIEW.STATE_WAITING_PIPELINE }}</p>
+      </div>
+    </template>
+
+    {% endfor %}
+
+    {# -- Stages arriving via SSE after page load (always in DOM so Alpine can render them) -- #}
     <template x-for="stage in dynamicStages" :key="stage.name">
       <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
         <button type="button" @click="openStage = openStage === stage.name ? null : stage.name"
@@ -157,7 +167,7 @@
               <div class="log-line flex gap-2 px-1 py-0.5">
                 <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16" x-text="entry.time"></span>
                 <span class="flex-shrink-0 w-14 text-right text-xs" :class="levelClass(entry.level)" x-text="entry.level"></span>
-                <span class="text-gray-300 text-xs break-all" x-text="entry.message"></span>
+                <span class="text-gray-300 text-xs break-all whitespace-pre-line" x-text="entry.message"></span>
               </div>
             </template>
             <template x-if="!(stageLogs[stage.name] || []).length">
@@ -167,16 +177,6 @@
         </div>
       </div>
     </template>
-
-    {# Waiting placeholder before any SSE stages arrive #}
-    <template x-if="dynamicStages.length === 0">
-      <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-8 text-center shadow-sm">
-        <svg class="w-6 h-6 text-blue-400 animate-spin mx-auto mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-        <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.RUN_DETAIL_VIEW.STATE_WAITING_PIPELINE }}</p>
-      </div>
-    </template>
-
-    {% endfor %}
 
     {# -- General logs (no stage name) -- #}
     {% with general_logs=logs_by_stage|lookup:"__general__" %}
@@ -196,7 +196,7 @@
           <div class="log-line flex gap-2 px-1 py-0.5">
             <span class="text-gray-600 flex-shrink-0 tabular-nums text-xs w-16">{{ entry.timestamp|timezone:local_tz|date:"H:i:s" }}</span>
             <span class="flex-shrink-0 w-14 text-right text-xs {{ entry.level|level_color }}">{{ entry.level }}</span>
-            <span class="text-gray-300 text-xs break-all">{{ entry.message }}</span>
+            <span class="text-gray-300 text-xs break-all whitespace-pre-line">{{ entry.message }}</span>
           </div>
           {% endfor %}
         </div>
