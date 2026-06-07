@@ -3,9 +3,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge)](LICENSE)<br>
 ![Version 3.0.0](https://img.shields.io/badge/version-3.0.0-green?style=for-the-badge)
 
-A web-based management interface for [AutoPkg](https://github.com/autopkg/autopkg) - the macOS software packaging automation tool. AutoPkg Runner wraps your AutoPkg workflows in a Django web application with real-time run monitoring, a REST API, a mobile PWA, and scheduled execution, replacing fragile cron scripts and log trawling with a proper operations dashboard.
-
----
+A web-based management interface for [AutoPkg](https://github.com/autopkg/autopkg) - the macOS software packaging automation tool. AutoPkg Runner wraps your AutoPkg workflows in a Django web application with real-time run monitoring, a REST API, a mobile PWA, and scheduled execution.
 
 ## Features
 
@@ -18,10 +16,9 @@ A web-based management interface for [AutoPkg](https://github.com/autopkg/autopk
 - **Run sharing** - generate a shareable, unauthenticated link to any completed run report; optional expiry window configurable in notification settings
 - **Schedule** - cron-based scheduling with an enable/disable toggle; changes apply immediately without a server restart
 - **Recipes** - full AutoPkg recipe management (see [Recipes](#recipes) below)
-- **Configuration** - full pipeline configuration through the browser; no config files to edit
+- **Configuration** - full pipeline configuration through the browser
 - **Users** - create and manage user accounts, reset passwords
 - **API tokens** - create and revoke per-user tokens for REST API access
-- **About** - version information and environment details
 
 ### Recipes
 
@@ -32,7 +29,7 @@ The Recipes section replaces AutoPkgr for day-to-day recipe management. It is or
 - Lists all AutoPkg recipe repositories with their remote URL and git status (up to date / N commits behind / unknown)
 - Add a repository by URL — runs `autopkg repo-add` in the background
 - Remove a repository — runs `autopkg repo-delete`
-- Update a repository inline — the row shows a spinner while `autopkg repo-update` runs, then refreshes with the new status without a page reload (HTMX swap)
+- Update a repository inline — the row shows a spinner while `autopkg repo-update` runs, then refreshes with the new status
 
 #### Recipe List
 
@@ -66,7 +63,7 @@ The Recipes section replaces AutoPkgr for day-to-day recipe management. It is or
 Seven notification providers are supported. Multiple notifiers can be configured and each can have its own custom title and message template.
 
 | Provider | Notes |
-|----------|-------|
+|-|-|
 | **Pushover** | Push notification to iPhone/iPad/Mac via the Pushover app |
 | **Discord** | Message to a Discord channel via an incoming webhook |
 | **WebPush** | Native browser push notification - works with the installed PWA or any subscribed browser session |
@@ -80,7 +77,7 @@ Notifications are always dispatched at the end of a run regardless of whether ea
 Notification message and title fields support template variables:
 
 | Variable | Description |
-|----------|-------------|
+|-|-|
 | `{{ status }}` | Run outcome (`success` / `failure`) |
 | `{{ status_emoji }}` | Emoji representing the outcome |
 | `{{ imports }}` | Number of items imported |
@@ -97,7 +94,7 @@ Notification message and title fields support template variables:
 All endpoints support both JSON (`Accept: application/json`) and XML (`Accept: application/xml`) responses. Token authentication is required for all endpoints except `get_token`.
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
+|--|-|-|
 | `POST` | `/api/auth/get_token/` | Exchange username + password for an API token |
 | `GET` | `/api/auth/check_token/` | Validate a token |
 | `POST` | `/api/tasks/trigger_run/` | Start a pipeline run - returns a task UUID |
@@ -119,7 +116,7 @@ The pipeline runs these stages in order:
 7. **Garbage Collector** - prunes old cache files, temp files, and stale HTML reports using `repoclean`
 8. **Send Notifications** - dispatches alerts to all configured notifiers
 
----
+
 
 ## Requirements
 
@@ -127,7 +124,7 @@ The pipeline runs these stages in order:
 - Python 3.9+
 - [AutoPkg](https://github.com/autopkg/autopkg) installed
 
----
+
 
 ## Installation
 
@@ -143,26 +140,26 @@ python3 manage.py serve
 
 Open `http://127.0.0.1:8000` and log in with the credentials shown. All configuration is done through the web UI.
 
----
+
 
 ## Management commands
 
 | Command | Description |
-|---------|-------------|
+||-|
 | `manage.py setup` | One-shot initialisation: migrate, create defaults, generate admin account |
 | `manage.py serve` | Start the development server (`--network` to bind to all interfaces, `--port` to change port) |
 | `manage.py resetpassword` | Generate and set a new random password for the admin account |
 | `manage.py generate_vapid_keys` | Generate VAPID keys for WebPush notifications and store them in the database |
 | `manage.py install_sftp_deps` | Install macFUSE and sshfs via Homebrew (required for SFTP repository connections) |
 
----
+
 
 ## Configuration
 
 All settings are stored in the database and managed through the **Configuration** page in the web UI.
 
 | Group | Key settings |
-|-------|-------------|
+|-|-|
 | **AutoPkg** | Binary path, cache path, recipe list path, report plist path |
 | **Workflow** | Toggle automatic repo updates before each run |
 | **Repository** | Connection type (SMB or SFTP), host, share name, mount path, public URL, credentials, directories to validate |
@@ -174,24 +171,26 @@ All settings are stored in the database and managed through the **Configuration*
 ### Environment variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+|-||-|
 | `DJANGO_SECRET_KEY` | (auto-generated) | Django secret key — set a stable value in production; also used as the master key for encrypting stored credentials |
 | `DJANGO_DEBUG` | `true` | Set to `false` in production |
 | `DJANGO_ALLOWED_HOSTS` | `localhost 127.0.0.1` | Space-separated list of allowed hostnames |
 
----
+
 
 ## Scheduling
 
 Scheduled runs are configured on the **Schedule** page. Enable the toggle and set the cron fields (minute, hour, day of week, day of month, month). Changes apply immediately - no server restart required.
 
----
+
 
 ## Localisation
 
 The UI ships with English (en-US) and French (fr-FR) translations. Switch languages under **Configuration → UI**. Additional languages can be added by creating a new JSON file in `webapp/translations/`.
 
----
+> Non-english translations are still a work in progress. If you are able to assist with the translations into additional languages, contributions are welcome.
+
+
 
 ## REST API usage
 
@@ -228,7 +227,7 @@ curl "http://localhost:8000/api/tasks/get_task_status/?uuid=d4e5f6..." \
 
 Add `-H "Accept: application/xml"` to any request to receive an XML response instead of JSON.
 
----
+
 
 ## SFTP repository support
 
@@ -240,7 +239,7 @@ python3 manage.py install_sftp_deps
 
 This installs macFUSE and sshfs via Homebrew. macFUSE requires a system reboot and kernel extension approval in **System Settings → Privacy & Security** after installation.
 
----
+
 
 ## Production deployment
 
@@ -259,7 +258,7 @@ chmod 600 db.sqlite3
 
 Set a stable `DJANGO_SECRET_KEY` in production — this value is used to encrypt all stored credentials (repository passwords, notifier tokens). Rotating the key will invalidate any encrypted values in the database.
 
----
+
 
 ## License
 
