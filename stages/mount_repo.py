@@ -83,7 +83,14 @@ class MountRepository(Stage):
         self.mounter.mount()
 
     def post_check(self) -> bool:
-        """Verify the mounted/local repository is accessible as a directory."""
+        """Verify the mounted/local repository is accessible and readable.
+
+        Checks more than just directory existence: after mounting, the mount-point
+        directory is always stat-able (it was created by os.mkdir before the mount),
+        so is_dir() alone gives a false positive when the SMB session cannot actually
+        deliver file content.  We therefore also verify that the directory can be
+        listed and that at least one file inside it is openable.
+        """
         if self._is_local():
             base: Path = self.local_path
         else:
@@ -94,6 +101,44 @@ class MountRepository(Stage):
         if not base.is_dir():
             self.logger.error(f"Repository base path is not accessible: {base}")
             return False
+
+        # Resolve symlinks before any VFS operation.  /tmp is a symlink to
+        # /private/tmp on macOS; resolving ensures consistent path handling.
+        resolved = base.resolve()
+
+        # Verify we can list the directory contents (not just stat the root).
+        try:
+            entries = list(resolved.iterdir())
+        except OSError as exc:
+            self.logger.error(f"Repository is mounted but its contents cannot be listed: {exc}")
+            return False
+
+        # Verify we can open and read at least one file from within the share.
+        # This catches permission issues that only materialise on actual I/O,
+        # not on directory stat calls.
+        #
+        # Munki repos have no files at the root (only catalogs/, pkgs/, etc.),
+        # so fall back to a one-level-deep search when the root itself is file-free.
+        first_file = next((e for e in entries if e.is_file()), None)
+        if first_file is None:
+            for subdir in (e for e in entries if e.is_dir()):
+                try:
+                    first_file = next(
+                        (e for e in subdir.iterdir() if e.is_file()),
+                        None,
+                    )
+                except OSError:
+                    continue
+                if first_file is not None:
+                    break
+
+        if first_file is not None:
+            try:
+                with first_file.open('rb') as fh:
+                    fh.read(1)
+            except OSError as exc:
+                self.logger.error(f"Repository is mounted but files cannot be read: {exc}")
+                return False
 
         self.logger.info("Repository structure check succeeded.")
         return True
