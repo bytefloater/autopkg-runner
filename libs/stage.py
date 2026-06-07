@@ -30,6 +30,7 @@ class Stage(ABC):
         outputs[self.__class__] = result
 
         if not self.post_check():
+            self.cleanup()
             raise RuntimeError(f"Post‑check failed for {self.name}")
 
     def pre_check(self) -> bool:
