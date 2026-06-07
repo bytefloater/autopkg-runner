@@ -131,6 +131,67 @@
       editor.setOption('theme',
         document.documentElement.classList.contains('dark') ? 'material-darker' : 'default');
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    // -- Scroll drift filter -------------------------------------------------
+    // Suppresses clearly-incidental cross-axis motion (trackpad noise during a
+    // vertical or horizontal scroll) without locking the direction.  If both
+    // axes carry significant energy the gesture is treated as intentionally
+    // diagonal and passes through unmodified.
+    //
+    // DRIFT_THRESHOLD: the cross-axis delta must be below this fraction of the
+    // primary-axis delta to be considered noise and filtered out.  0.15 means
+    // "horizontal drift < 15 % of vertical motion → probably not intentional".
+    const scrollEl = document.querySelector('.CodeMirror-scroll');
+    if (scrollEl) {
+      const DRIFT_THRESHOLD = 0.15;
+
+      // Capture phase fires BEFORE CodeMirror so we can drop noisy events
+      // before CodeMirror acts on them.
+      scrollEl.addEventListener('wheel', function (e) {
+        const absX = Math.abs(e.deltaX);
+        const absY = Math.abs(e.deltaY);
+
+        const driftX = absY > 0 && absX < absY * DRIFT_THRESHOLD; // tiny H during V scroll
+        const driftY = absX > 0 && absY < absX * DRIFT_THRESHOLD; // tiny V during H scroll
+
+        // Both axes significant → intentional diagonal, pass through unchanged.
+        if (!driftX && !driftY) return;
+
+        e.stopPropagation();
+        e.preventDefault();
+        // Apply only the dominant axis.
+        if (driftX) {
+          scrollEl.scrollTop  += e.deltaY;
+        } else {
+          scrollEl.scrollLeft += e.deltaX;
+        }
+      }, { passive: false, capture: true });
+
+      // Touch: use cumulative displacement from gesture origin so the direction
+      // estimate stabilises before we decide whether to filter.
+      let touchOrigin = null;
+
+      scrollEl.addEventListener('touchstart', function (e) {
+        touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }, { passive: true });
+
+      scrollEl.addEventListener('touchmove', function (e) {
+        if (!touchOrigin) return;
+        const absX = Math.abs(e.touches[0].clientX - touchOrigin.x);
+        const absY = Math.abs(e.touches[0].clientY - touchOrigin.y);
+
+        const driftX = absY > 0 && absX < absY * DRIFT_THRESHOLD;
+        const driftY = absX > 0 && absY < absX * DRIFT_THRESHOLD;
+
+        // Suppress only clear single-axis drift; allow diagonal gestures.
+        if (driftX && absX > 0) e.preventDefault();
+        if (driftY && absY > 0) e.preventDefault();
+      }, { passive: false });
+
+      scrollEl.addEventListener('touchend', function () {
+        touchOrigin = null;
+      }, { passive: true });
+    }
   })();
 </script>
 {% endblock %}

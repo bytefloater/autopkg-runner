@@ -453,6 +453,7 @@
         "ACTION_REMOVE": "Remove",
         "ACTION_CREATE_OVERRIDE": "Create Override",
         "ACTION_EDIT_OVERRIDE": "Edit Override",
+        "ACTION_DELETE_OVERRIDE": "Delete Override",
         "ACTION_EDIT": "Edit",
         "ACTION_SAVE_LIST": "Save Run List",
         "ACTION_CHECKED_FIRST": "Checked First",

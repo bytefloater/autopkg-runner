@@ -592,6 +592,12 @@ class OverrideCreateView(LoginRequiredMixin, View):
         if not identifier:
             messages.error(request, 'Recipe identifier is required.')
             return redirect('recipes-list')
+
+        od = _overrides_dir()
+        od.mkdir(parents=True, exist_ok=True)
+        # Snapshot filenames before so we can identify the newly created file
+        before = {f.name for f in od.glob('*.recipe')}
+
         try:
             r = subprocess.run(
                 [_autopkg(), 'make-override', identifier],
@@ -608,16 +614,36 @@ class OverrideCreateView(LoginRequiredMixin, View):
             messages.error(request, 'autopkg not found. Check the path in Configuration.')
             return redirect('recipes-list')
 
-        # Find the newly created file and open the editor
-        od = _overrides_dir()
-        stem = Path(identifier).stem
-        candidates = list(od.glob(f'{stem}*.recipe'))
-        if candidates:
-            exact = [c for c in candidates if c.stem == stem]
-            chosen = exact[0] if exact else candidates[0]
-            return redirect('recipes-override-edit', fname=chosen.name)
+        _invalidate_recipe_cache()
+
+        # Find the newly created file by comparing before/after snapshots
+        after = {f.name for f in od.glob('*.recipe')}
+        new_files = after - before
+        if new_files:
+            fname = next(iter(new_files))
+            return redirect('recipes-override-edit', fname=fname)
 
         messages.success(request, f'Override created for {identifier}.')
+        return redirect('recipes-list')
+
+
+class OverrideDeleteView(LoginRequiredMixin, View):
+    """POST: delete an override file from the overrides directory."""
+
+    def post(self, request, fname: str):
+        try:
+            path = _safe_override_path(fname)
+        except ValueError:
+            messages.error(request, 'Invalid override path.')
+            return redirect('recipes-list')
+
+        if not path.exists():
+            messages.error(request, f'{fname!r} was not found.')
+            return redirect('recipes-list')
+
+        path.unlink()
+        _invalidate_recipe_cache()
+        messages.success(request, f'{fname} deleted.')
         return redirect('recipes-list')
 
 

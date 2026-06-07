@@ -83,6 +83,8 @@ urlpatterns = [
          recipes.OverrideCreateView.as_view(), name='recipes-override-create'),
     path('recipes/overrides/<path:fname>/edit/',
          recipes.OverrideEditView.as_view(), name='recipes-override-edit'),
+    path('recipes/overrides/<path:fname>/delete/',
+         recipes.OverrideDeleteView.as_view(), name='recipes-override-delete'),
 
     # -- Other -----------------------------------------------------------------
     path('api-tokens/', api_tokens.ApiTokensView.as_view(), name='api-tokens'),
