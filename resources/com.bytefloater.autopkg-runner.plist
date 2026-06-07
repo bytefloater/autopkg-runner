@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.bytefloater.autopkg-runner</string>
+
+	<!-- Run the service as this user (privileges are dropped by launchd) -->
+	<key>UserName</key>
+	<string>{{run_as_user}}</string>
+
+	<!-- Project root — also the working directory for gunicorn and dotenv -->
+	<key>WorkingDirectory</key>
+	<string>{{working_dir}}</string>
+
+	<!-- Each argument must be a separate <string> element -->
+	<key>ProgramArguments</key>
+	<array>
+		{{program_args}}
+	</array>
+
+	<!-- Ensure the project root is on Python's module search path.
+	     WorkingDirectory alone is not sufficient — launchd sets the process
+	     cwd but does not modify sys.path, so autopkgrunner would not be
+	     importable without this. -->
+	<!-- Ensure the project root is on Python's module search path so that
+	     autopkgrunner is importable when running as a launchd daemon. -->
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PYTHONPATH</key>
+		<string>{{working_dir}}</string>
+	</dict>
+
+	<!-- Start the service when the plist is loaded (boot / launchctl load) -->
+	<key>RunAtLoad</key>
+	<true/>
+
+	<!-- Restart the service if it exits for any reason -->
+	<key>KeepAlive</key>
+	<true/>
+
+	<!-- Redirect stdout and stderr to a shared log file -->
+	<key>StandardOutPath</key>
+	<string>/var/log/autopkg-runner/server.log</string>
+
+	<key>StandardErrorPath</key>
+	<string>/var/log/autopkg-runner/server.log</string>
+</dict>
+</plist>

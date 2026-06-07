@@ -23,6 +23,7 @@ _SKIP_COMMANDS = frozenset({
     # Project-specific non-serving commands
     'configure', 'setup', 'install_sftp_deps',
     'generate_vapid_keys', 'resetpassword',
+    'install_service_daemon', 'remove_service_daemon',
 })
 
 
