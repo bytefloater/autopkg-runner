@@ -78,16 +78,17 @@ Notification message and title fields support template variables:
 
 | Variable | Description |
 |-|-|
-| `{{ status }}` | Run outcome (`success` / `failure`) |
-| `{{ status_emoji }}` | Emoji representing the outcome |
-| `{{ imports }}` | Number of items imported |
-| `{{ failures }}` | Number of recipe failures |
-| `{{ downloads }}` | Number of items downloaded |
-| `{{ duration }}` | Run duration |
-| `{{ share_url }}` | Link to the shareable run report |
-| `{{ run_id }}` | Run UUID |
-| `{{ triggered_by }}` | Who or what triggered the run |
-| `{{ date }}` / `{{ time }}` | Run date and time |
+| `{status}` | Run outcome (`success` / `failure`) |
+| `{status_emoji}` | Emoji representing the outcome |
+| `{imports}` | Number of items imported |
+| `{failures}` | Number of recipe failures |
+| `{downloads}` | Number of items downloaded |
+| `{duration}` | Run duration |
+| `{share_url}` | Raw share-link URL (plain text) |
+| `{share_link:"text"}` | Clickable HTML hyperlink to the share report — HTML notifiers only (e.g. Pushover with HTML enabled). Single or double quotes both accepted. Expands to nothing if no share URL is configured. |
+| `{run_id}` | Run UUID |
+| `{triggered_by}` | Who or what triggered the run |
+| `{date}` / `{time}` | Run date and time |
 
 ### REST API
 
@@ -153,7 +154,7 @@ Open `http://127.0.0.1:8000` and log in with the credentials shown. All configur
 ## Management commands
 
 | Command | Description |
-||-|
+|-|-|
 | `manage.py setup` | One-shot initialisation: migrate, create defaults, generate admin account |
 | `manage.py serve` | Start the development server (`--network` to bind to all interfaces, `--port` to change port) |
 | `manage.py resetpassword` | Generate and set a new random password for the admin account |
