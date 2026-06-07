@@ -124,6 +124,14 @@ The pipeline runs these stages in order:
 - Python 3.9+
 - [AutoPkg](https://github.com/autopkg/autopkg) installed
 
+> **Full Disk Access required**
+>
+> Both the Python interpreter used to run AutoPkg Runner **and** the Python interpreter bundled with AutoPkg itself must be granted Full Disk Access in **System Settings → Privacy & Security → Full Disk Access**. Without this, AutoPkg recipes that read from or write to protected locations (including SMB-mounted shares in a system daemon session) will fail with a permission error at runtime.
+>
+> The typical entries to add are:
+> - The `python3` binary used to launch AutoPkg Runner (e.g. `/opt/homebrew/bin/python3` or a venv interpreter)
+> - AutoPkg's bundled Python at `/Library/AutoPkg/Python3/Python.framework/Versions/Current/bin/python3`
+
 
 
 ## Installation
@@ -151,6 +159,8 @@ Open `http://127.0.0.1:8000` and log in with the credentials shown. All configur
 | `manage.py resetpassword` | Generate and set a new random password for the admin account |
 | `manage.py generate_vapid_keys` | Generate VAPID keys for WebPush notifications and store them in the database |
 | `manage.py install_sftp_deps` | Install macFUSE and sshfs via Homebrew (required for SFTP repository connections) |
+| `manage.py install_service_daemon --user <username>` | Install autopkg-runner as a macOS launchd system daemon (see [Running as a system service](#running-as-a-system-service)) |
+| `manage.py remove_service_daemon` | Unload and remove the installed launchd system daemon |
 
 
 
@@ -257,6 +267,63 @@ chmod 600 db.sqlite3
 ```
 
 Set a stable `DJANGO_SECRET_KEY` in production — this value is used to encrypt all stored credentials (repository passwords, notifier tokens). Rotating the key will invalidate any encrypted values in the database.
+
+
+
+## Running as a system service
+
+autopkg-runner can be installed as a macOS launchd system daemon that starts automatically at boot, runs under a dedicated user account, and is managed by the operating system.
+
+### Prerequisites
+
+- The project must be located under `/opt/` (e.g. `/opt/autopkg-runner`). macOS TCC blocks daemon processes from accessing user-protected directories such as `~/Desktop`, `~/Documents`, and `~/Downloads`; `/opt/` is not subject to these restrictions.
+- All files under the project root must be owned by the user account the daemon will run as.
+- [gunicorn](https://gunicorn.org) must be installed in the Python environment being used (`pip3 install gunicorn`).
+
+```bash
+# Move the project into /opt/ if it is not already there
+sudo mv /path/to/autopkg-runner /opt/autopkg-runner
+sudo chown -R autopkg /opt/autopkg-runner
+
+# Install the daemon
+python3 manage.py install_service_daemon --user autopkg
+```
+
+A macOS authentication dialog will appear to request administrator credentials for the privileged writes. Alternatively, run the command under `sudo` to skip the dialog.
+
+The command will:
+1. Validate the user account, project location, and file ownership
+2. Render a launchd plist configured to launch gunicorn with the specified options
+3. Write the plist to `/Library/LaunchDaemons/` with the correct ownership and permissions
+4. Create `/var/log/autopkg-runner/` for server logs
+5. Load the service immediately via `launchctl`
+
+### Options
+
+| Flag | Default | Description |
+|-|-|-|
+| `--user <username>` | *(required)* | macOS user account the service process runs as |
+| `--bind <address>` | `127.0.0.1` | Address gunicorn binds to |
+| `--port <port>` | `8000` | Port gunicorn listens on |
+| `--workers <n>` | `1` | Number of gunicorn worker processes — keep at 1 to avoid duplicate scheduled runs |
+| `--threads <n>` | `8` | Number of threads per worker |
+
+### Useful commands
+
+```bash
+# Check whether the service is running
+launchctl list | grep autopkg-runner
+
+# View server logs
+tail -f /var/log/autopkg-runner/server.log
+
+# Remove the service
+python3 manage.py remove_service_daemon
+```
+
+### Full Disk Access
+
+When running as a launchd system daemon, the service operates in a system session with stricter macOS security policy than a normal user session. Both Python interpreters listed in [Requirements](#requirements) must be granted Full Disk Access, or AutoPkg recipes will fail at runtime with a permission error.
 
 
 
