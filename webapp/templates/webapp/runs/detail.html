@@ -241,15 +241,24 @@
 <script>
 function runDetail(runId, initialStatus, lastLogId = 0) {
   return {
-    currentStatus: initialStatus,
-    openStage:     null,
-    stageStatuses: {},
-    stageLogs:     {},   // { stageName: [{time, level, message}] }
-    dynamicStages: [],   // for live runs before any server stages exist
-    liveStatus:    '',
-    eventSource:   null,
+    currentStatus:    initialStatus,
+    openStage:        null,
+    stageStatuses:    {},
+    stageLogs:        {},   // { stageName: [{time, level, message}] }
+    dynamicStages:    [],   // stages that arrive via SSE after page load
+    serverStageNames: new Set(),  // names of stages already server-rendered
+    liveStatus:       '',
+    eventSource:      null,
 
     init() {
+      // Collect server-rendered stage names so SSE stage events don't create
+      // duplicate cards in dynamicStages for stages already in the DOM.
+      this.serverStageNames = new Set(
+        [...document.querySelectorAll('[data-stage-log]')]
+          .map(el => el.dataset.stageLog)
+          .filter(n => n && n !== '__general__')
+      );
+
       const terminal = ['success', 'failed', 'cancelled'];
       if (!terminal.includes(initialStatus)) {
         this.startSSE(runId);
@@ -285,18 +294,20 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
           // Replace the whole stageStatuses object - Alpine 3 won't react to
           // in-place property assignment on a nested object.
           this.stageStatuses = { ...this.stageStatuses, [data.name]: data.status };
-          // Maintain dynamicStages array for live-only renders.
-          // Replace the array rather than mutating in-place for the same reason.
-          const existing = this.dynamicStages.find(s => s.name === data.name);
-          if (existing) {
-            this.dynamicStages = this.dynamicStages.map(s =>
-              s.name === data.name ? { ...s, status: data.status } : s
-            );
-          } else {
-            this.dynamicStages = [
-              ...this.dynamicStages,
-              { name: data.name, status: data.status, order: data.order },
-            ].sort((a, b) => a.order - b.order);
+          // Maintain dynamicStages for stages not already server-rendered.
+          // Server-rendered stages are updated via stageStatuses above.
+          if (!this.serverStageNames.has(data.name)) {
+            const existing = this.dynamicStages.find(s => s.name === data.name);
+            if (existing) {
+              this.dynamicStages = this.dynamicStages.map(s =>
+                s.name === data.name ? { ...s, status: data.status } : s
+              );
+            } else {
+              this.dynamicStages = [
+                ...this.dynamicStages,
+                { name: data.name, status: data.status, order: data.order },
+              ].sort((a, b) => a.order - b.order);
+            }
           }
           // When a stage starts, open it (implicitly closing whichever
           // stage was previously expanded in the single-open accordion).
