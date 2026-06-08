@@ -22,20 +22,24 @@
 
   <form method="post"
         x-data="{
-          enabled:    {% if notifier.enabled %}true{% else %}false{% endif %},
-          testing:    false,
-          testResult: null,
+          enabled: {% if notifier.enabled %}true{% else %}false{% endif %},
+          testing: false,
           async sendTest() {
-            this.testing    = true;
-            this.testResult = null;
+            this.testing = true;
             try {
               const r = await fetch('{% url 'notifier-test' notifier.pk %}', {
                 method:  'POST',
                 headers: { 'X-CSRFToken': '{{ csrf_token }}' },
               });
-              this.testResult = await r.json();
+              const result = await r.json();
+              this.$dispatch('toast', {
+                type:    result.success ? 'success' : 'error',
+                message: result.success
+                  ? '{{ t.NOTIFICATIONS_VIEW.TEST_SUCCESS|escapejs }}'
+                  : (result.message || '{{ t.NOTIFICATIONS_VIEW.TEST_FAILED|escapejs }}'),
+              });
             } catch(e) {
-              this.testResult = { success: false, message: 'Network error - check the console.' };
+              this.$dispatch('toast', { type: 'error', message: 'Network error — check the console.' });
             }
             this.testing = false;
           }
@@ -80,7 +84,172 @@
     </div>
 
     {# -- Type-specific fields -------------------------------------------------- #}
-    {% if fields %}
+    {% if notifier.notifier_type == 'email' %}
+    {# ---- Custom SMTP editor ------------------------------------------------- #}
+    <div x-data="smtpForm()">
+
+      {# Section 1: Connection #}
+      <div>
+        <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</h3>
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
+                    divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">
+
+          {# From address #}
+          <div class="px-4 py-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.NOTIFICATIONS_VIEW.OPT_FROM_ADDRESS }}</label>
+            <input type="text" name="from_address" x-model="fromAddress"
+                   placeholder="noreply@example.com"
+                   class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
+                          bg-gray-50 dark:bg-slate-800/50 text-sm
+                          text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                   :class="fromAddress && !fromValid ? 'border-red-400 dark:border-red-600 focus:ring-red-500' : ''">
+            <p x-show="fromAddress && !fromValid" x-cloak class="mt-1.5 text-xs text-red-500 dark:text-red-400">Invalid email address</p>
+          </div>
+
+          {# Recipients — tag-style input #}
+          <div class="px-4 py-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.NOTIFICATIONS_VIEW.OPT_RECIPIENTS }}</label>
+            <div @click="$refs.tagInput.focus()"
+                 class="flex flex-wrap gap-1.5 px-3 py-2 min-h-[2.5rem] rounded-lg border border-gray-200 dark:border-slate-700
+                        bg-gray-50 dark:bg-slate-800/50 cursor-text
+                        focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-colors">
+              <template x-for="(tag, i) in tags" :key="i">
+                <span class="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md text-xs font-medium"
+                      :class="isValidEmail(tag)
+                               ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                               : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'">
+                  <span x-text="tag"></span>
+                  <button type="button" @click.stop="removeTag(i)"
+                          class="w-4 h-4 flex items-center justify-center rounded hover:bg-black/10 dark:hover:bg-white/10 leading-none">&times;</button>
+                </span>
+              </template>
+              <input x-ref="tagInput" type="text" x-model="tagInput"
+                     @keydown="onTagKey($event)"
+                     @blur="tagInput.trim() && addTag()"
+                     placeholder="add email, press Enter or comma"
+                     class="flex-1 min-w-[180px] bg-transparent text-sm text-gray-900 dark:text-white
+                            placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none">
+              <input type="hidden" name="recipients" :value="recipientsValue">
+            </div>
+            <p x-show="invalidTags.length > 0" x-cloak class="mt-1.5 text-xs text-red-500 dark:text-red-400">
+              One or more addresses are not valid email addresses.
+            </p>
+          </div>
+
+          {# SMTP Server + Port inline #}
+          <div class="px-4 py-4">
+            <div class="flex gap-3 items-end">
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.NOTIFICATIONS_VIEW.OPT_SMTP_SERVER }}</label>
+                <input type="text" name="smtp_server"
+                       value="{{ decrypted_config|lookup:'smtp_server' }}"
+                       placeholder="mail.example.com"
+                       class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
+                              bg-gray-50 dark:bg-slate-800/50 text-sm
+                              text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+              </div>
+              <div class="w-24 flex-shrink-0">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Port</label>
+                <input type="number" name="smtp_port" min="1" max="65535"
+                       value="{{ decrypted_config|lookup:'smtp_port'|default:'587' }}"
+                       class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
+                              bg-gray-50 dark:bg-slate-800/50 text-sm text-center
+                              text-gray-900 dark:text-white
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+              </div>
+            </div>
+          </div>
+
+          {# Encryption dropdown #}
+          <div class="flex items-center justify-between px-4 py-4">
+            <label class="text-sm font-medium text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.OPT_SMTP_ENCRYPTION }}</label>
+            <select name="use_ssl"
+                    class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700
+                           bg-gray-50 dark:bg-slate-800/50 text-sm
+                           text-gray-900 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+              <option value=""{% if not decrypted_config.use_ssl %} selected{% endif %}>None / STARTTLS</option>
+              <option value="on"{% if decrypted_config.use_ssl %} selected{% endif %}>SSL</option>
+            </select>
+          </div>
+
+          {# Auth required toggle #}
+          <div class="flex items-center justify-between px-4 py-4">
+            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.OPT_USE_AUTH }}</p>
+            <input type="hidden" name="use_auth" :value="useAuth ? 'on' : ''">
+            <button type="button" @click="useAuth = !useAuth"
+                    :class="useAuth ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full
+                           border-2 border-transparent transition-colors duration-200">
+              <span :class="useAuth ? 'translate-x-5' : 'translate-x-0'"
+                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full
+                           bg-white shadow ring-0 transition duration-200"></span>
+            </button>
+          </div>
+
+          {# Email template selector #}
+          <div class="flex items-center justify-between px-4 py-4">
+            <label class="text-sm font-medium text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.OPT_EMAIL_TEMPLATE }}</label>
+            <select name="email_template"
+                    class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700
+                           bg-gray-50 dark:bg-slate-800/50 text-sm
+                           text-gray-900 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+              <option value="">{{ t.NOTIFICATIONS_VIEW.OPT_EMAIL_TEMPLATE_NONE }}</option>
+              {% for tmpl in email_templates %}
+              <option value="{{ tmpl }}"{% if decrypted_config|lookup:'email_template' == tmpl %} selected{% endif %}>{{ tmpl|title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      {# Section 2: Credentials (shown only when auth is required) #}
+      <div x-show="useAuth" x-transition class="mt-6">
+        <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_SMTP_CREDENTIALS }}</h3>
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
+                    divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">
+
+          {# Username #}
+          <div class="px-4 py-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.NOTIFICATIONS_VIEW.OPT_USERNAME }}</label>
+            <input type="text" name="username" autocomplete="off"
+                   value="{{ decrypted_config|lookup:'username' }}"
+                   class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
+                          bg-gray-50 dark:bg-slate-800/50 text-sm
+                          text-gray-900 dark:text-white
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+          </div>
+
+          {# Password #}
+          <div class="px-4 py-4" x-data="{ show: false }">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ t.NOTIFICATIONS_VIEW.OPT_SMTP_PASSWORD }}</label>
+            <div class="flex gap-2">
+              <input :type="show ? 'text' : 'password'" name="password"
+                     value="{{ decrypted_config|lookup:'password' }}"
+                     placeholder="••••••••"
+                     class="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
+                            bg-gray-50 dark:bg-slate-800/50 text-sm font-mono
+                            text-gray-900 dark:text-white placeholder-gray-400
+                            focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+              <button type="button" @click="show = !show"
+                      class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
+                             text-sm font-medium text-blue-600 dark:text-blue-400
+                             hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+                      x-text="show ? '{{ t.APP.ACTION_HIDE|escapejs }}' : '{{ t.APP.ACTION_SHOW|escapejs }}'"></button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    {% elif fields %}
+    {# ---- Generic field renderer for all other notifier types --------------- #}
     <div>
       <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</h3>
       <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
@@ -197,18 +366,6 @@
         <span x-text="subscribed ? '{{ t.NOTIFICATIONS_VIEW.STATE_SUBSCRIBED|escapejs }}' : subscribing ? '{{ t.NOTIFICATIONS_VIEW.STATE_SUBSCRIBING|escapejs }}' : '{{ t.NOTIFICATIONS_VIEW.ACTION_SUBSCRIBE_BROWSER|escapejs }}'"></span>
       </button>
 
-      <div x-show="subscribeResult !== null" x-transition x-cloak class="mt-3">
-        <div :class="subscribeResult?.success ? 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800'"
-             class="flex items-start gap-3 px-4 py-3.5 rounded-xl border">
-          <span class="flex-shrink-0 mt-0.5" :class="subscribeResult?.success ? 'text-green-500' : 'text-red-500'">
-            <template x-if="subscribeResult?.success">{% lucide "check-circle" "w-4 h-4" %}</template>
-            <template x-if="!subscribeResult?.success">{% lucide "x-circle" "w-4 h-4" %}</template>
-          </span>
-          <p class="text-sm" :class="subscribeResult?.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'"
-             x-text="subscribeResult?.message"></p>
-        </div>
-      </div>
-
       {% endif %}
     </div>
     {% endif %}
@@ -259,30 +416,6 @@
         </div>
 
       </div>
-    </div>
-
-    {# -- Test result banner --------------------------------------------------- #}
-    <div x-show="testResult !== null" x-transition x-cloak
-         :class="testResult?.success
-           ? 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
-           : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'"
-         class="flex items-start gap-2.5 px-4 py-3 rounded-xl border text-sm">
-      <span class="flex-shrink-0 mt-0.5">
-        <template x-if="testResult?.success">
-          <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-        </template>
-        <template x-if="!testResult?.success">
-          <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-        </template>
-      </span>
-      <div class="flex-1 min-w-0">
-        <span class="font-medium" x-text="testResult?.success ? '{{ t.NOTIFICATIONS_VIEW.TEST_SUCCESS|escapejs }}' : '{{ t.NOTIFICATIONS_VIEW.TEST_FAILED|escapejs }}'"></span>
-        <span x-show="!testResult?.success" class="block text-xs mt-0.5 opacity-80" x-text="testResult?.message"></span>
-      </div>
-      <button type="button" @click="testResult = null"
-              class="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
     </div>
 
     {# -- Save + Danger zone --------------------------------------------------- #}
@@ -383,13 +516,42 @@
 {% endblock %}
 
 {% block scripts %}
+{% if notifier.notifier_type == 'email' %}
+<script>
+function smtpForm() {
+  return {
+    useAuth: {{ decrypted_config.use_auth|yesno:'true,false' }},
+    fromAddress: '{{ decrypted_config|lookup:"from_address"|escapejs }}',
+    tags: [],
+    tagInput: '',
+    init() {
+      const raw = '{{ decrypted_config|lookup:"recipients"|escapejs }}';
+      this.tags = raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+    },
+    addTag() {
+      const val = this.tagInput.trim().replace(/,+$/, '');
+      if (val && !this.tags.includes(val)) this.tags.push(val);
+      this.tagInput = '';
+    },
+    removeTag(i) { this.tags.splice(i, 1); },
+    onTagKey(e) {
+      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); this.addTag(); }
+      else if (e.key === 'Backspace' && !this.tagInput && this.tags.length) { this.tags.pop(); }
+    },
+    get recipientsValue() { return this.tags.join(', '); },
+    isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); },
+    get fromValid() { return !this.fromAddress || this.isValidEmail(this.fromAddress); },
+    get invalidTags() { return this.tags.filter(t => !this.isValidEmail(t)); },
+  };
+}
+</script>
+{% endif %}
 {% if notifier.notifier_type == 'webpush' %}
 <script>
 function webPushManager(notifierPk, vapidPublicKey) {
   return {
     subscribing: false,
     subscribed: false,
-    subscribeResult: null,
 
     urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -400,25 +562,24 @@ function webPushManager(notifierPk, vapidPublicKey) {
 
     async subscribe() {
       this.subscribing = true;
-      this.subscribeResult = null;
       try {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
           let msg;
           if (isIOS && !window.navigator.standalone) {
-            msg = 'Open this app from your Home Screen icon - push notifications are only available when running as an installed PWA, not in Safari.';
+            msg = 'Open this app from your Home Screen icon — push notifications are only available when running as an installed PWA, not in Safari.';
           } else if (isIOS) {
             msg = 'Push notifications require a secure HTTPS connection and iOS 16.4 or later.';
           } else {
             msg = 'Push notifications are not supported in this browser.';
           }
-          this.subscribeResult = { success: false, message: msg };
+          this.$dispatch('toast', { type: 'error', message: msg });
           this.subscribing = false;
           return;
         }
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-          this.subscribeResult = { success: false, message: 'Notification permission denied.' };
+          this.$dispatch('toast', { type: 'error', message: 'Notification permission denied.' });
           this.subscribing = false;
           return;
         }
@@ -438,12 +599,12 @@ function webPushManager(notifierPk, vapidPublicKey) {
         const data = await resp.json();
         if (resp.ok) {
           this.subscribed = true;
-          this.subscribeResult = { success: true, message: 'This browser is now subscribed. Reload to see it in the list.' };
+          this.$dispatch('toast', { type: 'success', message: 'This browser is now subscribed. Reload to see it in the list.' });
         } else {
-          this.subscribeResult = { success: false, message: data.error || 'Subscription failed.' };
+          this.$dispatch('toast', { type: 'error', message: data.error || 'Subscription failed.' });
         }
       } catch (e) {
-        this.subscribeResult = { success: false, message: e.message || 'Subscription failed.' };
+        this.$dispatch('toast', { type: 'error', message: e.message || 'Subscription failed.' });
       }
       this.subscribing = false;
     },

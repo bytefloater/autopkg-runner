@@ -258,9 +258,13 @@
         "OPT_SMTP_SERVER": "SMTP Server",
         "OPT_SMTP_PORT": "SMTP Port",
         "OPT_USE_SSL": "Use SSL",
+        "OPT_SMTP_ENCRYPTION": "Encryption",
         "OPT_USE_AUTH": "Authentication",
+        "SECTION_SMTP_CREDENTIALS": "Credentials",
         "OPT_USERNAME": "Username",
         "OPT_SMTP_PASSWORD": "Password",
+        "OPT_EMAIL_TEMPLATE": "Email Template",
+        "OPT_EMAIL_TEMPLATE_NONE": "None (plain text)",
         "UNIT_DAYS": "days",
 
         "FIELD_NAME": "Name",

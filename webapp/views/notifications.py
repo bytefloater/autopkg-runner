@@ -32,15 +32,6 @@ class NotificationsView(LoginRequiredMixin, TemplateView):
         return ctx
 
     def post(self, request):
-        # -- Settings save (pwa_base_url form) ---------------------------------
-        if request.POST.get('_action') == 'save_settings':
-            from webapp.models import Setting
-            Setting.set('notify.pwa_base_url', request.POST.get('notify.pwa_base_url', '').strip())
-            expiry = request.POST.get('notify.share_link_expiry_days', '').strip()
-            Setting.set('notify.share_link_expiry_days', expiry)
-            messages.success(request, 'Notification settings saved.')
-            return redirect('config-notifications')
-
         # -- Quick-create a new notifier (name + type only) ---------------------
         from webapp.models import Notifier
         name  = request.POST.get('name', '').strip()
@@ -104,6 +95,12 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
             (var, notif_t[t_key])
             for var, t_key in self.TEMPLATE_VARIABLES
         ]
+
+        if notifier.notifier_type == 'email':
+            from pathlib import Path
+            from django.conf import settings as _settings
+            tdir = Path(_settings.BASE_DIR) / 'resources' / 'email_templates'
+            ctx['email_templates'] = sorted(p.stem for p in tdir.glob('*.html')) if tdir.exists() else []
 
         if notifier.notifier_type == 'webpush':
             ctx['webpush_subscriptions'] = WebPushSubscription.objects.filter(notifier=notifier)
@@ -207,7 +204,7 @@ class NotifierTestView(LoginRequiredMixin, View):
                 configuration=cfg,
                 message=(
                     "This is a test notification from AutoPkg Runner. "
-                    "If you received this, your notifier is configured correctly. ✅"
+                    "If you received this, your notifier is configured correctly."
                 ),
                 title="AutoPkg Runner - Test",
             )
@@ -221,12 +218,14 @@ class NotifierTestView(LoginRequiredMixin, View):
 
 
 class NotificationSettingsView(LoginRequiredMixin, TemplateView):
-    """
-    Mobile-only page: edit global notification settings (App URL for share links).
-    Desktop users access these settings from the main notifications page.
-    """
+    """Edit global notification settings (App URL for share links)."""
 
-    template_name = 'webapp/mobile/notification_settings.html'
+    template_name = 'webapp/notification_settings.html'
+
+    def get_template_names(self):
+        if getattr(self.request, 'is_mobile', False):
+            return ['webapp/mobile/notification_settings.html']
+        return [self.template_name]
 
     def get_context_data(self, **kwargs):
         from webapp.models import Setting

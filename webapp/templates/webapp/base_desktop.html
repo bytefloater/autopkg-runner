@@ -53,7 +53,8 @@
 </head>
 
 <body class="h-full bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-gray-100"
-      x-data="appShell()">
+      x-data="appShell()"
+      @toast.window="toast($event.detail.type, $event.detail.message)">
 
   {# -- Toast stack (bottom-right) -- #}
   <div class="fixed bottom-5 right-5 z-[200] flex flex-col-reverse gap-2 pointer-events-none w-80" aria-live="polite">
@@ -65,12 +66,12 @@
            x-transition:leave="transition ease-in duration-200"
            x-transition:leave-start="opacity-100 scale-100"
            x-transition:leave-end="opacity-0 scale-95"
-           class="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium"
+           class="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium backdrop-blur-md"
            :class="{
-             'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200': !toast.type || toast.type==='info',
-             'bg-green-50 dark:bg-green-950/60 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200': toast.type==='success',
-             'bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200': toast.type==='error',
-             'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200': toast.type==='warning',
+             'bg-white/80 dark:bg-slate-800/80 border-gray-200/60 dark:border-slate-700/60 text-gray-800 dark:text-gray-200': !toast.type || toast.type==='info',
+             'bg-green-50/90 dark:bg-green-950/75 border-green-200/60 dark:border-green-800/60 text-green-800 dark:text-green-200': toast.type==='success',
+             'bg-red-50/90 dark:bg-red-950/75 border-red-200/60 dark:border-red-800/60 text-red-800 dark:text-red-200': toast.type==='error',
+             'bg-amber-50/90 dark:bg-amber-950/75 border-amber-200/60 dark:border-amber-800/60 text-amber-800 dark:text-amber-200': toast.type==='warning',
            }">
         <span class="flex-1 leading-snug" x-text="toast.message"></span>
         <button @click="dismiss(toast.id)" class="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity mt-0.5">

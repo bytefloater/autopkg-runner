@@ -44,8 +44,9 @@ NOTIFIER_TYPES: dict[str, dict] = {
             {'key': 'smtp_port',    'label': 'SMTP Port',     't_key': 'OPT_SMTP_PORT',       'type': 'text',     'default': '587'},
             {'key': 'use_ssl',      'label': 'Use SSL',       't_key': 'OPT_USE_SSL',         'type': 'bool',     'default': False},
             {'key': 'use_auth',     'label': 'Authentication','t_key': 'OPT_USE_AUTH',        'type': 'bool',     'default': True},
-            {'key': 'username',     'label': 'Username',      't_key': 'OPT_USERNAME',        'type': 'text'},
-            {'key': 'password',     'label': 'Password',      't_key': 'OPT_SMTP_PASSWORD',   'type': 'password'},
+            {'key': 'username',       'label': 'Username',       't_key': 'OPT_USERNAME',        'type': 'text'},
+            {'key': 'password',       'label': 'Password',       't_key': 'OPT_SMTP_PASSWORD',   'type': 'password'},
+            {'key': 'email_template', 'label': 'Email Template', 't_key': 'OPT_EMAIL_TEMPLATE',  'type': 'text'},
         ],
     },
     'slack': {

@@ -242,7 +242,36 @@
 </head>
 
 <body class="bg-[#f2f2f7] dark:bg-black text-gray-900 dark:text-gray-100 min-h-screen flex flex-col"
-      x-data="mobileApp()">
+      x-data="mobileApp()"
+      @toast.window="toast($event.detail.type, $event.detail.message)">
+
+  {# -- Toast stack (fixed, below the nav bar) -------------------------------- #}
+  <div class="fixed left-0 right-0 z-[300] flex flex-col gap-2 px-4 pointer-events-none"
+       style="top:calc(44px + env(safe-area-inset-top,0px) + 8px);"
+       aria-live="polite">
+    <template x-for="toast in toasts" :key="toast.id">
+      <div x-show="toast.visible"
+           x-transition:enter="transition ease-out duration-250"
+           x-transition:enter-start="opacity-0 -translate-y-2 scale-95"
+           x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 scale-100"
+           x-transition:leave-end="opacity-0 -translate-y-1 scale-95"
+           class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-[14px] font-medium backdrop-blur-md"
+           :class="{
+             'bg-white/85 dark:bg-[#2c2c2e]/85 text-gray-800 dark:text-gray-200': !toast.type || toast.type==='info',
+             'bg-green-500/85 text-white': toast.type==='success',
+             'bg-red-500/85 text-white': toast.type==='error',
+             'bg-amber-500/85 text-white': toast.type==='warning',
+           }">
+        <span class="flex-1 leading-snug" x-text="toast.message"></span>
+        <button @click="dismiss(toast.id)"
+                class="flex-shrink-0 opacity-70 hover:opacity-100 active:opacity-50 transition-opacity">
+          {% lucide "x" "w-4 h-4" %}
+        </button>
+      </div>
+    </template>
+  </div>
 
   {# -- Navigation bar -------------------------------------------------------- #}
   {# fixed + left/right:0 keeps it pinned; padding-top fills the status-bar    #}
@@ -594,6 +623,20 @@
         showUserSheet: false,
         showChangePw:  false,
         theme: localStorage.getItem('aptheme') || 'auto',
+        toasts: [],
+        _tid:   0,
+
+        toast(type, message) {
+          const id = ++this._tid;
+          this.toasts.push({ id, type, message, visible: true });
+          setTimeout(() => this.dismiss(id), 4000);
+        },
+
+        dismiss(id) {
+          const t = this.toasts.find(t => t.id === id);
+          if (t) t.visible = false;
+          setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 250);
+        },
 
         themeLabel() {
           return {

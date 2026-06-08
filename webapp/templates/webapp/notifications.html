@@ -29,51 +29,8 @@
     </button>
   </div>
 
-  {# -- Notification settings --------------------------------------------------- #}
-  <form method="post" class="mb-6">
-    {% csrf_token %}
-    <input type="hidden" name="_action" value="save_settings">
-    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</h3>
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
-                divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">
-      <div class="px-4 py-4">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_APP_URL }}</label>
-        <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">
-          {{ t.NOTIFICATIONS_VIEW.OPT_APP_URL_DESC }}
-          <code class="font-mono text-xs">https://autopkg.example.com</code>
-        </p>
-        <input type="url" name="notify.pwa_base_url" value="{{ pwa_base_url }}"
-               placeholder="https://autopkg.example.com"
-               class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
-                      bg-gray-50 dark:bg-slate-800/50 text-sm font-mono
-                      text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600
-                      focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-      </div>
-      <div class="px-4 py-4">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_SHARE_LINK_EXPIRY }}</label>
-        <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">
-          {{ t.NOTIFICATIONS_VIEW.OPT_SHARE_LINK_EXPIRY_DESC }}
-        </p>
-        <div class="flex items-center gap-2">
-          <input type="number" name="notify.share_link_expiry_days" value="{{ share_link_expiry_days }}"
-                 placeholder="Never"
-                 min="1" max="3650"
-                 class="w-32 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
-                        bg-gray-50 dark:bg-slate-800/50 text-sm
-                        text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-          <span class="text-sm text-gray-500 dark:text-gray-400">{{ t.NOTIFICATIONS_VIEW.UNIT_DAYS }}</span>
-        </div>
-      </div>
-    </div>
-    <div class="flex justify-end mt-3">
-      <button type="submit"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
-                     rounded-lg transition-colors shadow-sm">
-        {{ t.NOTIFICATIONS_VIEW.ACTION_SAVE_SETTINGS }}
-      </button>
-    </div>
-  </form>
+  {# -- Notifiers --------------------------------------------------------------- #}
+  <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</h3>
 
   {% if notifiers %}
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
@@ -109,7 +66,7 @@
         </button>
       </form>
 
-      {# Edit link #}
+      {# Edit chevron #}
       <a href="{% url 'notifier-edit' n.pk %}"
          class="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200
                 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
@@ -134,6 +91,21 @@
     </div>
   </div>
   {% endif %}
+
+  {# -- Settings link ----------------------------------------------------------- #}
+  <div class="mt-6">
+    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_GENERAL }}</h3>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden">
+      <a href="{% url 'notification-settings' %}"
+         class="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+        <div class="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center flex-shrink-0">
+          {% lucide "settings" "w-4 h-4 text-white" %}
+        </div>
+        <span class="flex-1 text-sm font-medium text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</span>
+        {% lucide "chevron-right" "w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" %}
+      </a>
+    </div>
+  </div>
 
   {# ══════════════ ADD NOTIFIER MODAL ══════════════ #}
   <template x-teleport="body">

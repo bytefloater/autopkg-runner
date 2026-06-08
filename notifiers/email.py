@@ -5,6 +5,8 @@ import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
+from pathlib import Path
 from typing import Optional
 
 from notifiers._ssl import ssl_context
@@ -13,6 +15,10 @@ from notifiers._ssl import ssl_context
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+# Directory that contains named HTML email templates.
+_TEMPLATES_DIR = Path(__file__).parent.parent / 'resources' / 'email_templates'
+
 
 def _strip_html(text: str) -> str:
     """Remove HTML tags and decode common entities for a plain-text fallback."""
@@ -27,6 +33,20 @@ def _strip_html(text: str) -> str:
         .replace('&quot;', '"')
         .strip()
     )
+
+
+def _apply_template(template_name: str, message: str) -> str:
+    """Wrap *message* in the named HTML email template.
+
+    The template file must contain the literal string ``{{ content }}`` which
+    is replaced with the rendered message body.  If the template file cannot
+    be found the original message is returned unchanged.
+    """
+    template_file = _TEMPLATES_DIR / f'{template_name}.html'
+    if not template_file.exists():
+        return message
+    html = template_file.read_text(encoding='utf-8')
+    return html.replace('{{ content }}', message)
 
 
 # ---------------------------------------------------------------------------
@@ -78,9 +98,14 @@ def send(
         body_html  += f'\n<p><a href="{url}">{label}</a></p>'
         body_plain += f'\n{label}: {url}'
 
+    # Wrap in HTML template if one is configured.
+    template_name = configuration.get('email_template', '').strip()
+    if template_name:
+        body_html = _apply_template(template_name, body_html)
+
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From']    = configuration['from_address']
+    msg['From']    = formataddr(('AutoPkg Runner', configuration['from_address']))
     msg['To']      = ', '.join(recipients)
     msg.attach(MIMEText(body_plain, 'plain', 'utf-8'))
     msg.attach(MIMEText(body_html,  'html',  'utf-8'))
