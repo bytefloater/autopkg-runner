@@ -126,10 +126,15 @@ def lookup(d, key):
     Uses ``d[key]`` rather than ``d.get(key)`` so that subclasses such as
     TranslationProxy can handle missing keys via ``__missing__`` (returning
     the dotted key path) rather than silently producing ``None``.
+
+    Returns ``''`` for missing keys and for keys whose stored value is
+    ``None``, so that ``value="{{ config|lookup:'x' }}"`` renders blank
+    rather than the string "None".
     """
     if isinstance(d, dict):
         try:
-            return d[key]
+            val = d[key]
+            return '' if val is None else val
         except KeyError:
-            return None
-    return None
+            return ''
+    return ''
