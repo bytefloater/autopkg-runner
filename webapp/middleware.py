@@ -147,7 +147,10 @@ class MobileDetectionMiddleware:
 
         if request.GET.get('desktop') == '1':
             response.set_cookie('desktop_mode', '1', max_age=86400 * 365)
-            # Remove the iPad detection cookie so desktop mode is fully honoured.
             response.delete_cookie('ipad_detected', path='/')
+
+        if request.GET.get('mobile') == '1':
+            response.set_cookie('ipad_detected', '1', max_age=86400 * 365)
+            response.delete_cookie('desktop_mode', path='/')
 
         return response

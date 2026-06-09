@@ -85,6 +85,72 @@
     })();
   </script>
 
+  <!--Stage Manager / Split View traffic-light detection — iPadOS 26+ only.
+     iPadOS 26 shows window-decoration traffic lights in both Stage Manager
+     windows and Split View panes when running as an installed PWA, overlapping
+     the top-left of the app content and clashing with sub-view back buttons.
+     We only apply the back-button offset on iPadOS 26 (window.__ios26) because
+     earlier releases do not show traffic lights in Split View.
+       • Full screen  – both sorted axes ≥ 95 % of screen → no offset
+       • Slide Over   – very narrow strip (< 375 px)      → no offset
+       • Everything else (Stage Mgr, Split View)          → offset
+     The class is set before the body renders (no layout shift) and re-evaluated
+     on every resize so it tracks live layout changes. -->
+  <script>
+    function _iPadCheck() {
+      var ua = navigator.userAgent;
+      if (/iPad/.test(ua)) return true;
+      if (!/Macintosh/.test(ua)) return false;
+      var vm = ua.match(/Version\/(\d+)/);
+      var ver = vm ? parseInt(vm[1], 10) : 0;
+      // iPadOS 13+ desktop UA: Macintosh + touch/coarse + Safari ≥ 13
+      return ver >= 13 && (navigator.maxTouchPoints > 1 ||
+             (window.matchMedia && window.matchMedia('(pointer:coarse)').matches));
+    }
+    function _applyWindowedMode() {
+      var on = false;
+      // Traffic-light decoration in Split View is an iPadOS 26 behaviour only.
+      if (window.__ios26 && _iPadCheck()) {
+        // Window decoration only exists when running as an installed PWA (standalone
+        // mode). Regular Safari's own chrome prevents the overlap.
+        var standalone = navigator.standalone === true
+          || (window.matchMedia && window.matchMedia('(display-mode:standalone)').matches);
+        if (standalone) {
+          var sw = window.screen.width, sh = window.screen.height;
+          var iw = window.innerWidth,   ih = window.innerHeight;
+
+          // iOS reports screen.width/height in portrait order regardless of orientation,
+          // but innerWidth/Height swap. Sort both to make ratios orientation-agnostic.
+          var sShort = Math.min(sw, sh), sLong = Math.max(sw, sh);
+          var vShort = Math.min(iw, ih), vLong = Math.max(iw, ih);
+
+          var isFullScreen = vShort / sShort >= 0.95 && vLong / sLong >= 0.95;
+          var isSlideOver  = iw < 375;
+
+          // On iPadOS 26, Split View also shows traffic lights so we no longer
+          // exclude it — any non-full-screen, non-slide-over layout needs the offset.
+          on = !isFullScreen && !isSlideOver;
+        }
+      }
+      document.documentElement.classList.toggle('ipad-windowed', on);
+      document.documentElement.classList.toggle('is-ipad-windowed', on);
+    }
+    document.documentElement.classList.toggle('is-ipad', _iPadCheck());
+    _applyWindowedMode();
+    window.addEventListener('resize', _applyWindowedMode);
+  </script>
+
+  <style>
+    /* Push nav-left-slot past the Stage Manager traffic lights (~62 px from edge).
+       The parent nav bar already has 16 px (px-4) of left padding, so an extra
+       56 px gives ~72 px total clearance — enough for the three 12 px buttons
+       plus their 8 px gaps and the 10 px left inset of the window decoration. */
+    html.ipad-windowed #nav-left-slot {
+      margin-left: 56px;
+      transition: margin-left 0.2s ease;
+    }
+  </style>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = {
     darkMode: 'class',
@@ -122,6 +188,12 @@
     @keyframes pageIn {
       from { opacity: 0; transform: translateX(10px); }
       to   { opacity: 1; transform: none; }
+    }
+    /* iPad: skip the translateX slide — the shift is too visible on a large canvas */
+    html.is-ipad .page-enter { animation: pageInFade 0.25s ease both; }
+    @keyframes pageInFade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     /* Spinner utility */
@@ -177,46 +249,7 @@
     }
 
 
-    /* Tab bar outer nav: transparent — the pill positions itself independently */
-    html.ios26 nav#app-tabbar {
-      background:              transparent !important;
-      -webkit-backdrop-filter: none !important;
-      backdrop-filter:         none !important;
-      box-shadow:              none !important;
-    }
-
-    /* Inner pill: fixed to viewport directly, bypassing nav's inline padding-bottom.
-       bottom = safe-area + 4px so the glass sits just above the home indicator
-       while tap targets remain above the safe area boundary.                   */
-    html.ios26 #tab-bar {
-      position:                fixed !important;
-      bottom:                  calc(env(safe-area-inset-bottom, 0px) - 13px) !important;
-      left:                    12px !important;
-      right:                   12px !important;
-      margin:                  0 !important;
-      z-index:                 50 !important;
-      border-radius:           100px !important;
-      padding-top:             10px !important;
-      padding-bottom:          10px !important;
-      overflow:                hidden !important;
-      /* Liquid Glass: low-opacity tint + aggressive blur + saturation boost.
-         The inset top shadow is the characteristic specular edge highlight. */
-      background:              rgba(255,255,255,0.20) !important;
-      -webkit-backdrop-filter: blur(40px) saturate(2.2) brightness(1.06) !important;
-      backdrop-filter:         blur(40px) saturate(2.2) brightness(1.06) !important;
-      box-shadow:              0 0 0 0.5px rgba(0,0,0,0.06),
-                               inset 0 1px 0 rgba(255,255,255,0.65),
-                               0 4px 20px rgba(0,0,0,0.08) !important;
-    }
-    html.ios26.dark #tab-bar {
-      background:              rgba(28,28,30,0.28) !important;
-      box-shadow:              0 0 0 0.5px rgba(255,255,255,0.10),
-                               inset 0 1px 0 rgba(255,255,255,0.10),
-                               0 4px 20px rgba(0,0,0,0.35) !important;
-    }
-
-    /* Default vertical tap-target padding for all devices — replaces the
-       py-1.5 Tailwind class that was removed from the template.
+    /* Default vertical tap-target padding for all devices.
        flex:1 makes every tab item the same width so they are equidistant. */
     #tab-bar > a {
       flex:           1;
@@ -225,12 +258,58 @@
       padding-bottom: 6px;
     }
 
-    /* iOS26: strip item padding — the pill's own padding-top/bottom
-       provides all vertical spacing, so align-items:center is unambiguous.
-       No Tailwind class to fight, so no !important needed.               */
-    html.ios26 #tab-bar > a {
-      padding-top:    0;
-      padding-bottom: 0;
+    /* iOS 26: Liquid Glass floating pill tab bar */
+    html.ios26 nav#app-tabbar {
+      left:                    12px;
+      right:                   12px;
+      bottom:                  calc(env(safe-area-inset-bottom, 0px) - 12px) !important;
+      border-radius:           100px;
+      padding-bottom:          0px !important;
+      background:              rgba(255, 255, 255, 0.30) !important;
+      -webkit-backdrop-filter: blur(48px) saturate(2.2) brightness(1.05) !important;
+      backdrop-filter:         blur(48px) saturate(2.2) brightness(1.05) !important;
+      border:                  1px solid rgba(255, 255, 255, 0.55);
+      box-shadow:              0 8px 32px rgba(0,0,0,0.10),
+                               0 2px 6px  rgba(0,0,0,0.07),
+                               inset 0 1px 0 rgba(255,255,255,0.70),
+                               inset 0 -1px 0 rgba(0,0,0,0.04) !important;
+    }
+    html.ios26.dark nav#app-tabbar {
+      background:              rgba(30, 30, 32, 0.50) !important;
+      -webkit-backdrop-filter: blur(48px) saturate(2.0) brightness(0.95) !important;
+      backdrop-filter:         blur(48px) saturate(2.0) brightness(0.95) !important;
+      border:                  1px solid rgba(255, 255, 255, 0.10);
+      box-shadow:              0 8px 32px rgba(0,0,0,0.45),
+                               0 2px 6px  rgba(0,0,0,0.28),
+                               inset 0 1px 0 rgba(255,255,255,0.08),
+                               inset 0 -1px 0 rgba(0,0,0,0.20) !important;
+    }
+
+    html.ios26 #tab-bar {
+      padding-top:    4px;
+      padding-bottom: 4px;
+      padding-left:   0.25rem;
+      padding-right:  0.25rem;
+    }
+
+    html.ios26.is-ipad nav#app-tabbar {
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 4px) !important;
+    }
+    html.ios26.is-ipad.is-ipad-windowed nav#app-tabbar {
+      bottom: calc(env(safe-area-inset-bottom, 0px) - 4px) !important;
+    }
+
+    /* iOS 26: active tab indicator — semi-opaque glass inlay on the active item */
+    html.ios26 #tab-bar > a[aria-current="page"] {
+      background:    rgba(255, 255, 255, 0.75);
+      border-radius: 100px;
+      box-shadow:    0 1px 4px rgba(0,0,0,0.10),
+                     inset 0 1px 0 rgba(255,255,255,0.90);
+    }
+    html.ios26.dark #tab-bar > a[aria-current="page"] {
+      background: rgba(80, 80, 88, 0.65);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35),
+                  inset 0 1px 0 rgba(255,255,255,0.10);
     }
 
     html.ios26 .inset-group {
@@ -330,8 +409,8 @@
   {# box-shadow replaces border-t - avoids the 3-device-pixel line on 3× DPR. #}
   <nav id="app-tabbar"
        class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-xl"
-       style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 6px); box-shadow:0 -1px 0 var(--chrome-sep);">
-    <div id="tab-bar" class="flex items-center pt-2 px-2">
+       style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 4px); box-shadow:0 -1px 0 var(--chrome-sep);">
+    <div id="tab-bar" class="flex items-center">
       {% for tab in mobile_nav_tabs %}
       <a href="{% url tab.url_name %}"
          {% if active_tab == tab.name %}aria-current="page"{% endif %}
@@ -406,7 +485,7 @@
             <span class="w-[29px] h-[29px] rounded-[7px] bg-red-500 flex items-center justify-center flex-shrink-0">
               {% lucide "log-out" "w-4 h-4 text-white" %}
             </span>
-            <span class="flex-1 text-[16px] text-red-500 dark:text-red-400">{{ t.APP.ACTION_LOGOUT }}</span>
+            <span class="flex-1 text-[16px] text-red-500 dark:text-red-400 text-left">{{ t.APP.ACTION_LOGOUT }}</span>
           </button>
         </form>
       </div>
@@ -480,70 +559,6 @@
     </div>
   </div>
   <script>
-    // -- iOS 26 tab selection bubble -----------------------------------------
-    // Inserts an absolutely-positioned <div> as the first child of #tab-bar
-    // so overflow:hidden + border-radius clips it to the pill shape.
-    // Tab <a> elements are promoted to z-index:1 so they paint above it.
-    function _applyIos26TabBubble() {
-      if (!window.__ios26) return;
-      const bar = document.getElementById('tab-bar');
-      if (!bar) return;
-
-      // Remove any stale bubble (inside pill or on body from prior approach)
-      const stale = document.getElementById('ios26-tab-bubble');
-      if (stale) stale.remove();
-
-      // Reset all tab items; find the active one
-      const links = bar.getElementsByTagName('a');
-      let active = null;
-      for (let i = 0; i < links.length; i++) {
-        const a = links[i];
-        a.style.paddingTop    = '0px';
-        a.style.paddingBottom = '0px';
-        a.style.position      = 'relative';
-        a.style.zIndex        = '1';
-        if (!active && (a.classList.contains('text-blue-600') ||
-                        a.getAttribute('aria-current') === 'page')) {
-          active = a;
-        }
-      }
-      if (!active) return;
-
-      // No extra padding on the active item — the bubble's own top:4px/bottom:4px
-      // inset from the pill edges gives it visual height without stretching the pill.
-
-      // Position bubble relative to the pill using getBoundingClientRect diff.
-      // Use the widest tab's width for all bubbles so the size is uniform
-      // regardless of which tab's label happens to be longer.
-      const barRect    = bar.getBoundingClientRect();
-      const activeRect = active.getBoundingClientRect();
-      let maxW = 0;
-      for (let i = 0; i < links.length; i++) {
-        maxW = Math.max(maxW, links[i].getBoundingClientRect().width);
-      }
-      // Centre the uniform bubble over the active tab's midpoint
-      const activeMidX  = activeRect.left + activeRect.width  / 2;
-      const bubbleLeft  = activeMidX - barRect.left - maxW / 2;
-      const dark = document.documentElement.classList.contains('dark');
-
-      const bubble = document.createElement('div');
-      bubble.id = 'ios26-tab-bubble';
-      Object.assign(bubble.style, {
-        position:     'absolute',
-        top:          '4px',
-        bottom:       '4px',
-        left:         bubbleLeft + 'px',
-        width:        maxW + 'px',
-        background:   dark ? 'rgba(60,60,65,0.85)' : 'rgba(255,255,255,0.95)',
-        borderRadius: '100px',
-        boxShadow:    dark ? '0 1px 6px rgba(0,0,0,0.30)'
-                           : '0 1px 6px rgba(0,0,0,0.10)',
-        pointerEvents:'none',
-        zIndex:       '0',   // below the <a> elements at z-index:1
-      });
-      bar.insertBefore(bubble, bar.firstChild);
-    }
-
     // -- SPA router ----------------------------------------------------------
     // Intercepts same-origin link taps and swaps #page-content via fetch(),
     // preventing full-page loads that cause iOS to reveal browser chrome.
@@ -607,7 +622,7 @@
 
         // Swap tab bar (updates active-tab colour)
         const [nB, cB] = [doc.getElementById('tab-bar'), document.getElementById('tab-bar')];
-        if (nB && cB) { cB.innerHTML = nB.innerHTML; _applyIos26TabBubble(); }
+        if (nB && cB) { cB.innerHTML = nB.innerHTML; }
 
         document.title = doc.title;
         if (push) history.pushState({}, '', url);
@@ -653,7 +668,6 @@
           const isDark = this.theme === 'dark' ||
             (this.theme === 'auto' && window.matchMedia('(prefers-color-scheme:dark)').matches);
           document.documentElement.classList.toggle('dark', isDark);
-          _applyIos26TabBubble();
         },
 
         init() {
@@ -666,7 +680,6 @@
           window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', e => {
             if (this.theme === 'auto') {
               document.documentElement.classList.toggle('dark', e.matches);
-              _applyIos26TabBubble();
             }
           });
 
@@ -709,8 +722,6 @@
       }
     }
 
-    // Apply bubble on initial page load (SPA navigations are handled inline)
-    _applyIos26TabBubble();
   </script>
 </body>
 </html>

@@ -7,22 +7,108 @@
   <title>{% block title %}AutoPkg Runner{% endblock %}</title>
   <link rel="icon" type="image/x-icon" href="{% static 'logos/favicon.ico' %}">
 
+  <script>
+    // ---------------------------------------------------------------------------
+    // detectIPad()
+    // Returns true when the browser is running on an iPad, including iPadOS 13+
+    // which sends a desktop Macintosh UA in Safari's default "Request Desktop
+    // Website" mode.  Multiple signals are checked in order of confidence:
+    //   1. Explicit "iPad" substring in the UA  (pre-iPadOS 13 / non-desktop mode)
+    //   2. Macintosh UA + maxTouchPoints > 1    (iPadOS 13+ desktop mode)
+    //   3. Macintosh UA + coarse pointer query  (fallback for some WebKit builds
+    //      where maxTouchPoints is mis-reported as 0 on first script execution)
+    //   4. Macintosh UA + Safari version ≥ 13   (minimum iPadOS desktop-UA era;
+    //      combined with (2)/(3), not used alone to avoid matching real Macs)
+    // ---------------------------------------------------------------------------
+    function detectIPad() {
+      var ua  = navigator.userAgent;
+      var ios = /iPad/.test(ua);
+      if (ios) return true;
+
+      if (!/Macintosh/.test(ua)) return false;
+
+      var coarse  = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+      var touch   = navigator.maxTouchPoints > 1;
+
+      // Extract Safari's Version/X major number from the UA.
+      // On a real Mac, Safari sends Version/17 etc. but ALSO has a fine pointer and
+      // maxTouchPoints === 0, so this version check alone is not sufficient —
+      // it only adds confidence when combined with touch/coarse signals.
+      var safariVer = 0;
+      var vm = ua.match(/Version\/(\d+)/);
+      if (vm) safariVer = parseInt(vm[1], 10);
+
+      return (touch || coarse) && safariVer >= 13;
+    }
+
+    // ---------------------------------------------------------------------------
+    // detectWindowedMode()
+    // Returns true when an iPad is running in a floating Stage Manager window,
+    // deliberately excluding Split View and Slide Over.
+    //
+    // How each multitasking layout differs via window/screen geometry:
+    //
+    //   Full screen   – innerWidth  ≈ screen.width  (≥ 88%)
+    //                   innerHeight ≈ screen.height (≥ 88%)
+    //
+    //   Slide Over    – innerWidth  < 375 px  (narrow floating strip)
+    //                   height fills the screen
+    //
+    //   Split View    – innerWidth is a fraction (50 / 33 / 67 %) of screen.width
+    //                   innerHeight ≥ 88% of screen.height
+    //                   (apps share WIDTH only; no window chrome removes height)
+    //
+    //   Stage Manager – innerWidth  < screen.width  (any free-form size)
+    //                   innerHeight < screen.height × 0.88
+    //                   (title bar ~40 px + always-visible Dock ~68 px reduce height;
+    //                    width may equal screen.width if window is stretched across)
+    //
+    // The height ratio is the reliable discriminator: Split View never reduces
+    // height (no window chrome), Stage Manager always does.
+    // ---------------------------------------------------------------------------
+    function detectWindowedMode() {
+      if (!detectIPad()) return false;
+
+      var sw = window.screen.width;
+      var sh = window.screen.height;
+      var iw = window.innerWidth;
+      var ih = window.innerHeight;
+
+      // Slide Over: narrow strip — not a resizable window, skip
+      if (iw < 375) return false;
+
+      // Full screen: occupies nearly the entire screen in both axes
+      if (iw / sw >= 0.88 && ih / sh >= 0.88) return false;
+
+      // Split View: height fills the screen; only width is divided.
+      // Stage Manager always loses height to the title bar + Dock.
+      if (ih / sh >= 0.88) return false;
+
+      // Remaining case: height is meaningfully reduced → Stage Manager window
+      return true;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Auto-redirect on first visit.
+    // Hides the document immediately and uses location.replace() (no history
+    // entry) so no desktop layout is ever rendered on an iPad.
+    // ---------------------------------------------------------------------------
+    (function(){
+      if (document.cookie.indexOf('desktop_mode=1') >= 0) return;
+      if (detectIPad()) {
+        document.documentElement.style.display = 'none';
+        document.cookie = 'ipad_detected=1;path=/;max-age=31536000;SameSite=Lax';
+        location.replace(location.href);
+      }
+    })();
+  </script>
+
   {# Anti-FOUC: apply saved theme class before first paint #}
   <script>
     (function(){
       var t=localStorage.getItem('aptheme')||'auto';
       if(t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches))
         document.documentElement.classList.add('dark');
-    })();
-  </script>
-
-  <script>
-    (function () {
-      if (document.cookie.indexOf('desktop_mode=1') !== -1) return;
-      if (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1) {
-        document.cookie = 'ipad_detected=1; path=/; max-age=31536000; SameSite=Lax';
-        window.location.reload();
-      }
     })();
   </script>
 

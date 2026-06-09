@@ -216,6 +216,35 @@
 </head>
 
 <body>
+  {# View toggle — only revealed on touch devices via JS below #}
+  <a id="view-toggle" href="?desktop=1"
+     style="display:none; position:fixed; bottom:max(env(safe-area-inset-bottom,0px) + 0.75rem, 1.25rem); right:1.25rem;
+            align-items:center; gap:6px;
+            background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2);
+            border-radius:20px; padding:7px 14px;
+            font-size:13px; font-weight:500; color:var(--sublabel);
+            text-decoration:none; backdrop-filter:blur(10px);">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2"/>
+      <line x1="8" y1="21" x2="16" y2="21"/>
+      <line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+    Desktop View
+  </a>
+
+  <script>
+    (function(){
+      var touch = navigator.maxTouchPoints > 0
+               || 'ontouchstart' in window
+               || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+      if (touch) {
+        var btn = document.getElementById('view-toggle');
+        btn.style.display = 'inline-flex';
+      }
+    })();
+  </script>
+
   <div class="login-wrap">
 
     <img src="{% static 'logos/icon-192.png' %}" alt="AutoPkg Runner" class="app-icon">
