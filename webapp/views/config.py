@@ -136,7 +136,8 @@ def _section_keys(section: str) -> tuple:
         return (
             [],
             [],
-            ['autopkg.bin_path', 'autopkg.cache_path', 'autopkg.recipe_list'],
+            ['autopkg.bin_path', 'autopkg.cache_path', 'autopkg.recipe_list',
+             'autopkg.overrides_dir', 'autopkg.recipe_repos_dir'],
         )
     elif section == 'workflow':
         return (['workflow.update_repos'], [], [])

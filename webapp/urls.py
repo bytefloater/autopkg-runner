@@ -4,7 +4,7 @@ from django.views.generic import RedirectView
 
 from webapp.views import (
     dashboard, runs, schedule, config, api_tokens, users, pwa, account,
-    notifications, share, about, recipes,
+    notifications, share, about, recipes, filebrowser,
 )
 from webapp.views.config import LogLevelPickerView
 
@@ -85,6 +85,10 @@ urlpatterns = [
          recipes.OverrideEditView.as_view(), name='recipes-override-edit'),
     path('recipes/overrides/<path:fname>/delete/',
          recipes.OverrideDeleteView.as_view(), name='recipes-override-delete'),
+
+    # -- File browser API (used by path pickers in config pages) ---------------
+    path('api/browse/',       filebrowser.BrowseView.as_view(), name='api-browse'),
+    path('api/browse/mkdir/', filebrowser.MkdirView.as_view(),  name='api-browse-mkdir'),
 
     # -- Other -----------------------------------------------------------------
     path('api-tokens/', api_tokens.ApiTokensView.as_view(), name='api-tokens'),

@@ -30,9 +30,11 @@ class Setting(models.Model):
 
     DEFAULTS: dict[str, str] = {
         # AutoPkg
-        'autopkg.bin_path':    '/usr/local/bin/autopkg',
-        'autopkg.cache_path':  '~/Library/AutoPkg/Cache',
-        'autopkg.recipe_list': '~/Library/Application Support/AutoPkgr/recipe_list.txt',
+        'autopkg.bin_path':      '/usr/local/bin/autopkg',
+        'autopkg.cache_path':    '~/Library/AutoPkg/Cache',
+        'autopkg.recipe_list':   '~/Library/Application Support/AutoPkgr/recipe_list.txt',
+        'autopkg.overrides_dir': '~/Library/AutoPkg/RecipeOverrides',
+        'autopkg.recipe_repos_dir': '~/Library/AutoPkg/RecipeRepos',
         # Workflow
         'workflow.update_repos': 'true',
         # Repository

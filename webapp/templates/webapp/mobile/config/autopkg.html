@@ -20,6 +20,7 @@
 {% endblock %}
 
 {% block content %}
+<div x-data="fileBrowserSheet()">
 <div class="h-4"></div>
 
 <form method="post" id="config-form">
@@ -36,10 +37,20 @@
     </div>
 
     <div class="px-4 py-3">
-      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_AUTOPKG_CACHE_PATH }}</label>
-      <p class="text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">{{ t.CONFIG_VIEW.OPT_AUTOPKG_CACHE_PATH_DESC }}</p>
-      <input type="text" name="autopkg.cache_path" value="{{ s|lookup:'autopkg.cache_path' }}"
-             class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_AUTOPKG_CACHE_PATH }}</label>
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">{{ t.CONFIG_VIEW.OPT_AUTOPKG_CACHE_PATH_DESC }}</p>
+          <input type="text" id="mob-cache-path" name="autopkg.cache_path" value="{{ s|lookup:'autopkg.cache_path' }}"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+        <button type="button"
+                @click="launch('mob-cache-path', document.getElementById('mob-cache-path').value || '~')"
+                class="flex-shrink-0 flex items-center gap-1 text-blue-600 dark:text-blue-400 text-[13px] active:opacity-60 transition-opacity duration-75 mt-5">
+          {% lucide "folder-open" "w-4 h-4" %}
+          {{ t.CONFIG_VIEW.ACTION_BROWSE }}
+        </button>
+      </div>
     </div>
 
     <div class="px-4 py-3">
@@ -51,6 +62,303 @@
 
   </div>
 
+  <div class="h-6"></div>
+
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RECIPES_VIEW.SUBTAB_REPOS }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    <div class="px-4 py-3">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_AUTOPKG_OVERRIDES_DIR }}</label>
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">{{ t.CONFIG_VIEW.OPT_AUTOPKG_OVERRIDES_DIR_DESC }}</p>
+          <input type="text" id="mob-overrides-dir" name="autopkg.overrides_dir"
+                 value="{{ s|lookup:'autopkg.overrides_dir' }}"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+        <button type="button"
+                @click="launch('mob-overrides-dir', document.getElementById('mob-overrides-dir').value || '~')"
+                class="flex-shrink-0 flex items-center gap-1 text-blue-600 dark:text-blue-400 text-[13px] active:opacity-60 transition-opacity duration-75">
+          {% lucide "folder-open" "w-4 h-4" %}
+          {{ t.CONFIG_VIEW.ACTION_BROWSE }}
+        </button>
+      </div>
+    </div>
+
+    <div class="px-4 py-3">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_AUTOPKG_REPOS_DIR }}</label>
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 mb-1.5">{{ t.CONFIG_VIEW.OPT_AUTOPKG_REPOS_DIR_DESC }}</p>
+          <input type="text" id="mob-repos-dir" name="autopkg.recipe_repos_dir"
+                 value="{{ s|lookup:'autopkg.recipe_repos_dir' }}"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+        <button type="button"
+                @click="launch('mob-repos-dir', document.getElementById('mob-repos-dir').value || '~')"
+                class="flex-shrink-0 flex items-center gap-1 text-blue-600 dark:text-blue-400 text-[13px] active:opacity-60 transition-opacity duration-75">
+          {% lucide "folder-open" "w-4 h-4" %}
+          {{ t.CONFIG_VIEW.ACTION_BROWSE }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+
   <div class="h-8"></div>
 </form>
+
+{# ── File Browser Sheet ─────────────────────────────────────────────────── #}
+<div x-show="open" x-cloak
+     class="fixed inset-0 z-[200]"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+  {# Backdrop #}
+  <div class="absolute inset-0 bg-black/50" @click="open=false"></div>
+
+  {# Sheet #}
+  <div class="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#1c1c1e] rounded-t-2xl flex flex-col"
+       style="max-height: 80vh; padding-bottom: env(safe-area-inset-bottom, 0px);"
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="translate-y-full"
+       x-transition:enter-end="translate-y-0"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="translate-y-0"
+       x-transition:leave-end="translate-y-full">
+
+    {# Handle + header #}
+    <div class="flex-shrink-0">
+      <div class="flex justify-center pt-3 pb-1">
+        <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+      </div>
+      <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200/70 dark:border-[#38383a]">
+        <span class="text-[17px] font-semibold text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.FILE_BROWSER_TITLE }}</span>
+        <button @click="open=false"
+                class="text-blue-600 dark:text-blue-400 text-[17px] active:opacity-60 transition-opacity duration-75">
+          {{ t.APP.ACTION_CANCEL }}
+        </button>
+      </div>
+
+      {# Current path bar — editable #}
+      <div class="px-4 py-2 bg-gray-50 dark:bg-[#2c2c2e] border-b border-gray-200/70 dark:border-[#38383a] flex items-center gap-2">
+        <input type="text" x-model="pathInput"
+               @keydown.enter.prevent="navigate(pathInput)"
+               spellcheck="false" autocomplete="off"
+               class="flex-1 text-[12px] font-mono text-gray-700 dark:text-gray-300 bg-transparent
+                      focus:outline-none min-w-0">
+        <button type="button" @click="navigate(pathInput)"
+                class="flex-shrink-0 px-2.5 py-1 text-[13px] font-semibold rounded-lg
+                       bg-gray-200 dark:bg-[#3a3a3c] text-gray-700 dark:text-gray-300
+                       active:opacity-60 transition-opacity">
+          Go
+        </button>
+      </div>
+    </div>
+
+    {# Scrollable listing #}
+    <div class="flex-1 overflow-y-auto divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+      {# Loading #}
+      <div x-show="loading" class="flex items-center justify-center py-12">
+        {% lucide "loader-2" "w-5 h-5 text-gray-400 animate-spin" %}
+        <span class="ml-2 text-sm text-gray-400">{{ t.CONFIG_VIEW.FILE_BROWSER_LOADING }}</span>
+      </div>
+
+      {# Error state #}
+      <div x-show="!loading && error" class="flex flex-col items-center gap-3 px-6 py-10 text-center">
+        {% lucide "triangle-alert" "w-10 h-10 text-amber-500 flex-shrink-0" %}
+        <div>
+          <p class="text-[15px] font-semibold text-gray-800 dark:text-gray-200" x-text="errorCode"></p>
+          <p class="text-[13px] text-gray-500 dark:text-gray-400 mt-1" x-text="errorDetail"></p>
+        </div>
+        <button type="button" @click="navigate('/')"
+                class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[15px] font-medium
+                       bg-gray-100 dark:bg-[#3a3a3c] text-gray-700 dark:text-gray-300
+                       active:opacity-60 transition-opacity">
+          {% lucide "hard-drive" "w-4 h-4" %}
+          Go to root (/)
+        </button>
+      </div>
+
+      {# Parent row #}
+      <button x-show="!loading && !error && parent !== null"
+              type="button" @click="navigate(parent)"
+              class="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors text-left">
+        {% lucide "folder-up" "w-5 h-5 text-gray-400 flex-shrink-0" %}
+        <span class="text-[15px] text-gray-500 dark:text-gray-400">Parent directory</span>
+      </button>
+
+      {# Directory entries #}
+      <template x-for="entry in entries" :key="entry.name">
+        <button type="button"
+                x-show="entry.is_dir"
+                @click="navigate(path.replace(/\/$/, '') + '/' + entry.name)"
+                class="w-full flex items-center gap-3 px-5 py-3.5 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors text-left">
+          {% lucide "folder" "w-5 h-5 text-yellow-500 flex-shrink-0" %}
+          <span class="text-[15px] text-gray-900 dark:text-white truncate flex-1" x-text="entry.name"></span>
+          {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+        </button>
+      </template>
+
+      {# Empty state #}
+      <div x-show="!loading && !error && entries.filter(e => e.is_dir).length === 0"
+           class="px-5 py-8 text-center text-sm text-gray-400">
+        Empty directory
+      </div>
+    </div>
+
+    {# New folder form #}
+    <div x-show="showMkdir" x-cloak
+         class="flex-shrink-0 px-5 py-3 border-t border-gray-200/70 dark:border-[#38383a] bg-gray-50 dark:bg-[#2c2c2e]">
+      <div class="flex gap-2 items-center">
+        <input type="text" x-model="mkdirName" x-ref="mkdirInput"
+               @keydown.enter.prevent="createDir()"
+               @keydown.escape.prevent="showMkdir=false; mkdirName=''"
+               placeholder="{{ t.CONFIG_VIEW.FILE_BROWSER_FOLDER_NAME }}"
+               class="flex-1 px-3 py-2 text-[15px] font-mono rounded-xl border border-gray-200 dark:border-[#38383a]
+                      bg-white dark:bg-[#1c1c1e] text-gray-900 dark:text-white
+                      focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+        <button type="button" @click="createDir()"
+                :disabled="!mkdirName.trim()"
+                class="px-4 py-2 text-[15px] font-semibold border border-transparent bg-blue-600 text-white rounded-xl
+                       active:opacity-80 disabled:opacity-40 transition-opacity">
+          {{ t.CONFIG_VIEW.FILE_BROWSER_CREATE }}
+        </button>
+      </div>
+      <p x-show="mkdirError" class="text-xs text-red-500 mt-1.5" x-text="mkdirError"></p>
+    </div>
+
+    {# Footer actions #}
+    <div class="flex-shrink-0 px-5 py-3 border-t border-gray-200/70 dark:border-[#38383a] flex items-center gap-3">
+      <button type="button"
+              x-show="!showMkdir"
+              @click="showMkdir=true; mkdirName=''; mkdirError=null; $nextTick(() => $refs.mkdirInput && $refs.mkdirInput.focus())"
+              class="flex items-center gap-1.5 text-[15px] text-gray-500 dark:text-gray-400 active:opacity-60 transition-opacity">
+        {% lucide "folder-plus" "w-4 h-4" %}
+        {{ t.CONFIG_VIEW.FILE_BROWSER_NEW_FOLDER }}
+      </button>
+      <button type="button"
+              x-show="showMkdir"
+              @click="showMkdir=false; mkdirName=''"
+              class="flex items-center gap-1.5 text-[15px] text-gray-500 dark:text-gray-400 active:opacity-60 transition-opacity">
+        {{ t.APP.ACTION_CANCEL }}
+      </button>
+
+      <button type="button" @click="select()"
+              :disabled="loading || !!error"
+              class="ml-auto px-5 py-2 border border-transparent bg-blue-600 text-white text-[15px] font-semibold rounded-xl
+                     active:opacity-80 disabled:opacity-40 transition-opacity">
+        {{ t.CONFIG_VIEW.FILE_BROWSER_SELECT }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+</div>{# /x-data fileBrowserSheet #}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fileBrowserSheet() {
+  return {
+    open: false,
+    path: '',
+    pathInput: '',
+    parent: null,
+    entries: [],
+    loading: false,
+    error: null,
+    errorCode: null,
+    errorDetail: null,
+    targetFieldId: null,
+    showMkdir: false,
+    mkdirName: '',
+    mkdirError: null,
+
+    launch(fieldId, path) {
+      this.targetFieldId = fieldId;
+      this.showMkdir = false;
+      this.mkdirName = '';
+      this.mkdirError = null;
+      this.error = null;
+      this.errorCode = null;
+      this.errorDetail = null;
+      this.open = true;
+      this.navigate(path || '~');
+    },
+
+    navigate(path) {
+      this.loading = true;
+      this.error = null;
+      this.errorCode = null;
+      this.errorDetail = null;
+      this.entries = [];
+      fetch('/api/browse/?path=' + encodeURIComponent(path))
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) {
+            this.error = data.error;
+            this.errorCode = data.error_code || 'Error';
+            this.errorDetail = data.error_detail || data.error;
+          } else {
+            this.path = data.path;
+            this.pathInput = data.path;
+            this.parent = data.parent;
+            this.entries = data.entries;
+          }
+          this.loading = false;
+        })
+        .catch(() => {
+          this.error = 'Network error';
+          this.errorCode = 'Network Error';
+          this.errorDetail = 'Could not reach the server.';
+          this.loading = false;
+        });
+    },
+
+    select() {
+      const field = document.getElementById(this.targetFieldId);
+      if (field) {
+        field.value = this.path;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      this.open = false;
+    },
+
+    createDir() {
+      const name = this.mkdirName.trim();
+      if (!name) return;
+      const newPath = this.path.replace(/\/$/, '') + '/' + name;
+      this.mkdirError = null;
+      fetch('/api/browse/mkdir/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '',
+        },
+        body: JSON.stringify({ path: newPath }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) {
+            this.mkdirError = data.error;
+          } else {
+            this.mkdirName = '';
+            this.showMkdir = false;
+            this.navigate(data.path);
+          }
+        })
+        .catch(() => {
+          this.mkdirError = 'Failed to create folder.';
+        });
+    },
+  };
+}
+</script>
 {% endblock %}

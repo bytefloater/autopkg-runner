@@ -47,7 +47,9 @@ def _recipe_list_path() -> Path:
 
 
 def _overrides_dir() -> Path:
-    return Path('~/Library/AutoPkg/RecipeOverrides').expanduser()
+    from webapp.models import Setting
+    raw = Setting.get('autopkg.overrides_dir', '~/Library/AutoPkg/RecipeOverrides')
+    return Path(raw).expanduser()
 
 
 def _read_run_list() -> list:
@@ -266,7 +268,9 @@ def _recipe_search_dirs() -> list:
     prefs = _autopkg_prefs()
     dirs = [d for d in prefs.get('RECIPE_SEARCH_DIRS', []) if d and d != '.']
     if not dirs:
-        repos_root = Path('~/Library/AutoPkg/RecipeRepos').expanduser()
+        from webapp.models import Setting
+        repos_raw = Setting.get('autopkg.recipe_repos_dir', '~/Library/AutoPkg/RecipeRepos')
+        repos_root = Path(repos_raw).expanduser()
         if repos_root.exists():
             dirs = [str(d) for d in repos_root.iterdir() if d.is_dir()]
 
