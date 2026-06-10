@@ -138,3 +138,69 @@ def lookup(d, key):
         except KeyError:
             return ''
     return ''
+
+
+_RESULT_TYPE_KEYS = {
+    'failure':        'RESULT_TYPE_FAILURE',
+    'pkg_copied':     'RESULT_TYPE_PKG_COPIED',
+    'pkgcopied':      'RESULT_TYPE_PKG_COPIED',
+    'url_downloaded': 'RESULT_TYPE_URL_DOWNLOADED',
+    'urldownloaded':  'RESULT_TYPE_URL_DOWNLOADED',
+    'deprecation':    'RESULT_TYPE_DEPRECATION',
+    'munki_import':   'RESULT_TYPE_MUNKI_IMPORT',
+    'munkiimport':    'RESULT_TYPE_MUNKI_IMPORT',
+    'trust_updated':  'RESULT_TYPE_TRUST_UPDATED',
+    'trustupdated':   'RESULT_TYPE_TRUST_UPDATED',
+}
+
+
+@register.filter
+def result_type_label(result_type, t):
+    """Return a translated display name for an AutoPkg result_type.
+
+    Usage: {{ result.result_type|result_type_label:t }}
+    Falls back to the dotted translation key (e.g. RUN_DETAIL_VIEW.RESULT_TYPE_FAILURE)
+    for missing translations, consistent with TranslationProxy.__missing__.
+    """
+    key = _RESULT_TYPE_KEYS.get(result_type)
+    if key and t:
+        try:
+            return t['RUN_DETAIL_VIEW'][key]
+        except (KeyError, TypeError):
+            return f'RUN_DETAIL_VIEW.{key}'
+    synthetic = 'RESULT_TYPE_' + result_type.upper()
+    return f'RUN_DETAIL_VIEW.{synthetic}'
+
+# Maps field names to RESULT_FIELD_* translation keys.
+# 'name' is qualified with its result_type since it has a specific meaning in
+# deprecation warnings that differs from a generic "name" field.
+_RESULT_FIELD_KEYS = {
+    'message':            'RESULT_FIELD_MESSAGE',
+    'recipe':             'RESULT_FIELD_RECIPE',
+    'recipe_id':          'RESULT_FIELD_RECIPE_ID',
+    'traceback':          'RESULT_FIELD_TRACEBACK',
+    'pkg_path':           'RESULT_FIELD_PKG_PATH',
+    'download_path':      'RESULT_FIELD_DOWNLOAD_PATH',
+    'warning':            'RESULT_FIELD_WARNING',
+    'deprecation:name':   'RESULT_FIELD_DEPRECATION_NAME',
+}
+
+
+@register.simple_tag
+def result_field_label(field_name, result_type, t):
+    """Return a translated column header for an AutoPkg result field.
+
+    Usage: {% result_field_label key result.result_type t %}
+    Tries the result_type-qualified key first, then the plain field name.
+    Falls back to the dotted translation key (e.g. RUN_DETAIL_VIEW.RESULT_FIELD_PKG_PATH)
+    for missing translations, consistent with TranslationProxy.__missing__.
+    """
+    for lookup in [f'{result_type}:{field_name}', field_name]:
+        translation_key = _RESULT_FIELD_KEYS.get(lookup)
+        if translation_key:
+            try:
+                return t['RUN_DETAIL_VIEW'][translation_key]
+            except (KeyError, TypeError):
+                return f'RUN_DETAIL_VIEW.{translation_key}'
+    synthetic = 'RESULT_FIELD_' + field_name.upper()
+    return f'RUN_DETAIL_VIEW.{synthetic}'

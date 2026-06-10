@@ -144,14 +144,14 @@
   {# -- Recipe results ------------------------------------------------------- #}
   {% for result in results %}
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-    {{ result.result_type|cut:"_"|capfirst }}
+    {{ result.result_type|result_type_label:t }}
   </p>
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
     {% if result.data %}
     {% for row in result.data %}
     {% for key, val in row.items %}
     <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">{{ key|capfirst }}</span>
+      <span class="text-[16px] text-gray-900 dark:text-white">{% result_field_label key result.result_type t %}</span>
       <span class="text-[16px] text-gray-500 dark:text-gray-400 text-right ml-4 min-w-0 break-all">{{ val }}</span>
     </div>
     {% endfor %}

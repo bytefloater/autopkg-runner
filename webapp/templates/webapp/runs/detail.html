@@ -211,14 +211,14 @@
   {% for result in results %}
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
     <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-800">
-      <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 capitalize">{{ result.result_type|cut:"_" }}</h3>
+      <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ result.result_type|result_type_label:t }}</h3>
     </div>
     <div class="px-4 py-3 overflow-x-auto">
       {% if result.data %}
       <table class="text-xs w-full">
         <thead>
           <tr class="text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-slate-800">
-            {% for key in result.data.0.keys %}<th class="text-left pb-1 pr-4 font-medium">{{ key }}</th>{% endfor %}
+            {% for key in result.data.0.keys %}<th class="text-left pb-1 pr-4 font-medium">{% result_field_label key result.result_type t %}</th>{% endfor %}
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50 dark:divide-slate-800">

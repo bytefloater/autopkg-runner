@@ -135,7 +135,23 @@
         "STATUS_CANCELLED": "@:APP.STATE_CANCELLED",
         "STATUS_SKIPPED": "@:APP.STATE_SKIPPED",
 
-        "RESULTS_NO_DATA": "No data."
+        "RESULTS_NO_DATA": "No data.",
+
+        "RESULT_FIELD_MESSAGE": "Message",
+        "RESULT_FIELD_RECIPE": "Recipe",
+        "RESULT_FIELD_RECIPE_ID": "Identifier",
+        "RESULT_FIELD_TRACEBACK": "Traceback",
+        "RESULT_FIELD_PKG_PATH": "Package Path",
+        "RESULT_FIELD_DOWNLOAD_PATH": "Download Path",
+        "RESULT_FIELD_WARNING": "Warning",
+        "RESULT_FIELD_DEPRECATION_NAME": "Recipe Name",
+
+        "RESULT_TYPE_FAILURE": "Failures",
+        "RESULT_TYPE_PKG_COPIED": "Packages Copied",
+        "RESULT_TYPE_URL_DOWNLOADED": "URLs Downloaded",
+        "RESULT_TYPE_DEPRECATION": "Deprecation Warnings",
+        "RESULT_TYPE_MUNKI_IMPORT": "Munki Imports",
+        "RESULT_TYPE_TRUST_UPDATED": "Trust Updated"
     },
     "SCHEDULE_VIEW": {
         "DESC_SCHEDULER": "Configure when the AutoPkg pipeline runs automatically. Use standard cron syntax.",
