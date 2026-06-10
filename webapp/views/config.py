@@ -1,9 +1,18 @@
 import shutil
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
+
+
+class SuperuserRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Administrator access required.')
+        return redirect('dashboard')
 
 from webapp import translations as trans
 
@@ -21,7 +30,7 @@ CONFIG_SECTIONS = [
 ]
 
 
-class ConfigRootView(LoginRequiredMixin, TemplateView):
+class ConfigRootView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView):
     """Configuration landing page - shows a navigable list of sections."""
 
     template_name = 'webapp/config.html'
@@ -40,7 +49,7 @@ class ConfigRootView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
-class ConfigSectionView(LoginRequiredMixin, TemplateView):
+class ConfigSectionView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView):
     """Handles GET (display) and POST (save) for a named config section."""
 
     # section kwarg supplied by the URL dispatcher
@@ -110,7 +119,7 @@ class ConfigSectionView(LoginRequiredMixin, TemplateView):
         return redirect(f'config-{section}')
 
 
-class LogLevelPickerView(LoginRequiredMixin, TemplateView):
+class LogLevelPickerView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView):
     """
     Mobile-only sub-page: show available log levels with checkmarks.
     Selecting one redirects to /config/logging/?level=<LEVEL>.

@@ -90,17 +90,27 @@ class APITokenAuthentication(BaseAuthentication):
             raise AuthenticationFailed('Invalid or revoked token.')
 
     def _check_nonce(self, token_id: str, nonce: str) -> None:
+        # Intentionally left as a pre-flight check for the common (non-replay)
+        # path. The definitive replay guard is _record_nonce, which uses an
+        # atomic insert and catches IntegrityError on the unique_together
+        # constraint. A race between two identical requests reaching this
+        # point simultaneously will be resolved safely there.
         from webapp.models import UsedNonce
         if UsedNonce.objects.filter(token_id=token_id, nonce=nonce).exists():
             raise AuthenticationFailed('Nonce has already been used — possible replay attack.')
 
     def _record_nonce(self, token_id: str, nonce: str) -> None:
+        from django.db import IntegrityError
         from webapp.models import UsedNonce
-        UsedNonce.objects.create(
-            token_id=token_id,
-            nonce=nonce,
-            used_at=timezone.now(),
-        )
+        try:
+            UsedNonce.objects.create(
+                token_id=token_id,
+                nonce=nonce,
+                used_at=timezone.now(),
+            )
+        except IntegrityError:
+            # Concurrent request with the same nonce lost the race — treat as replay.
+            raise AuthenticationFailed('Nonce has already been used — possible replay attack.')
         # Prune nonces older than the timestamp window to keep the table small.
         cutoff = timezone.now() - timezone.timedelta(seconds=_TIMESTAMP_TOLERANCE)
         UsedNonce.objects.filter(token_id=token_id, used_at__lt=cutoff).delete()
@@ -111,6 +121,7 @@ class APITokenAuthentication(BaseAuthentication):
         canonical = '\n'.join([
             request.method.upper(),
             request.path,
+            request.META.get('QUERY_STRING', ''),
             str(timestamp),
             nonce,
             body_hash,

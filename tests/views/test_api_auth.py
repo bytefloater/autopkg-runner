@@ -44,11 +44,12 @@ def _compute_zk_response(challenge_json: dict, password: str) -> str:
 
 
 def _hmac_auth_header(token_id: str, token_secret: str,
-                      method: str, path: str, body: bytes = b'') -> str:
+                      method: str, path: str, body: bytes = b'',
+                      query: str = '') -> str:
     timestamp  = int(time.time())
     nonce      = secrets.token_hex(16)
     body_hash  = hashlib.sha256(body).hexdigest()
-    canonical  = '\n'.join([method.upper(), path, str(timestamp), nonce, body_hash])
+    canonical  = '\n'.join([method.upper(), path, query, str(timestamp), nonce, body_hash])
     sig        = hmac.new(token_secret.encode(), canonical.encode(), hashlib.sha256).hexdigest()
     return (
         f'HMAC-SHA256 Credential={token_id}, Timestamp={timestamp}, '

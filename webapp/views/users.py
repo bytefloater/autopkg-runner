@@ -22,12 +22,11 @@ class UsersView(LoginRequiredMixin, TemplateView):
         return [self.template_name]
 
     def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        # Only superusers may manage accounts.
+        # Check before dispatching so post() is never reached by non-superusers.
         if request.user.is_authenticated and not request.user.is_superuser:
             messages.error(request, 'Administrator access required.')
             return redirect('dashboard')
-        return response
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
