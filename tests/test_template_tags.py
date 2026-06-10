@@ -62,13 +62,13 @@ class TestLookupFilter:
     def test_present_key_in_regular_dict(self):
         assert self._call({'a': 'b'}, 'a') == 'b'
 
-    def test_missing_key_in_regular_dict_returns_none(self):
-        assert self._call({'a': 'b'}, 'z') is None
+    def test_missing_key_in_regular_dict_returns_empty_string(self):
+        assert self._call({'a': 'b'}, 'z') == ''
 
-    def test_non_dict_input_returns_none(self):
-        assert self._call('string', 'key') is None
-        assert self._call(42, 'key') is None
-        assert self._call(None, 'key') is None
+    def test_non_dict_input_returns_empty_string(self):
+        assert self._call('string', 'key') == ''
+        assert self._call(42, 'key') == ''
+        assert self._call(None, 'key') == ''
 
     def test_missing_key_in_translation_proxy_returns_dotted_path(self):
         from webapp.translations import TranslationProxy

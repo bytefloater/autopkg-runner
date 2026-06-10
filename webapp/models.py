@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import binascii
 import os
+import secrets
 import uuid
 from typing import TYPE_CHECKING, Optional
 
@@ -433,24 +434,76 @@ class Task(models.Model):
         return f'Task {self.id} [{self.task_type}:{self.status}]'
 
 
+# -- Authentication challenges --------------------------------------------------
+
+class AuthChallenge(models.Model):
+    """
+    Short-lived one-time challenge used in zero-knowledge login.
+
+    The client requests a challenge, uses it to compute an HMAC response
+    without sending the password, then the server verifies and marks it used.
+    """
+    challenge_id = models.CharField(max_length=64, unique=True, db_index=True)
+    nonce        = models.CharField(max_length=64)
+    username     = models.CharField(max_length=150)
+    expires_at   = models.DateTimeField()
+    used         = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Auth Challenge'
+
+
+class UsedNonce(models.Model):
+    """
+    Records nonces consumed by HMAC-signed API requests.
+
+    Prevents replay attacks within the timestamp tolerance window.
+    Rows older than the window can be pruned periodically.
+    """
+    token_id   = models.CharField(max_length=32, db_index=True)
+    nonce      = models.CharField(max_length=32)
+    used_at    = models.DateTimeField()
+
+    class Meta:
+        verbose_name = 'Used Nonce'
+        unique_together = [('token_id', 'nonce')]
+
+
 # -- API tokens -----------------------------------------------------------------
 
 class APIToken(models.Model):
-    """Named API token for a user. Multiple tokens per user are supported."""
+    """
+    Named API token for HMAC-signed requests.
 
-    user    = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='api_tokens')
-    name    = models.CharField(max_length=100, verbose_name='Token name')
-    key     = models.CharField(max_length=40, unique=True, db_index=True, editable=False)
-    created = models.DateTimeField(auto_now_add=True)
+    token_id     — public identifier sent in the Authorization header Credential= field
+    token_secret — 32-byte secret (encrypted at rest) used as the HMAC key; shown once at creation
+    """
+
+    user         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='api_tokens')
+    name         = models.CharField(max_length=100, verbose_name='Token name')
+    token_id     = models.CharField(max_length=32, unique=True, db_index=True, editable=False)
+    token_secret = models.CharField(max_length=200, editable=False)  # encrypted at rest
+    created      = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created']
         verbose_name = 'API Token'
 
     def save(self, *args, **kwargs):
-        if not self.key:
-            self.key = binascii.hexlify(os.urandom(20)).decode()
+        from webapp.encryption import encrypt, is_encrypted
+        if not self.token_id:
+            self.token_id = binascii.hexlify(os.urandom(16)).decode()
+        if not self.token_secret:
+            raw_secret = secrets.token_hex(32)
+            self.token_secret = encrypt(raw_secret)
+        elif self.token_secret and not is_encrypted(self.token_secret):
+            self.token_secret = encrypt(self.token_secret)
         super().save(*args, **kwargs)
+
+    @property
+    def decrypted_secret(self) -> str:
+        from webapp.encryption import decrypt
+        return decrypt(self.token_secret)
 
     def __str__(self):
         return f'{self.user.username} / {self.name}'

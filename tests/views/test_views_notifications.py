@@ -25,8 +25,7 @@ class TestNotificationsView:
         assert notifier in resp.context['notifiers']
 
     def test_post_save_settings(self, client):
-        resp = client.post(self.url, {
-            '_action': 'save_settings',
+        resp = client.post('/config/notifications/settings/', {
             'notify.pwa_base_url': 'https://example.com',
             'notify.share_link_expiry_days': '7',
         })

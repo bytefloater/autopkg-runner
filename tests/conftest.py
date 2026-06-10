@@ -4,9 +4,26 @@ from __future__ import annotations
 import os
 import uuid
 from datetime import datetime, timezone, timedelta
+from unittest.mock import patch
 
 import django
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def _no_recipe_cache_thread(request):
+    """Suppress background recipe-cache threads in all tests.
+
+    The _build() thread opens Django DB connections that can outlive test
+    teardown, producing ResourceWarning noise. Mark a test with
+    ``@pytest.mark.real_cache_build`` to skip this patch and exercise the
+    real function.
+    """
+    if request.node.get_closest_marker('real_cache_build'):
+        yield
+    else:
+        with patch('webapp.views.recipes._start_cache_build'):
+            yield
 
 # Ensure the required environment variable is present before Django loads.
 os.environ.setdefault('DJANGO_SECRET_KEY', 'test-secret-key-not-for-production')
@@ -74,11 +91,15 @@ def api_token(db, user):
 
 
 @pytest.fixture
-def api_client(api_token):
-    """DRF APIClient authenticated with the user's token."""
+def api_client(user):
+    """DRF APIClient force-authenticated as the regular user.
+
+    Uses force_authenticate so view tests don't depend on the HMAC signing
+    scheme — use test_api_auth.py to test the auth layer itself.
+    """
     from rest_framework.test import APIClient
     c = APIClient()
-    c.credentials(HTTP_AUTHORIZATION=f'Token {api_token.key}')
+    c.force_authenticate(user=user)
     return c
 
 

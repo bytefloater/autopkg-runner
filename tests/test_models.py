@@ -178,18 +178,20 @@ class TestRunShareToken:
 
 @pytest.mark.django_db
 class TestAPIToken:
-    def test_save_autogenerates_key(self, user):
+    def test_save_autogenerates_token_id_and_secret(self, user):
         from webapp.models import APIToken
         t = APIToken.objects.create(user=user, name='My Token')
-        assert len(t.key) == 40
-        assert t.key.isalnum()
+        assert len(t.token_id) == 32
+        assert t.token_id.isalnum()
+        # Secret is stored encrypted; decrypted form is a 64-char hex string
+        assert len(t.decrypted_secret) == 64
+        assert t.decrypted_secret.isalnum()
 
-    def test_explicit_key_preserved(self, user):
-        # APIToken.key is editable=False so we set it via direct field assignment
+    def test_token_secret_stored_encrypted(self, user):
         from webapp.models import APIToken
-        t = APIToken(user=user, name='Fixed Token', key='a' * 40)
-        t.save()
-        assert t.key == 'a' * 40
+        from webapp.encryption import is_encrypted
+        t = APIToken.objects.create(user=user, name='Enc Token')
+        assert is_encrypted(t.token_secret)
 
 
 # ---------------------------------------------------------------------------

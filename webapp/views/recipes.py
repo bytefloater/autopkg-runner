@@ -406,8 +406,18 @@ def _start_cache_build():
             results.sort(key=lambda r: r['stem'].lower())
             _RECIPES_CACHE['data'] = results
             _RECIPES_CACHE['ts'] = time.monotonic()
+        except Exception:
+            pass
         finally:
             _RECIPES_BUILDING = False
+            # Close any Django DB connections opened by this thread (e.g. via
+            # Setting.get in _recipe_search_dirs) so they are not left open
+            # after the thread exits, which would cause ResourceWarning on GC.
+            try:
+                from django.db import close_old_connections
+                close_old_connections()
+            except Exception:
+                pass
 
     threading.Thread(target=_build, daemon=True, name='recipe-cache-build').start()
 
@@ -477,7 +487,24 @@ def _build_recipe_entries(run_list_set: set) -> tuple:
         stem = recipe['stem']
         parent_id = recipe['identifier']
 
-        # Always emit the parent recipe row.
+        # Stem-based match: an override whose filename stem matches the parent
+        # stem and has no ParentRecipe field supersedes the parent — emit only
+        # the override row, suppress the parent row entirely.
+        stem_override = override_map.get(stem)
+        if stem_override and not stem_override.get('parent'):
+            ov_id = stem_override['identifier']
+            matched_override_fnames.add(stem_override['fname'])
+            entries.append({
+                'identifier':    ov_id,
+                'name':          stem_override['stem'],
+                'is_override':   True,
+                'override_fname': stem_override['fname'],
+                'parent_recipe': recipe.get('parent'),
+                'in_run_list':   ov_id in run_list_set,
+            })
+            continue
+
+        # Emit the parent recipe row.
         entries.append({
             'identifier':    parent_id,
             'name':          stem,
@@ -487,12 +514,11 @@ def _build_recipe_entries(run_list_set: set) -> tuple:
             'in_run_list':   parent_id in run_list_set,
         })
 
-        # Emit a separate row for each override that explicitly targets this parent.
-        # The override's own ParentRecipe is the base recipe (confirmed present here),
-        # so we expose the base recipe's OWN dependency as parent_recipe so the
-        # missing-parent check reflects whether the full execution chain is available.
+        # Emit a separate row for each override that explicitly targets this parent
+        # via its ParentRecipe field.  Expose the base recipe's OWN dependency as
+        # parent_recipe so the missing-parent check reflects the full chain.
         # Use the override file's own stem as the display name so that e.g.
-        # FileZilla-Arm.munki.recipe shows as "FileZilla-Arm.munki", not "FileZilla.munki".
+        # FileZilla-Arm.munki.recipe shows as "FileZilla-Arm.munki".
         for o_info in parent_id_to_overrides.get(parent_id, []):
             ov_id = o_info['identifier']
             matched_override_fnames.add(o_info['fname'])
@@ -620,11 +646,16 @@ class OverrideCreateView(LoginRequiredMixin, View):
 
         _invalidate_recipe_cache()
 
-        # Find the newly created file by comparing before/after snapshots
+        # Find the newly created file by comparing before/after snapshots.
+        # When multiple files were added, prefer the one whose stem exactly
+        # matches the first component of the identifier (e.g. 'Firefox' for
+        # 'Firefox.munki') before falling back to an arbitrary choice.
         after = {f.name for f in od.glob('*.recipe')}
         new_files = after - before
         if new_files:
-            fname = next(iter(new_files))
+            stem = identifier.split('.')[0]
+            exact = next((f for f in sorted(new_files) if f == f'{stem}.recipe'), None)
+            fname = exact or next(iter(sorted(new_files)))
             return redirect('recipes-override-edit', fname=fname)
 
         messages.success(request, f'Override created for {identifier}.')

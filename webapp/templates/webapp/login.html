@@ -28,13 +28,15 @@
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 p-6">
-      {% if form.errors %}
+      {% if form.errors or zk_failed %}
       <div class="mb-4 px-3 py-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300">
         {{ t.LOGIN_VIEW.ERROR_INVALID_CREDENTIALS }}
       </div>
       {% endif %}
 
-      <form method="post" class="space-y-4">
+      <form method="post" class="space-y-4" id="login-form">
+        {% if form.errors or zk_failed %}
+        {% else %}{% endif %}
         <div>
           <label for="id_username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.APP.FIELDNAME_USERNAME }}</label>
           <input type="text" name="username" id="id_username" autocomplete="username" required autofocus
@@ -51,12 +53,15 @@
                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                         placeholder-gray-400 transition-colors">
         </div>
-        <button type="submit"
+        <button type="submit" id="login-btn"
                 class="w-full py-2.5 px-4 border border-transparent bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
           {{ t.APP.ACTION_LOGIN }}
         </button>
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next }}">
+        {# ZK hidden fields — populated by JS before submit #}
+        <input type="hidden" name="challenge_id" id="zk-challenge-id">
+        <input type="hidden" name="response"      id="zk-response">
       </form>
     </div>
   </div>
@@ -88,6 +93,102 @@
         btn.style.display = 'inline-flex';
       }
     })();
+  </script>
+
+  {# Zero-knowledge login: Argon2id runs in-browser; password never leaves the device #}
+  <script src="https://unpkg.com/argon2-browser@1.18.0/dist/argon2-bundled.min.js"></script>
+  <script>
+  (function () {
+    var form   = document.getElementById('login-form');
+    var btn    = document.getElementById('login-btn');
+    var zkReady = typeof argon2 !== 'undefined';
+
+    if (!zkReady) return;  // argon2-browser failed to load; fall back to password POST
+
+    // Remove the 'required' attribute from the password field — JS will handle it.
+    var pwField = document.getElementById('id_password');
+    pwField.removeAttribute('required');
+
+    function b64ToBytes(b64) {
+      var padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
+      var binary = atob(padded);
+      var bytes  = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+
+    function bytesToHex(buf) {
+      return Array.from(new Uint8Array(buf))
+        .map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+    }
+
+    async function zkLogin(username, password, next) {
+      // 1. Fetch challenge + Argon2id params
+      var challengeResp = await fetch('/api/auth/challenge/?username=' + encodeURIComponent(username));
+      if (!challengeResp.ok) {
+        // Account not yet upgraded to Argon2id — fall back to plain password POST
+        return false;
+      }
+      var ch = await challengeResp.json();
+
+      // 2. Derive hash locally using the server's salt + params
+      var saltBytes = b64ToBytes(ch.argon2_params.salt);
+      var result = await argon2.hash({
+        pass:        password,
+        salt:        saltBytes,
+        time:        ch.argon2_params.time_cost,
+        mem:         ch.argon2_params.memory_cost,
+        parallelism: ch.argon2_params.parallelism,
+        hashLen:     ch.argon2_params.hash_len,
+        type:        argon2.ArgonType.Argon2id,
+      });
+
+      // 3. HMAC-SHA256(key=hash_bytes, msg=nonce|username|challenge_id)
+      var keyMaterial = await crypto.subtle.importKey(
+        'raw', result.hash.buffer,
+        {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']
+      );
+      var msg    = ch.nonce + '|' + username + '|' + ch.challenge_id;
+      var sigBuf = await crypto.subtle.sign('HMAC', keyMaterial, new TextEncoder().encode(msg));
+      var sigHex = bytesToHex(sigBuf);
+
+      // 4. Fill in hidden ZK fields and clear the password field before submit
+      document.getElementById('zk-challenge-id').value = ch.challenge_id;
+      document.getElementById('zk-response').value      = sigHex;
+      pwField.value = '';
+      pwField.name  = '';   // prevent password from being included in POST body
+
+      return true;
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var username = document.getElementById('id_username').value.trim();
+      var password = pwField.value;
+      if (!username || !password) { form.submit(); return; }
+
+      btn.disabled    = true;
+      btn.textContent = '…';
+
+      zkLogin(username, password).then(function (ok) {
+        if (ok) {
+          form.submit();
+        } else {
+          // Argon2id not available for this account — restore password field and submit normally
+          pwField.name = 'password';
+          btn.disabled = false;
+          btn.textContent = '{{ t.APP.ACTION_LOGIN }}';
+          form.submit();
+        }
+      }).catch(function () {
+        // Network or crypto error — restore and fall back
+        pwField.name = 'password';
+        btn.disabled = false;
+        btn.textContent = '{{ t.APP.ACTION_LOGIN }}';
+        form.submit();
+      });
+    });
+  })();
   </script>
 </body>
 </html>

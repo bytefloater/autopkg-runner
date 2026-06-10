@@ -305,6 +305,7 @@ class TestCacheHelpers:
         # Reset so other tests are not affected
         rv._RECIPES_BUILDING = False
 
+    @pytest.mark.real_cache_build
     def test_start_cache_build_launches_thread_when_cold(self):
         import webapp.views.recipes as rv
         rv._RECIPES_CACHE['data'] = None
@@ -329,7 +330,7 @@ class TestBuildRecipeEntries:
              patch('webapp.views.recipes._list_parent_recipes', return_value=[
                  {'stem': 'Firefox', 'identifier': 'com.github.autopkg.firefox-pkg'}
              ]):
-            entries, _ = _build_recipe_entries(set())
+            entries, _, _orphaned = _build_recipe_entries(set())
         assert len(entries) == 1
         assert entries[0]['is_override'] is False
         assert entries[0]['identifier'] == 'com.github.autopkg.firefox-pkg'
@@ -342,7 +343,7 @@ class TestBuildRecipeEntries:
              patch('webapp.views.recipes._list_parent_recipes', return_value=[
                  {'stem': 'Firefox', 'identifier': 'com.github.autopkg.firefox-pkg'}
              ]):
-            entries, _ = _build_recipe_entries({'com.github.autopkg.firefox-pkg'})
+            entries, _, _orphaned = _build_recipe_entries({'com.github.autopkg.firefox-pkg'})
         assert entries[0]['in_run_list'] is True
 
     def test_override_supersedes_parent(self, tmp_path):
@@ -359,7 +360,7 @@ class TestBuildRecipeEntries:
              patch('webapp.views.recipes._list_parent_recipes', return_value=[
                  {'stem': 'Firefox', 'identifier': 'com.github.autopkg.firefox-pkg'}
              ]):
-            entries, _ = _build_recipe_entries(set())
+            entries, _, _orphaned = _build_recipe_entries(set())
         assert len(entries) == 1
         assert entries[0]['is_override'] is True
         assert entries[0]['identifier'] == 'local.firefox.override'
@@ -378,7 +379,7 @@ class TestBuildRecipeEntries:
              patch('webapp.views.recipes._list_parent_recipes', return_value=[
                  {'stem': 'Chrome', 'identifier': 'com.github.autopkg.chrome'}
              ]):
-            entries, _ = _build_recipe_entries({'local.chrome.override'})
+            entries, _, _orphaned = _build_recipe_entries({'local.chrome.override'})
         assert entries[0]['in_run_list'] is True
 
     def test_orphan_override_no_parent(self, tmp_path):
@@ -392,7 +393,7 @@ class TestBuildRecipeEntries:
         from webapp.views.recipes import _build_recipe_entries
         with patch('webapp.views.recipes._overrides_dir', return_value=od), \
              patch('webapp.views.recipes._list_parent_recipes', return_value=[]):
-            entries, _ = _build_recipe_entries(set())
+            entries, _, _orphaned = _build_recipe_entries(set())
         assert len(entries) == 1
         assert entries[0]['name'] == 'Orphan'
         assert entries[0]['is_override'] is True
@@ -405,7 +406,7 @@ class TestBuildRecipeEntries:
                  {'stem': 'Zoo', 'identifier': 'com.zoo'},
                  {'stem': 'Alpha', 'identifier': 'com.alpha'},
              ]):
-            entries, _ = _build_recipe_entries(set())
+            entries, _, _orphaned = _build_recipe_entries(set())
         assert entries[0]['name'] == 'Alpha'
         assert entries[1]['name'] == 'Zoo'
 
@@ -614,7 +615,7 @@ class TestRecipeDataView:
         with patch('webapp.views.recipes._start_cache_build'), \
              patch('webapp.views.recipes._is_cache_ready', return_value=True), \
              patch('webapp.views.recipes._read_run_list', return_value=[]), \
-             patch('webapp.views.recipes._build_recipe_entries', return_value=(entries, False)):
+             patch('webapp.views.recipes._build_recipe_entries', return_value=(entries, False, [])):
             resp = client.get(self.url)
         assert resp.status_code == 200
         data = json.loads(resp.content)
@@ -654,9 +655,12 @@ class TestOverrideCreateView:
     def test_success_redirects_to_editor_when_file_found(self, client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
-        (od / 'Firefox.recipe').write_text('<plist/>')
-        r = MagicMock(returncode=0, stdout='', stderr='')
-        with patch('subprocess.run', return_value=r), \
+
+        def create_file(cmd, **kwargs):
+            (od / 'Firefox.recipe').write_text('<plist/>')
+            return MagicMock(returncode=0, stdout='', stderr='')
+
+        with patch('subprocess.run', side_effect=create_file), \
              patch('webapp.views.recipes._overrides_dir', return_value=od):
             resp = client.post(self.url, {'identifier': 'Firefox.munki'})
         assert resp.status_code == 302
@@ -664,7 +668,7 @@ class TestOverrideCreateView:
 
     def test_success_redirects_to_list_when_no_file_found(self, client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
-        od.mkdir()  # empty — no recipe file created
+        od.mkdir()  # subprocess succeeds but creates no file
         r = MagicMock(returncode=0, stdout='', stderr='')
         with patch('subprocess.run', return_value=r), \
              patch('webapp.views.recipes._overrides_dir', return_value=od):
@@ -675,11 +679,13 @@ class TestOverrideCreateView:
     def test_success_prefers_exact_stem_match(self, client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
-        # Two candidates — exact stem match should win
-        (od / 'Firefox.recipe').write_text('<plist/>')
-        (od / 'Firefox-extra.recipe').write_text('<plist/>')
-        r = MagicMock(returncode=0, stdout='', stderr='')
-        with patch('subprocess.run', return_value=r), \
+        # Subprocess creates two candidates — exact stem match should win
+        def create_both(cmd, **kwargs):
+            (od / 'Firefox.recipe').write_text('<plist/>')
+            (od / 'Firefox-extra.recipe').write_text('<plist/>')
+            return MagicMock(returncode=0, stdout='', stderr='')
+
+        with patch('subprocess.run', side_effect=create_both), \
              patch('webapp.views.recipes._overrides_dir', return_value=od):
             resp = client.post(self.url, {'identifier': 'Firefox.munki'})
         assert 'Firefox.recipe' in resp['Location']

@@ -245,17 +245,20 @@
     })();
   </script>
 
+  {# Zero-knowledge login: Argon2id runs in-browser; password never leaves the device #}
+  <script src="https://unpkg.com/argon2-browser@1.18.0/dist/argon2-bundled.min.js"></script>
+
   <div class="login-wrap">
 
     <img src="{% static 'logos/icon-192.png' %}" alt="AutoPkg Runner" class="app-icon">
     <h1 class="app-name">AutoPkg Runner</h1>
     <p class="app-tagline">{{ t.LOGIN_VIEW.TAGLINE }}</p>
 
-    {% if form.errors %}
+    {% if form.errors or zk_failed %}
     <div class="error-banner">{{ t.LOGIN_VIEW.ERROR_INVALID_CREDENTIALS }}</div>
     {% endif %}
 
-    <form method="post">
+    <form method="post" id="login-form">
       <div class="field-group">
         <div class="field-row">
           <input class="field-input"
@@ -281,12 +284,96 @@
         </div>
       </div>
 
-      <button type="submit" class="btn-signin">{{ t.APP.ACTION_LOGIN }}</button>
+      <button type="submit" class="btn-signin" id="login-btn">{{ t.APP.ACTION_LOGIN }}</button>
 
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ next }}">
+      {# ZK hidden fields — populated by JS before submit #}
+      <input type="hidden" name="challenge_id" id="zk-challenge-id">
+      <input type="hidden" name="response"      id="zk-response">
     </form>
 
   </div>
+  <script>
+  (function () {
+    var form    = document.getElementById('login-form');
+    var btn     = document.getElementById('login-btn');
+    var zkReady = typeof argon2 !== 'undefined';
+
+    if (!zkReady) return;
+
+    var pwField = document.getElementById('id_password');
+    pwField.removeAttribute('required');
+
+    function b64ToBytes(b64) {
+      var padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
+      var binary = atob(padded);
+      var bytes  = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+
+    function bytesToHex(buf) {
+      return Array.from(new Uint8Array(buf))
+        .map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+    }
+
+    async function zkLogin(username, password) {
+      var challengeResp = await fetch('/api/auth/challenge/?username=' + encodeURIComponent(username));
+      if (!challengeResp.ok) return false;
+      var ch = await challengeResp.json();
+
+      var saltBytes = b64ToBytes(ch.argon2_params.salt);
+      var result = await argon2.hash({
+        pass:        password,
+        salt:        saltBytes,
+        time:        ch.argon2_params.time_cost,
+        mem:         ch.argon2_params.memory_cost,
+        parallelism: ch.argon2_params.parallelism,
+        hashLen:     ch.argon2_params.hash_len,
+        type:        argon2.ArgonType.Argon2id,
+      });
+
+      var keyMaterial = await crypto.subtle.importKey(
+        'raw', result.hash.buffer,
+        {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']
+      );
+      var msg    = ch.nonce + '|' + username + '|' + ch.challenge_id;
+      var sigBuf = await crypto.subtle.sign('HMAC', keyMaterial, new TextEncoder().encode(msg));
+
+      document.getElementById('zk-challenge-id').value = ch.challenge_id;
+      document.getElementById('zk-response').value      = bytesToHex(sigBuf);
+      pwField.value = '';
+      pwField.name  = '';
+      return true;
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var username = document.getElementById('id_username').value.trim();
+      var password = pwField.value;
+      if (!username || !password) { form.submit(); return; }
+
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+
+      zkLogin(username, password).then(function (ok) {
+        if (ok) {
+          form.submit();
+        } else {
+          pwField.name = 'password';
+          btn.disabled = false;
+          btn.style.opacity = '';
+          form.submit();
+        }
+      }).catch(function () {
+        pwField.name = 'password';
+        btn.disabled = false;
+        btn.style.opacity = '';
+        form.submit();
+      });
+    });
+  })();
+  </script>
 </body>
 </html>
