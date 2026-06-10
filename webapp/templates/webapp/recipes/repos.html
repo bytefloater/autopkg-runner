@@ -68,6 +68,7 @@
       {# Add Repository button #}
       <button type="button" @click="showAdd = true; $nextTick(() => $refs.addInput.focus())"
               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
+                     border border-transparent
                      bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm">
         {% lucide "plus" "w-4 h-4" %}
         {{ t.RECIPES_VIEW.ACTION_ADD_REPO }}
@@ -158,7 +159,7 @@
           </button>
           <button type="submit"
                   class="px-4 py-2.5 text-sm font-semibold rounded-lg
-                         bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                         border border-transparent bg-blue-600 hover:bg-blue-700 text-white transition-colors">
             {{ t.APP.ACTION_ADD }}
           </button>
         </div>

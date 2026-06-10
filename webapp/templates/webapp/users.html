@@ -4,13 +4,13 @@
 {% block title %}Users - AutoPkg Runner{% endblock %}
 
 {% block content %}
-<div class="space-y-6" x-data="usersPage()">
+<div class="space-y-4" x-data="usersPage()">
 
   {# -- Page header - consistent with Dashboard / Runs #}
   <div class="flex items-center justify-between">
     <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_USERS }}</h1>
     <button @click="showCreate = true"
-            class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+            class="flex items-center gap-2 px-4 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
       {% lucide "plus" "w-4 h-4" %}
       {{ t.USER_VIEW.ACTION_ADD_USER }}
     </button>
@@ -166,7 +166,7 @@
                   class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
             {{ t.APP.ACTION_CANCEL }}
           </button>
-          <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+          <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 hover:bg-blue-700 text-white transition-colors">
             {{ t.USER_VIEW.ACTION_CREATE_USER }}
           </button>
         </div>
@@ -249,7 +249,7 @@
                   class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
             {{ t.APP.ACTION_CANCEL }}
           </button>
-          <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+          <button type="submit" class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 hover:bg-blue-700 text-white transition-colors">
             {{ t.USER_VIEW.ACTION_SAVE_CHANGES }}
           </button>
         </div>

@@ -6,14 +6,22 @@
 {% block content %}
 <div class="space-y-6" x-data="tokenPage()">
 
-  {# -- Page header - consistent with Dashboard / Runs #}
-  <div class="flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.TOKENS_VIEW.SECTION_API_TOKENS }}</h1>
-    <button @click="showCreate = true"
-            class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
-      {% lucide "plus" "w-4 h-4" %}
-      {{ t.TOKENS_VIEW.ACTION_NEW_TOKEN }}
-    </button>
+  {# -- Page header #}
+  <div>
+    <div class="flex items-center justify-between min-h-[38px] mb-1">
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.TOKENS_VIEW.SECTION_API_TOKENS }}</h1>
+      <button @click="showCreate = true"
+              class="flex items-center gap-2 px-4 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+        {% lucide "plus" "w-4 h-4" %}
+        {{ t.TOKENS_VIEW.ACTION_NEW_TOKEN }}
+      </button>
+    </div>
+    <nav class="flex items-center gap-1.5 text-sm">
+      <a href="{% url 'config' %}"
+         class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ t.APP.VIEWS_CONFIG }}</a>
+      {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
+      <span class="text-gray-600 dark:text-gray-400">{{ t.TOKENS_VIEW.SECTION_API_TOKENS }}</span>
+    </nav>
   </div>
 
   {# -- Revealed-token banner (shown once, session-backed) -- #}
@@ -66,7 +74,7 @@
       <div class="text-gray-300 dark:text-slate-700 mb-3">{% lucide "key" "w-10 h-10 mx-auto" %}</div>
       <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ t.TOKENS_VIEW.EMPTY_NO_TOKENS }}</p>
       <button @click="showCreate = true"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
+              class="px-4 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors">
         {{ t.TOKENS_VIEW.ACTION_CREATE_FIRST }}
       </button>
     </div>
@@ -145,7 +153,7 @@
             {{ t.APP.ACTION_CANCEL }}
           </button>
           <button type="submit" :disabled="!newName.trim()"
-                  class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700
+                  class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 hover:bg-blue-700
                          text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
             {{ t.TOKENS_VIEW.ACTION_CREATE_TOKEN }}
           </button>

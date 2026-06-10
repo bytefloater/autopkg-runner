@@ -358,7 +358,7 @@
       <button type="button" @click="subscribe()"
               :disabled="subscribing || subscribed"
               class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold
-                     bg-blue-600 hover:bg-blue-700 text-white transition-colors
+                     border border-transparent bg-blue-600 hover:bg-blue-700 text-white transition-colors
                      disabled:opacity-40 disabled:cursor-not-allowed">
         <template x-if="subscribing">
           <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
@@ -446,7 +446,7 @@
         </button>
 
         <button type="submit"
-                class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
+                class="px-5 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
                        rounded-lg transition-colors shadow-sm">
           {{ t.NOTIFICATIONS_VIEW.ACTION_SAVE_NOTIFIER }}
         </button>

@@ -8,11 +8,16 @@
   <div>
     <div class="flex items-center justify-between min-h-9">
       <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_SCHEDULES }}</h1>
+      <button type="submit" form="schedule-form"
+              class="px-5 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
+                     rounded-lg transition-colors shadow-sm">
+        {{ t.SCHEDULE_VIEW.ACTION_SAVE }}
+      </button>
     </div>
     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t.SCHEDULE_VIEW.DESC_SCHEDULER }}</p>
   </div>
 
-  <form method="post" x-data="{ enabled: {{ schedule.enabled|yesno:'true,false' }} }">
+  <form id="schedule-form" method="post" x-data="{ enabled: {{ schedule.enabled|yesno:'true,false' }} }">
     {% csrf_token %}
 
     <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
@@ -75,13 +80,6 @@
       </div>
     </div>{# /card #}
 
-    <div class="flex justify-end mt-4">
-      <button type="submit"
-              class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
-                     rounded-lg transition-colors shadow-sm">
-        {{ t.SCHEDULE_VIEW.ACTION_SAVE }}
-      </button>
-    </div>
 
   </form>
 </div>

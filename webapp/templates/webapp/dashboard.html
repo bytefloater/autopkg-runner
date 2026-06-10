@@ -4,7 +4,7 @@
 {% block title %}Dashboard - AutoPkg Runner{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-4">
 
   <!-- Page header -->
   <div class="flex items-center justify-between">
@@ -16,7 +16,7 @@
               hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
               hx-swap="none"
               hx-on::after-request="if(event.detail.successful){ window.location = '/runs/' + JSON.parse(event.detail.xhr.responseText).run_id + '/' }"
-              class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+              class="flex items-center gap-2 px-4 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
         {% lucide "play" "w-4 h-4" %}
         {{ t.APP.ACTION_TRIGGER_RUN }}
       </button>

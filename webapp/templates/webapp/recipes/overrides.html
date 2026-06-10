@@ -65,7 +65,7 @@
   <div class="pt-4">
     <button type="button" @click="showCreate = !showCreate"
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
-                   bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm">
+                   border border-transparent bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm">
       {% lucide "plus" "w-4 h-4" %}
       {{ t.RECIPES_VIEW.ACTION_CREATE_OVERRIDE }}
     </button>
@@ -82,7 +82,7 @@
                       focus:outline-none focus:ring-2 focus:ring-blue-500">
         <button type="submit"
                 class="px-4 py-2.5 text-sm font-semibold rounded-lg
-                       bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                       border border-transparent bg-blue-600 hover:bg-blue-700 text-white transition-colors">
           {{ t.RECIPES_VIEW.ACTION_CREATE_OVERRIDE }}
         </button>
         <button type="button" @click="showCreate = false; createId = ''"
