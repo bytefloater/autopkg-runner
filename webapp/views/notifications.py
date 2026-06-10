@@ -3,6 +3,7 @@ import json
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from webapp.perms import ConfigEditorRequired
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView, View
@@ -10,7 +11,7 @@ from django.views.generic import TemplateView, View
 from webapp.notifier_types import NOTIFIER_TYPES, type_choices
 
 
-class NotificationsView(LoginRequiredMixin, TemplateView):
+class NotificationsView(ConfigEditorRequired, TemplateView):
     """List all configured notifiers."""
 
     template_name = 'webapp/notifications.html'
@@ -43,7 +44,7 @@ class NotificationsView(LoginRequiredMixin, TemplateView):
         return redirect('notifier-edit', pk=notifier.pk)
 
 
-class NotifierEditView(LoginRequiredMixin, TemplateView):
+class NotifierEditView(ConfigEditorRequired, TemplateView):
     """Edit a single notifier's settings."""
 
     template_name = 'webapp/notifier_edit.html'
@@ -142,7 +143,7 @@ class NotifierEditView(LoginRequiredMixin, TemplateView):
         return redirect('config-notifications')
 
 
-class NotifierDeleteView(LoginRequiredMixin, View):
+class NotifierDeleteView(ConfigEditorRequired, View):
     """POST-only delete."""
 
     def post(self, request, pk):
@@ -154,7 +155,7 @@ class NotifierDeleteView(LoginRequiredMixin, View):
         return redirect('config-notifications')
 
 
-class NotifierToggleView(LoginRequiredMixin, View):
+class NotifierToggleView(ConfigEditorRequired, View):
     """POST-only enable/disable toggle (used by the list view)."""
 
     def post(self, request, pk):
@@ -165,7 +166,7 @@ class NotifierToggleView(LoginRequiredMixin, View):
         return redirect('config-notifications')
 
 
-class NotifierTestView(LoginRequiredMixin, View):
+class NotifierTestView(ConfigEditorRequired, View):
     """
     POST-only endpoint: send a test notification via a saved notifier.
 
@@ -217,7 +218,7 @@ class NotifierTestView(LoginRequiredMixin, View):
         return JsonResponse({'success': True, 'message': 'Test notification sent.'})
 
 
-class NotificationSettingsView(LoginRequiredMixin, TemplateView):
+class NotificationSettingsView(ConfigEditorRequired, TemplateView):
     """Edit global notification settings (App URL for share links)."""
 
     template_name = 'webapp/notification_settings.html'
@@ -244,7 +245,7 @@ class NotificationSettingsView(LoginRequiredMixin, TemplateView):
         return redirect('notification-settings')
 
 
-class WebPushVapidKeyView(LoginRequiredMixin, View):
+class WebPushVapidKeyView(ConfigEditorRequired, View):
     """Return the VAPID public key so the browser can subscribe."""
 
     def get(self, request):
@@ -255,7 +256,7 @@ class WebPushVapidKeyView(LoginRequiredMixin, View):
         return JsonResponse({'public_key': key})
 
 
-class WebPushSubscribeView(LoginRequiredMixin, View):
+class WebPushSubscribeView(ConfigEditorRequired, View):
     """Register a new browser push subscription for a WebPush notifier."""
 
     def post(self, request, pk):
@@ -296,7 +297,7 @@ class WebPushSubscribeView(LoginRequiredMixin, View):
         return JsonResponse({'status': 'subscribed', 'id': sub.pk, 'created': created})
 
 
-class WebPushUnsubscribeView(LoginRequiredMixin, View):
+class WebPushUnsubscribeView(ConfigEditorRequired, View):
     """Remove a specific push subscription."""
 
     def post(self, request, pk, sub_id):

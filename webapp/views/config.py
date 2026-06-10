@@ -1,36 +1,33 @@
 import shutil
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
-
-class SuperuserRequiredMixin(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_superuser
-
-    def handle_no_permission(self):
-        messages.error(self.request, 'Administrator access required.')
-        return redirect('dashboard')
-
 from webapp import translations as trans
+from webapp.perms import ConfigEditorRequired
 
 _LOG_LEVELS = [('DEBUG', 'DEBUG'), ('INFO', 'INFO'), ('WARNING', 'WARNING'), ('ERROR', 'ERROR')]
 
 # -- Sections shown on the root config page -------------------------------------
 CONFIG_SECTIONS = [
-    {'key': 'autopkg',     'url_name': 'config-autopkg',     'icon': 'package'},
-    {'key': 'workflow',    'url_name': 'config-workflow',    'icon': 'git-branch'},
-    {'key': 'repository',  'url_name': 'config-repository',  'icon': 'hard-drive'},
-    {'key': 'gc',          'url_name': 'config-gc',          'icon': 'trash-2'},
-    {'key': 'logging',     'url_name': 'config-logging',     'icon': 'file-text'},
-    {'key': 'notifications','url_name': 'config-notifications','icon': 'bell'},
-    {'key': 'ui',          'url_name': 'config-ui',          'icon': 'globe'},
+    # Pipeline
+    {'key': 'schedule',      'url_name': 'schedule',            'icon': 'calendar',    'category': 'pipeline'},
+    {'key': 'autopkg',       'url_name': 'config-autopkg',      'icon': 'package',     'category': 'pipeline'},
+    {'key': 'workflow',      'url_name': 'config-workflow',     'icon': 'git-branch',  'category': 'pipeline'},
+    # Storage
+    {'key': 'repository',    'url_name': 'config-repository',   'icon': 'hard-drive',  'category': 'storage'},
+    {'key': 'gc',            'url_name': 'config-gc',           'icon': 'trash-2',     'category': 'storage'},
+    # Logging
+    {'key': 'logging',       'url_name': 'config-logging',      'icon': 'file-text',   'category': 'logging'},
+    # Notifications
+    {'key': 'notifications', 'url_name': 'config-notifications', 'icon': 'bell',        'category': 'notifications'},
+    # Interface
+    {'key': 'ui',            'url_name': 'config-ui',           'icon': 'globe',       'category': 'interface'},
 ]
 
 
-class ConfigRootView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView):
+class ConfigRootView(ConfigEditorRequired, TemplateView):
     """Configuration landing page - shows a navigable list of sections."""
 
     template_name = 'webapp/config.html'
@@ -49,7 +46,7 @@ class ConfigRootView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView):
         return ctx
 
 
-class ConfigSectionView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView):
+class ConfigSectionView(ConfigEditorRequired, TemplateView):
     """Handles GET (display) and POST (save) for a named config section."""
 
     # section kwarg supplied by the URL dispatcher
@@ -69,15 +66,14 @@ class ConfigSectionView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView
         ctx = super().get_context_data(**kwargs)
         ctx['active_tab'] = 'config'
         ctx['section']    = self.section
-        ctx['s']          = Setting.get_all()   # full settings dict
+        ctx['s']          = Setting.get_all()
         ctx['log_levels'] = _LOG_LEVELS
-        ctx['sections']   = CONFIG_SECTIONS     # for desktop sidebar nav
+        ctx['sections']   = CONFIG_SECTIONS
 
         if self.section == 'repository':
             ctx['sftp_available'] = shutil.which('sshfs') is not None
 
         if self.section == 'logging':
-            # Allow the log-level subpage to communicate back via ?level=DEBUG
             level_param = self.request.GET.get('level', '').upper().strip()
             valid = {v for v, _ in _LOG_LEVELS}
             if level_param in valid:
@@ -91,9 +87,6 @@ class ConfigSectionView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView
         from webapp.models import Setting
 
         section = kwargs.get('section', self.section)
-
-        # Each section declares which keys it owns and their types.
-        # Keys absent from POST for bool fields are treated as False.
         bool_keys, int_keys, text_keys = _section_keys(section)
 
         for key in bool_keys:
@@ -109,8 +102,6 @@ class ConfigSectionView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView
         for key in text_keys:
             val = request.POST.get(key, '')
             if val is not None:
-                # Don't overwrite a saved credential with a blank submission
-                # (e.g. user opens the form but doesn't change the password).
                 if key in Setting.SENSITIVE_KEYS and not val:
                     continue
                 Setting.set(key, val)
@@ -119,7 +110,7 @@ class ConfigSectionView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView
         return redirect(f'config-{section}')
 
 
-class LogLevelPickerView(SuperuserRequiredMixin, LoginRequiredMixin, TemplateView):
+class LogLevelPickerView(ConfigEditorRequired, TemplateView):
     """
     Mobile-only sub-page: show available log levels with checkmarks.
     Selecting one redirects to /config/logging/?level=<LEVEL>.

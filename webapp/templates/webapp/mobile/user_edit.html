@@ -24,8 +24,12 @@
 
 <form method="post" id="user-form"
       x-data="{
-        isActive: {% if edit_user.is_active %}true{% else %}false{% endif %},
-        isAdmin:  {% if edit_user.is_superuser %}true{% else %}false{% endif %}
+        isActive:    {% if edit_user.is_active %}true{% else %}false{% endif %},
+        isAdmin:     {% if edit_user.is_superuser %}true{% else %}false{% endif %},
+        permManage:  {% if perms_ext.can_manage_users %}true{% else %}false{% endif %},
+        permTrigger: {% if perms_ext.can_trigger_runs %}true{% else %}false{% endif %},
+        permConfig:  {% if perms_ext.can_edit_config %}true{% else %}false{% endif %},
+        permView:    {% if perms_ext.can_view_runs %}true{% else %}false{% endif %}
       }">
   {% csrf_token %}
   <input type="hidden" name="action" value="update">
@@ -107,6 +111,67 @@
     </div>
 
   </div>
+
+  {# Permission checkboxes — hidden when superuser is on #}
+  <div x-show="!isAdmin" x-transition>
+    <p class="px-4 pb-1 pt-2 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_PERMISSIONS }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+
+      <div class="flex items-center justify-between px-4 py-3">
+        <input type="hidden" name="can_manage_users" :value="permManage ? 'on' : ''">
+        <div>
+          <p class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.PERM_MANAGE_USERS }}</p>
+          <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.PERM_MANAGE_USERS_DESC }}</p>
+        </div>
+        <button type="button" @click="permManage = !permManage"
+                :class="permManage ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'"
+                class="w-[22px] h-[22px] flex-shrink-0 rounded border flex items-center justify-center transition-colors">
+          <span x-show="permManage">{% lucide "check" "w-3.5 h-3.5" %}</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between px-4 py-3">
+        <input type="hidden" name="can_trigger_runs" :value="permTrigger ? 'on' : ''">
+        <div>
+          <p class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.PERM_TRIGGER_RUNS }}</p>
+          <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.PERM_TRIGGER_RUNS_DESC }}</p>
+        </div>
+        <button type="button" @click="permTrigger = !permTrigger"
+                :class="permTrigger ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'"
+                class="w-[22px] h-[22px] flex-shrink-0 rounded border flex items-center justify-center transition-colors">
+          <span x-show="permTrigger">{% lucide "check" "w-3.5 h-3.5" %}</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between px-4 py-3">
+        <input type="hidden" name="can_edit_config" :value="permConfig ? 'on' : ''">
+        <div>
+          <p class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.PERM_EDIT_CONFIG }}</p>
+          <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.PERM_EDIT_CONFIG_DESC }}</p>
+        </div>
+        <button type="button" @click="permConfig = !permConfig"
+                :class="permConfig ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'"
+                class="w-[22px] h-[22px] flex-shrink-0 rounded border flex items-center justify-center transition-colors">
+          <span x-show="permConfig">{% lucide "check" "w-3.5 h-3.5" %}</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between px-4 py-3">
+        <input type="hidden" name="can_view_runs" :value="permView ? 'on' : ''">
+        <div>
+          <p class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.PERM_VIEW_RUNS }}</p>
+          <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.PERM_VIEW_RUNS_DESC }}</p>
+        </div>
+        <button type="button" @click="permView = !permView"
+                :class="permView ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'"
+                class="w-[22px] h-[22px] flex-shrink-0 rounded border flex items-center justify-center transition-colors">
+          <span x-show="permView">{% lucide "check" "w-3.5 h-3.5" %}</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   {% else %}
   <p class="mx-4 mb-6 text-[13px] text-gray-400 dark:text-gray-500">
     {{ t.USER_VIEW.SELF_EDIT_NOTICE_LONG }}

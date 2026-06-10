@@ -4,8 +4,9 @@
 {% block title %}Runs - AutoPkg Runner{% endblock %}
 {% block nav_title %}Runs{% endblock %}
 
-{# -- Left nav slot: Delete button (manage mode only) ------------------------ #}
+{# -- Left nav slot: Delete button (manage mode only, run managers only) ----- #}
 {% block nav_left %}
+{% if user_perms.can_trigger_runs %}
 <div x-data="{ managing: false, selCount: 0 }"
      @toggle-manage-runs.window="managing = !managing; selCount = 0"
      @runs-selected.window="selCount = $event.detail.count">
@@ -22,10 +23,12 @@
     {{ t.RUNS_VIEW.ACTION_DELETE }}<span x-show="selCount > 0">&nbsp;(<span x-text="selCount"></span>)</span>
   </button>
 </div>
+{% endif %}
 {% endblock %}
 
-{# -- Right nav slot: Manage / Done toggle ----------------------------------- #}
+{# -- Right nav slot: Manage / Done toggle (run managers only) --------------- #}
 {% block nav_right %}
+{% if user_perms.can_trigger_runs %}
 <button type="button"
         x-data
         @click="$dispatch('toggle-manage-runs')"
@@ -34,6 +37,7 @@
         @toggle-manage-runs.window="managing = !managing"
         x-text="managing ? '{{ t.RUNS_VIEW.ACTION_DONE|escapejs }}' : '{{ t.RUNS_VIEW.ACTION_MANAGE|escapejs }}'">{{ t.RUNS_VIEW.ACTION_MANAGE }}</span>
 </button>
+{% endif %}
 {% endblock %}
 
 {% block content %}

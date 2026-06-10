@@ -2,6 +2,7 @@ from datetime import datetime, timezone as dt_timezone
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from webapp.perms import ConfigEditorRequired
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
@@ -113,7 +114,7 @@ def _system_tz_context() -> dict:
         return {'system_tz_name': 'UTC', 'system_tz_abbr': 'UTC'}
 
 
-class ScheduleView(LoginRequiredMixin, TemplateView):
+class ScheduleView(ConfigEditorRequired, TemplateView):
     template_name = 'webapp/schedule.html'
 
     def get_template_names(self):
@@ -124,7 +125,7 @@ class ScheduleView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         from webapp.models import Schedule
-        ctx['active_tab'] = 'schedule'
+        ctx['active_tab'] = 'config'
         s, _ = Schedule.objects.get_or_create(pk=1)
         ctx['schedule'] = s
         ctx['cron_fields'] = [

@@ -38,7 +38,8 @@
 {% block content %}
 <div class="h-4"></div>
 
-<div x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})" >
+<div x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})"
+     class="select-none [&_a]:[-webkit-touch-callout:none]">
 
   {# -- Stages ---------------------------------------------------------------- #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_STAGES }}</p>

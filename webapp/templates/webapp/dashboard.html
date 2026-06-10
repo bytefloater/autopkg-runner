@@ -7,8 +7,9 @@
 <div class="space-y-4">
 
   <!-- Page header -->
-  <div class="flex items-center justify-between">
+  <div class="flex items-center justify-between min-h-[38px]">
     <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_DASHBOARD }}</h1>
+    {% if user_perms.can_trigger_runs %}
     <form method="post" action="{% url 'trigger-run' %}" id="trigger-form">
       {% csrf_token %}
       <button type="submit"
@@ -21,6 +22,7 @@
         {{ t.APP.ACTION_TRIGGER_RUN }}
       </button>
     </form>
+    {% endif %}
   </div>
 
   <!-- Stats row -->
@@ -62,12 +64,14 @@
           &nbsp;·&nbsp; {{ last_run.started_at|duration:last_run.completed_at }}
         {% endif %}
       </div>
+      {% if user_perms.can_trigger_runs or user_perms.can_view_runs %}
       <div class="ml-auto">
         <a href="{% url 'run-detail' last_run.id %}"
            class="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
           {{ t.APP.ACTION_VIEW_LOGS }}
         </a>
       </div>
+      {% endif %}
     </div>
   </div>
   {% else %}

@@ -1,5 +1,6 @@
 import time
 
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db import close_old_connections
@@ -7,6 +8,11 @@ from django.http import StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import TemplateView
+
+from webapp.perms import (
+    RunAccessRequired, RunManagerRequired,
+    perm_required, PERM_VIEW_RUNS, PERM_TRIGGER_RUNS,
+)
 
 
 class RunListView(LoginRequiredMixin, TemplateView):
@@ -28,7 +34,7 @@ class RunListView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
-class RunDetailView(LoginRequiredMixin, TemplateView):
+class RunDetailView(RunAccessRequired, TemplateView):
     template_name = 'webapp/runs/detail.html'
 
     def get_template_names(self):
@@ -45,8 +51,6 @@ class RunDetailView(LoginRequiredMixin, TemplateView):
         ctx['run'] = run
         ctx['stages'] = run.stage_executions.order_by('order')
 
-        # Group log entries by stage for the accordion view.
-        # Entries with no stage_name go under the '__general__' key.
         logs_by_stage: dict[str, list] = defaultdict(list)
         last_log_id = 0
         for entry in run.log_entries.order_by('timestamp'):
@@ -61,7 +65,7 @@ class RunDetailView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
-class TriggerRunView(LoginRequiredMixin, View):
+class TriggerRunView(RunManagerRequired, View):
     def post(self, request):
         from webapp.runner import trigger_manual_run, RunAlreadyRunningError
         try:
@@ -82,7 +86,7 @@ class TriggerRunView(LoginRequiredMixin, View):
         return redirect('run-detail', run_id=run_id)
 
 
-class RunDeleteView(LoginRequiredMixin, View):
+class RunDeleteView(RunManagerRequired, View):
     """POST - delete one or more completed runs by UUID.
 
     Accepts ``run_ids`` as a multi-value POST field (one UUID per value).
@@ -102,13 +106,8 @@ class RunDeleteView(LoginRequiredMixin, View):
         return redirect('run-list')
 
 
-class RunCancelView(LoginRequiredMixin, View):
-    """POST - cancel a single active (pending or running) run.
-
-    Marks the run as 'cancelled' so the UI is unblocked.  If a pipeline thread
-    is still alive it will finish naturally but won't overwrite the cancelled
-    status (the _execute_run finally block excludes cancelled rows).
-    """
+class RunCancelView(RunManagerRequired, View):
+    """POST - cancel a single active (pending or running) run."""
 
     def post(self, request, run_id):
         from django.utils import timezone
@@ -130,14 +129,14 @@ class RunCancelView(LoginRequiredMixin, View):
         return redirect('run-list')
 
 
+@login_required
+@perm_required(PERM_VIEW_RUNS, PERM_TRIGGER_RUNS)
 def run_stream(request, run_id):
     """SSE endpoint: streams LogEntry rows for a running pipeline."""
     from webapp.models import LogEntry, Run, StageExecution
     import json
 
     def event_stream():
-        # Honour ?from=<id> so the stream only delivers log entries that
-        # weren't already rendered server-side, eliminating duplicates.
         last_log_id = int(request.GET.get('from', 0))
         last_stage_data = {}
 
@@ -149,7 +148,6 @@ def run_stream(request, run_id):
                 yield b'event: error\ndata: {"error": "run not found"}\n\n'
                 break
 
-            # Push new log entries
             entries = LogEntry.objects.filter(
                 run_id=run_id, id__gt=last_log_id
             ).order_by('id')
@@ -164,7 +162,6 @@ def run_stream(request, run_id):
                 yield f'data: {payload}\n\n'.encode()
                 last_log_id = entry.id
 
-            # Push stage status updates
             for stage in StageExecution.objects.filter(run_id=run_id):
                 key = f'{stage.name}:{stage.status}'
                 if last_stage_data.get(stage.name) != key:
@@ -180,8 +177,6 @@ def run_stream(request, run_id):
                     yield f'data: {payload}\n\n'.encode()
 
             if run.status in ('success', 'failed', 'cancelled'):
-                # Tell the browser to wait 24 h before reconnecting - effectively
-                # disabling auto-reconnect so a client close() wins the race.
                 yield b'retry: 86400000\n\n'
                 payload = json.dumps({'type': 'complete', 'status': run.status})
                 yield f'data: {payload}\n\n'.encode()

@@ -231,7 +231,18 @@
 
         "FIELD_ACTIVE_DESC": "Allow this user to sign in",
         "RESET_PWD_DESC": "Generate a new random password for",
-        "RESET_PWD_HINT": "The new password will be shown once immediately after resetting."
+        "RESET_PWD_HINT": "The new password will be shown once immediately after resetting.",
+
+        "SECTION_PERMISSIONS": "Permissions",
+
+        "PERM_MANAGE_USERS": "Manage Users",
+        "PERM_MANAGE_USERS_DESC": "Add/remove users, reset passwords",
+        "PERM_TRIGGER_RUNS": "Run Manager",
+        "PERM_TRIGGER_RUNS_DESC": "Trigger runs, cancel, delete, view logs",
+        "PERM_EDIT_CONFIG": "Configuration Editor",
+        "PERM_EDIT_CONFIG_DESC": "Edit config, schedule, recipes, API tokens",
+        "PERM_VIEW_RUNS": "Run Viewer",
+        "PERM_VIEW_RUNS_DESC": "View run details and logs"
     },
     "NOTIFICATIONS_VIEW": {
         "SECTION_SETTINGS": "Settings",
@@ -374,6 +385,9 @@
         "SECTION_SMB_SERVER": "SMB Server",
         "SECTION_REPOCLEAN": "RepoClean",
         "SECTION_LOG_FILE": "Log File",
+
+        "TAB_SCHEDULE": "Schedule",
+        "SUBTITLE_SCHEDULE": "When the pipeline runs automatically",
 
         "SUBTITLE_AUTOPKG": "Binary path, cache, recipe list",
         "SUBTITLE_WORKFLOW": "Run behaviour and repo updates",

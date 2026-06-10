@@ -148,13 +148,13 @@ class TestScheduleView:
         resp = anon_client.get(self.url)
         assert resp.status_code == 302
 
-    def test_get_renders_schedule_form(self, client, schedule):
-        resp = client.get(self.url)
+    def test_get_renders_schedule_form(self, config_editor_client, schedule):
+        resp = config_editor_client.get(self.url)
         assert resp.status_code == 200
 
-    def test_post_updates_schedule(self, client, schedule):
+    def test_post_updates_schedule(self, config_editor_client, schedule):
         with patch('webapp.scheduler.reschedule_job'):
-            resp = client.post(self.url, {
+            resp = config_editor_client.post(self.url, {
                 'enabled': 'on',
                 'minute': '30',
                 'hour': '3',
@@ -166,9 +166,9 @@ class TestScheduleView:
         assert schedule.minute == '30'
         assert schedule.hour == '3'
 
-    def test_post_calls_reschedule_job(self, client, schedule):
+    def test_post_calls_reschedule_job(self, config_editor_client, schedule):
         with patch('webapp.scheduler.reschedule_job') as mock_reschedule:
-            client.post(self.url, {
+            config_editor_client.post(self.url, {
                 'minute': '0',
                 'hour': '2',
                 'day_of_week': '*',
@@ -177,9 +177,9 @@ class TestScheduleView:
             })
         mock_reschedule.assert_called_once()
 
-    def test_post_empty_fields_use_defaults(self, client, schedule):
+    def test_post_empty_fields_use_defaults(self, config_editor_client, schedule):
         with patch('webapp.scheduler.reschedule_job'):
-            client.post(self.url, {
+            config_editor_client.post(self.url, {
                 'minute': '',
                 'hour': '',
                 'day_of_week': '',
@@ -191,24 +191,24 @@ class TestScheduleView:
         assert schedule.minute != ''
         assert schedule.hour != ''
 
-    def test_context_has_cron_description_when_enabled(self, client, schedule):
+    def test_context_has_cron_description_when_enabled(self, config_editor_client, schedule):
         with patch('webapp.scheduler.reschedule_job'):
-            resp = client.get(self.url)
+            resp = config_editor_client.get(self.url)
         assert resp.status_code == 200
         assert 'cron_description' in resp.context
         assert resp.context['cron_description'] is not None
 
-    def test_context_has_no_cron_description_when_disabled(self, client, schedule):
+    def test_context_has_no_cron_description_when_disabled(self, config_editor_client, schedule):
         schedule.enabled = False
         schedule.save()
-        resp = client.get(self.url)
+        resp = config_editor_client.get(self.url)
         assert resp.status_code == 200
         assert resp.context['cron_description'] is None
         assert resp.context['next_run'] is None
 
-    def test_post_redirects_on_success(self, client, schedule):
+    def test_post_redirects_on_success(self, config_editor_client, schedule):
         with patch('webapp.scheduler.reschedule_job'):
-            resp = client.post(self.url, {
+            resp = config_editor_client.post(self.url, {
                 'enabled': 'on',
                 'minute': '0',
                 'hour': '2',
@@ -218,10 +218,10 @@ class TestScheduleView:
             })
         assert resp.status_code == 302
 
-    def test_post_handles_reschedule_exception(self, client, schedule):
+    def test_post_handles_reschedule_exception(self, config_editor_client, schedule):
         """If reschedule_job raises, a flash message is shown but no crash."""
         with patch('webapp.scheduler.reschedule_job', side_effect=Exception('sched error')):
-            resp = client.post(self.url, {
+            resp = config_editor_client.post(self.url, {
                 'enabled': 'on',
                 'minute': '0',
                 'hour': '2',

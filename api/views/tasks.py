@@ -1,8 +1,11 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.permissions import CanTriggerRuns
+
 
 class TriggerRunView(APIView):
+    permission_classes = [CanTriggerRuns]
     def post(self, request):
         from webapp.runner import trigger_manual_run, RunAlreadyRunningError
         try:
@@ -13,6 +16,8 @@ class TriggerRunView(APIView):
 
 
 class TriggerDbCleanupView(APIView):
+    permission_classes = [CanTriggerRuns]
+
     def post(self, request):
         from webapp.runner import trigger_db_cleanup
         task_id = trigger_db_cleanup()
@@ -20,6 +25,8 @@ class TriggerDbCleanupView(APIView):
 
 
 class GetTaskStatusView(APIView):
+    permission_classes = [CanTriggerRuns]
+
     def get(self, request):
         from webapp.models import Task
         from api.serializers import TaskSerializer

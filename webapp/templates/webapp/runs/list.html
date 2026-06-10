@@ -16,10 +16,11 @@
        }
      }">
 
-  <div class="flex items-center justify-between">
+  <div class="flex items-center justify-between min-h-[38px]">
     <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_RUNS }}</h1>
     <div class="flex items-center gap-2">
 
+      {% if user_perms.can_trigger_runs %}
       {# Manage / Done toggle #}
       <button type="button" @click="managing = !managing; selected = []"
               :class="managing
@@ -62,6 +63,7 @@
           {{ t.APP.ACTION_TRIGGER_RUN }}
         </button>
       </form>
+      {% endif %}
 
     </div>
   </div>

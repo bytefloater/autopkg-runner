@@ -1,7 +1,8 @@
 from webapp import translations as _trans
+from webapp.perms import get_user_perms, PERM_EDIT_CONFIG, PERM_MANAGE_USERS
 
 # Cached server timezone key — determined once at first request then reused.
-_local_tz_key = None  # str once resolved, None until first request
+_local_tz_key = None
 
 
 def _get_local_tz_key() -> str:
@@ -11,29 +12,32 @@ def _get_local_tz_key() -> str:
         _local_tz_key = get_system_timezone().key
     return _local_tz_key
 
-_BASE_TABS = [
-    {'name': 'dashboard', 't_key': 'VIEWS_DASHBOARD', 'label': 'Dashboard', 'url_name': 'dashboard',  'icon': 'house'},
-    {'name': 'runs',      't_key': 'VIEWS_RUNS',      'label': 'Runs',      'url_name': 'run-list',   'icon': 'list'},
-    {'name': 'schedule',  't_key': 'VIEWS_SCHEDULES', 'label': 'Schedule',  'url_name': 'schedule',      'icon': 'calendar'},
-    {'name': 'recipes',   't_key': 'VIEWS_RECIPES',  'label': 'Recipes',   'url_name': 'recipes-repos', 'icon': 'package'},
-    {'name': 'config',    't_key': 'VIEWS_CONFIG',    'label': 'Config',    'url_name': 'config',        'icon': 'settings'},
-]
 
-_ADMIN_TABS = [
-    {'name': 'users', 't_key': 'VIEWS_USERS', 'label': 'Users', 'url_name': 'users', 'icon': 'users'},
-]
+_DASHBOARD_TAB = {'name': 'dashboard', 't_key': 'VIEWS_DASHBOARD', 'label': 'Dashboard', 'url_name': 'dashboard',     'icon': 'house'}
+_RUNS_TAB      = {'name': 'runs',      't_key': 'VIEWS_RUNS',      'label': 'Runs',      'url_name': 'run-list',      'icon': 'list'}
+_RECIPES_TAB   = {'name': 'recipes',   't_key': 'VIEWS_RECIPES',   'label': 'Recipes',   'url_name': 'recipes-repos', 'icon': 'package'}
+_CONFIG_TAB    = {'name': 'config',    't_key': 'VIEWS_CONFIG',    'label': 'Config',    'url_name': 'config',        'icon': 'settings'}
+_USERS_TAB     = {'name': 'users',     't_key': 'VIEWS_USERS',     'label': 'Users',     'url_name': 'users',         'icon': 'users'}
+
+_MOBILE_EXCLUDED = {'recipes', 'users'}
 
 
 def nav_tabs(request):
-    tabs = list(_BASE_TABS)
-    if request.user.is_authenticated and request.user.is_superuser:
-        tabs += _ADMIN_TABS
-    # Recipes is accessible via Config on mobile — exclude from tab bar
-    _MOBILE_EXCLUDED = {'recipes'}
+    tabs = [_DASHBOARD_TAB, _RUNS_TAB]
+    perms: dict = {}
+
+    if request.user.is_authenticated:
+        perms = get_user_perms(request.user)
+        if perms[PERM_EDIT_CONFIG]:
+            tabs += [_RECIPES_TAB, _CONFIG_TAB]
+        if perms[PERM_MANAGE_USERS]:
+            tabs += [_USERS_TAB]
+
     return {
         'nav_tabs': tabs,
-        'mobile_nav_tabs': [t for t in _BASE_TABS if t['name'] not in _MOBILE_EXCLUDED],
+        'mobile_nav_tabs': [t for t in tabs if t['name'] not in _MOBILE_EXCLUDED],
         'local_tz': _get_local_tz_key(),
+        'user_perms': perms,
     }
 
 

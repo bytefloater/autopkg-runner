@@ -1,0 +1,14 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center py-20 gap-4 text-center px-8">
+  <div class="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+    {% lucide "shield-alert" "w-7 h-7 text-amber-600 dark:text-amber-400" %}
+  </div>
+  <div>
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">Access denied</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400">You don't have permission to view this page. Contact an administrator to request access.</p>
+  </div>
+</div>
+{% endblock %}

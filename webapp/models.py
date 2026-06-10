@@ -507,3 +507,29 @@ class APIToken(models.Model):
 
     def __str__(self):
         return f'{self.user.username} / {self.name}'
+
+
+# -- User permissions -----------------------------------------------------------
+
+class UserPermission(models.Model):
+    """
+    Granular permission flags for a single user.
+
+    Superusers bypass all checks and never need a row here.
+    Absence of a row is equivalent to all flags being False.
+    """
+    user             = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='permissions_ext',
+    )
+    can_manage_users = models.BooleanField(default=False)
+    can_trigger_runs = models.BooleanField(default=False)
+    can_edit_config  = models.BooleanField(default=False)
+    can_view_runs    = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'User Permission'
+
+    def __str__(self):
+        return f'Permissions for {self.user.username}'

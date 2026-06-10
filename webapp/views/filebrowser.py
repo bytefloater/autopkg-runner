@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from webapp.perms import ConfigEditorRequired
 from django.http import JsonResponse
 from django.views import View
 
@@ -17,7 +18,7 @@ def _resolve(raw: str) -> Path:
     return Path(raw or '~').expanduser().resolve()
 
 
-class BrowseView(LoginRequiredMixin, View):
+class BrowseView(ConfigEditorRequired, View):
     """GET /api/browse/?path=<path>
 
     Returns a directory listing for *path*.  If *path* is a file, its parent
@@ -63,7 +64,7 @@ class BrowseView(LoginRequiredMixin, View):
             }, status=400)
 
 
-class MkdirView(LoginRequiredMixin, View):
+class MkdirView(ConfigEditorRequired, View):
     """POST /api/browse/mkdir/
 
     Request body (JSON)::

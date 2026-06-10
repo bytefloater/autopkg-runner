@@ -33,13 +33,13 @@ class TestNavTabs:
         names = [t['name'] for t in ctx['nav_tabs']]
         assert 'users' in names
 
-    def test_mobile_nav_tabs_excludes_admin_tabs(self, factory, superuser):
+    def test_mobile_nav_tabs_excludes_recipes(self, factory, superuser):
         from webapp.context_processors import nav_tabs
         request = factory.get('/')
         request.user = superuser
         ctx = nav_tabs(request)
         mobile_names = [t['name'] for t in ctx['mobile_nav_tabs']]
-        assert 'users' not in mobile_names
+        assert 'recipes' not in mobile_names
 
     def test_base_tabs_always_present(self, factory, user):
         from webapp.context_processors import nav_tabs
@@ -47,7 +47,7 @@ class TestNavTabs:
         request.user = user
         ctx = nav_tabs(request)
         names = {t['name'] for t in ctx['nav_tabs']}
-        for expected in ('dashboard', 'runs', 'schedule', 'config'):
+        for expected in ('dashboard', 'runs'):
             assert expected in names
 
 

@@ -18,6 +18,7 @@ from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from webapp.perms import ConfigEditorRequired
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -122,7 +123,7 @@ def _list_repos() -> list:
 
 # -- Repository views ----------------------------------------------------------
 
-class ReposView(LoginRequiredMixin, TemplateView):
+class ReposView(ConfigEditorRequired, TemplateView):
     template_name = 'webapp/recipes/repos.html'
 
     def get_context_data(self, **kwargs):
@@ -134,7 +135,7 @@ class ReposView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
-class RepoAddView(LoginRequiredMixin, View):
+class RepoAddView(ConfigEditorRequired, View):
     def post(self, request):
         url = request.POST.get('url', '').strip()
         if not url:
@@ -158,7 +159,7 @@ class RepoAddView(LoginRequiredMixin, View):
         return redirect('recipes-repos')
 
 
-class RepoDeleteView(LoginRequiredMixin, View):
+class RepoDeleteView(ConfigEditorRequired, View):
     def post(self, request):
         url = request.POST.get('url', '').strip()
         if not url:
@@ -182,7 +183,7 @@ class RepoDeleteView(LoginRequiredMixin, View):
         return redirect('recipes-repos')
 
 
-class RepoUpdateView(LoginRequiredMixin, View):
+class RepoUpdateView(ConfigEditorRequired, View):
     """HTMX endpoint - runs ``autopkg repo-update`` and returns a refreshed table row."""
 
     def post(self, request):
@@ -566,7 +567,7 @@ def _build_recipe_entries(run_list_set: set) -> tuple:
 
 # -- Recipe list views ---------------------------------------------------------
 
-class RecipeListView(LoginRequiredMixin, TemplateView):
+class RecipeListView(ConfigEditorRequired, TemplateView):
     """Renders the page shell immediately; recipe data is fetched asynchronously."""
 
     template_name = 'webapp/recipes/recipe_list.html'
@@ -586,7 +587,7 @@ class RecipeListView(LoginRequiredMixin, TemplateView):
         return redirect('recipes-list')
 
 
-class RecipeDataView(LoginRequiredMixin, View):
+class RecipeDataView(ConfigEditorRequired, View):
     """JSON endpoint polled by the recipe list page.
 
     Returns HTTP 202 while the background cache build is running so the server
@@ -606,7 +607,7 @@ class RecipeDataView(LoginRequiredMixin, View):
         })
 
 
-class RecipeCacheResetView(LoginRequiredMixin, View):
+class RecipeCacheResetView(ConfigEditorRequired, View):
     """POST → bust the recipe cache and start a fresh background rebuild."""
 
     def post(self, request):
@@ -616,7 +617,7 @@ class RecipeCacheResetView(LoginRequiredMixin, View):
 
 # -- Override views ------------------------------------------------------------
 
-class OverrideCreateView(LoginRequiredMixin, View):
+class OverrideCreateView(ConfigEditorRequired, View):
     def post(self, request):
         identifier = request.POST.get('identifier', '').strip()
         if not identifier:
@@ -662,7 +663,7 @@ class OverrideCreateView(LoginRequiredMixin, View):
         return redirect('recipes-list')
 
 
-class OverrideDeleteView(LoginRequiredMixin, View):
+class OverrideDeleteView(ConfigEditorRequired, View):
     """POST: delete an override file from the overrides directory."""
 
     def post(self, request, fname: str):
@@ -682,7 +683,7 @@ class OverrideDeleteView(LoginRequiredMixin, View):
         return redirect('recipes-list')
 
 
-class OverrideEditView(LoginRequiredMixin, View):
+class OverrideEditView(ConfigEditorRequired, View):
     template_name = 'webapp/recipes/override_editor.html'
 
     def _get_path(self, fname: str) -> Path:

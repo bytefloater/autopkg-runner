@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from webapp.perms import ConfigEditorRequired
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
@@ -29,7 +30,7 @@ Rules:
 """
 
 
-class ApiTokensView(LoginRequiredMixin, TemplateView):
+class ApiTokensView(ConfigEditorRequired, TemplateView):
     template_name = 'webapp/api_tokens.html'
 
     def get_template_names(self):

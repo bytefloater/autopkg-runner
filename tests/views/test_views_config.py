@@ -12,9 +12,9 @@ class TestConfigRootView:
         resp = anon_client.get(self.url)
         assert resp.status_code == 302
 
-    def test_requires_superuser(self, client):
+    def test_requires_permission(self, client):
         resp = client.get(self.url)
-        assert resp.status_code == 302
+        assert resp.status_code == 403
 
     def test_renders_for_superuser(self, admin_client):
         resp = admin_client.get(self.url)
@@ -53,9 +53,9 @@ class TestConfigSectionViewGet:
         assert 's' in resp.context
         assert isinstance(resp.context['s'], dict)
 
-    def test_requires_superuser(self, client):
+    def test_requires_permission(self, client):
         resp = client.get('/config/autopkg/')
-        assert resp.status_code == 302
+        assert resp.status_code == 403
 
 
 @pytest.mark.django_db
@@ -136,9 +136,9 @@ class TestConfigSectionViewPost:
         assert resp.status_code == 200
         assert resp.context['s'].get('logging.level') == 'INFO'
 
-    def test_requires_superuser(self, client):
+    def test_requires_permission(self, client):
         resp = client.post('/config/autopkg/', {'autopkg.bin_path': '/evil'})
-        assert resp.status_code == 302
+        assert resp.status_code == 403
 
 
 @pytest.mark.django_db
@@ -149,9 +149,9 @@ class TestLogLevelPickerView:
         resp = anon_client.get(self.url)
         assert resp.status_code == 302
 
-    def test_requires_superuser(self, client):
+    def test_requires_permission(self, client):
         resp = client.get(self.url)
-        assert resp.status_code == 302
+        assert resp.status_code == 403
 
     def test_renders_for_superuser(self, admin_client):
         resp = admin_client.get(self.url)

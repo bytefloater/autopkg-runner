@@ -3,8 +3,11 @@ from datetime import date
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.permissions import CanViewRuns
+
 
 class GetRunDataView(APIView):
+    permission_classes = [CanViewRuns]
     def get(self, request):
         from webapp.models import Run
         from api.serializers import RunDetailSerializer
@@ -25,6 +28,8 @@ class GetRunDataView(APIView):
 
 
 class ListRunsView(APIView):
+    permission_classes = [CanViewRuns]
+
     def get(self, request):
         from webapp.models import Run
         from api.serializers import RunSerializer

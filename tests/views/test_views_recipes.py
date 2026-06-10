@@ -421,17 +421,17 @@ class TestReposView:
         resp = anon_client.get(self.url)
         assert resp.status_code == 302
 
-    def test_get_renders_empty_repo_list(self, client):
+    def test_get_renders_empty_repo_list(self, config_editor_client):
         with patch('webapp.views.recipes._list_repos', return_value=[]):
-            resp = client.get(self.url)
+            resp = config_editor_client.get(self.url)
         assert resp.status_code == 200
         assert resp.context['repos'] == []
         assert resp.context['active_tab'] == 'recipes'
 
-    def test_get_passes_repos_to_context(self, client):
+    def test_get_passes_repos_to_context(self, config_editor_client):
         repos = [{'path': '/p', 'url': 'https://example.com/r.git', 'behind': 0}]
         with patch('webapp.views.recipes._list_repos', return_value=repos):
-            resp = client.get(self.url)
+            resp = config_editor_client.get(self.url)
         assert resp.context['repos'] == repos
 
 
@@ -443,38 +443,38 @@ class TestRepoAddView:
         resp = anon_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_empty_url_redirects(self, client):
-        resp = client.post(self.url, {'url': ''})
+    def test_empty_url_redirects(self, config_editor_client):
+        resp = config_editor_client.post(self.url, {'url': ''})
         assert resp.status_code == 302
         assert resp['Location'].endswith('/recipes/repos/')
 
-    def test_success_redirects_to_repos(self, client):
+    def test_success_redirects_to_repos(self, config_editor_client):
         r = MagicMock(returncode=0, stdout='', stderr='')
         with patch('subprocess.run', return_value=r), \
              patch('webapp.views.recipes._invalidate_recipe_cache'):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_autopkg_failure_redirects(self, client):
+    def test_autopkg_failure_redirects(self, config_editor_client):
         r = MagicMock(returncode=1, stdout='', stderr='oops')
         with patch('subprocess.run', return_value=r):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_autopkg_stdout_used_when_stderr_empty(self, client):
+    def test_autopkg_stdout_used_when_stderr_empty(self, config_editor_client):
         r = MagicMock(returncode=1, stdout='stdout error', stderr='')
         with patch('subprocess.run', return_value=r):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_timeout_redirects(self, client):
+    def test_timeout_redirects(self, config_editor_client):
         with patch('subprocess.run', side_effect=subprocess.TimeoutExpired('autopkg', 60)):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_file_not_found_redirects(self, client):
+    def test_file_not_found_redirects(self, config_editor_client):
         with patch('subprocess.run', side_effect=FileNotFoundError):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
 
@@ -486,31 +486,31 @@ class TestRepoDeleteView:
         resp = anon_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_empty_url_redirects(self, client):
-        resp = client.post(self.url, {'url': ''})
+    def test_empty_url_redirects(self, config_editor_client):
+        resp = config_editor_client.post(self.url, {'url': ''})
         assert resp.status_code == 302
 
-    def test_success_redirects(self, client):
+    def test_success_redirects(self, config_editor_client):
         r = MagicMock(returncode=0, stdout='', stderr='')
         with patch('subprocess.run', return_value=r), \
              patch('webapp.views.recipes._invalidate_recipe_cache'):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_autopkg_failure_redirects(self, client):
+    def test_autopkg_failure_redirects(self, config_editor_client):
         r = MagicMock(returncode=1, stdout='', stderr='not found')
         with patch('subprocess.run', return_value=r):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_timeout_redirects(self, client):
+    def test_timeout_redirects(self, config_editor_client):
         with patch('subprocess.run', side_effect=subprocess.TimeoutExpired('autopkg', 30)):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_file_not_found_redirects(self, client):
+    def test_file_not_found_redirects(self, config_editor_client):
         with patch('subprocess.run', side_effect=FileNotFoundError):
-            resp = client.post(self.url, {'url': 'https://example.com/r.git'})
+            resp = config_editor_client.post(self.url, {'url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
 
@@ -522,42 +522,42 @@ class TestRepoUpdateView:
         resp = anon_client.post(self.url, {'repo_url': 'https://example.com/r.git'})
         assert resp.status_code == 302
 
-    def test_missing_url_returns_html_with_error(self, client):
-        resp = client.post(self.url, {'repo_url': '', 'repo_path': ''})
+    def test_missing_url_returns_html_with_error(self, config_editor_client):
+        resp = config_editor_client.post(self.url, {'repo_url': '', 'repo_path': ''})
         assert resp.status_code == 200
         assert b'<' in resp.content
 
-    def test_success_returns_row_html(self, client):
+    def test_success_returns_row_html(self, config_editor_client):
         r = MagicMock(returncode=0, stdout='', stderr='')
         with patch('subprocess.run', return_value=r), \
              patch('webapp.views.recipes._git_behind_count', return_value=0), \
              patch('webapp.views.recipes._invalidate_recipe_cache'):
-            resp = client.post(self.url, {
+            resp = config_editor_client.post(self.url, {
                 'repo_url': 'https://example.com/r.git',
                 'repo_path': '/path/to/repo',
             })
         assert resp.status_code == 200
 
-    def test_autopkg_failure_returns_html(self, client):
+    def test_autopkg_failure_returns_html(self, config_editor_client):
         r = MagicMock(returncode=1, stdout='', stderr='update failed')
         with patch('subprocess.run', return_value=r):
-            resp = client.post(self.url, {
+            resp = config_editor_client.post(self.url, {
                 'repo_url': 'https://example.com/r.git',
                 'repo_path': '/path/to/repo',
             })
         assert resp.status_code == 200
 
-    def test_timeout_returns_html(self, client):
+    def test_timeout_returns_html(self, config_editor_client):
         with patch('subprocess.run', side_effect=subprocess.TimeoutExpired('autopkg', 120)):
-            resp = client.post(self.url, {
+            resp = config_editor_client.post(self.url, {
                 'repo_url': 'https://example.com/r.git',
                 'repo_path': '/path/to/repo',
             })
         assert resp.status_code == 200
 
-    def test_file_not_found_returns_html(self, client):
+    def test_file_not_found_returns_html(self, config_editor_client):
         with patch('subprocess.run', side_effect=FileNotFoundError):
-            resp = client.post(self.url, {
+            resp = config_editor_client.post(self.url, {
                 'repo_url': 'https://example.com/r.git',
                 'repo_path': '/path/to/repo',
             })
@@ -572,23 +572,23 @@ class TestRecipeListView:
         resp = anon_client.get(self.url)
         assert resp.status_code == 302
 
-    def test_get_renders(self, client):
+    def test_get_renders(self, config_editor_client):
         with patch('webapp.views.recipes._start_cache_build'):
-            resp = client.get(self.url)
+            resp = config_editor_client.get(self.url)
         assert resp.status_code == 200
         assert resp.context['active_tab'] == 'recipes'
 
-    def test_post_saves_and_redirects(self, client):
+    def test_post_saves_and_redirects(self, config_editor_client):
         with patch('webapp.views.recipes._write_run_list') as mock_write, \
              patch('webapp.views.recipes._sort_run_list', side_effect=lambda x: x):
-            resp = client.post(self.url, {'selected': ['Foo.munki', 'Bar.pkg']})
+            resp = config_editor_client.post(self.url, {'selected': ['Foo.munki', 'Bar.pkg']})
         assert resp.status_code == 302
         mock_write.assert_called_once_with(['Foo.munki', 'Bar.pkg'])
 
-    def test_post_empty_selection_writes_empty_list(self, client):
+    def test_post_empty_selection_writes_empty_list(self, config_editor_client):
         with patch('webapp.views.recipes._write_run_list') as mock_write, \
              patch('webapp.views.recipes._sort_run_list', side_effect=lambda x: x):
-            resp = client.post(self.url, {})  # no 'selected' key
+            resp = config_editor_client.post(self.url, {})  # no 'selected' key
         assert resp.status_code == 302
         mock_write.assert_called_once_with([])
 
@@ -601,22 +601,22 @@ class TestRecipeDataView:
         resp = anon_client.get(self.url)
         assert resp.status_code == 302
 
-    def test_returns_202_while_building(self, client):
+    def test_returns_202_while_building(self, config_editor_client):
         with patch('webapp.views.recipes._start_cache_build'), \
              patch('webapp.views.recipes._is_cache_ready', return_value=False):
-            resp = client.get(self.url)
+            resp = config_editor_client.get(self.url)
         assert resp.status_code == 202
         data = json.loads(resp.content)
         assert data.get('building') is True
 
-    def test_returns_200_with_recipe_data_when_ready(self, client):
+    def test_returns_200_with_recipe_data_when_ready(self, config_editor_client):
         entries = [{'identifier': 'com.test', 'name': 'Test', 'is_override': False,
                     'override_fname': None, 'in_run_list': False}]
         with patch('webapp.views.recipes._start_cache_build'), \
              patch('webapp.views.recipes._is_cache_ready', return_value=True), \
              patch('webapp.views.recipes._read_run_list', return_value=[]), \
              patch('webapp.views.recipes._build_recipe_entries', return_value=(entries, False, [])):
-            resp = client.get(self.url)
+            resp = config_editor_client.get(self.url)
         assert resp.status_code == 200
         data = json.loads(resp.content)
         assert 'recipes' in data
@@ -631,28 +631,28 @@ class TestOverrideCreateView:
         resp = anon_client.post(self.url, {'identifier': 'Firefox.munki'})
         assert resp.status_code == 302
 
-    def test_empty_identifier_redirects(self, client):
-        resp = client.post(self.url, {'identifier': ''})
+    def test_empty_identifier_redirects(self, config_editor_client):
+        resp = config_editor_client.post(self.url, {'identifier': ''})
         assert resp.status_code == 302
         assert 'list' in resp['Location']
 
-    def test_autopkg_failure_redirects_with_error(self, client):
+    def test_autopkg_failure_redirects_with_error(self, config_editor_client):
         r = MagicMock(returncode=1, stdout='', stderr='recipe not found')
         with patch('subprocess.run', return_value=r):
-            resp = client.post(self.url, {'identifier': 'NoSuchRecipe.munki'})
+            resp = config_editor_client.post(self.url, {'identifier': 'NoSuchRecipe.munki'})
         assert resp.status_code == 302
 
-    def test_timeout_redirects(self, client):
+    def test_timeout_redirects(self, config_editor_client):
         with patch('subprocess.run', side_effect=subprocess.TimeoutExpired('autopkg', 30)):
-            resp = client.post(self.url, {'identifier': 'Firefox.munki'})
+            resp = config_editor_client.post(self.url, {'identifier': 'Firefox.munki'})
         assert resp.status_code == 302
 
-    def test_file_not_found_redirects(self, client):
+    def test_file_not_found_redirects(self, config_editor_client):
         with patch('subprocess.run', side_effect=FileNotFoundError):
-            resp = client.post(self.url, {'identifier': 'Firefox.munki'})
+            resp = config_editor_client.post(self.url, {'identifier': 'Firefox.munki'})
         assert resp.status_code == 302
 
-    def test_success_redirects_to_editor_when_file_found(self, client, tmp_path):
+    def test_success_redirects_to_editor_when_file_found(self, config_editor_client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
 
@@ -662,21 +662,21 @@ class TestOverrideCreateView:
 
         with patch('subprocess.run', side_effect=create_file), \
              patch('webapp.views.recipes._overrides_dir', return_value=od):
-            resp = client.post(self.url, {'identifier': 'Firefox.munki'})
+            resp = config_editor_client.post(self.url, {'identifier': 'Firefox.munki'})
         assert resp.status_code == 302
         assert 'Firefox' in resp['Location']
 
-    def test_success_redirects_to_list_when_no_file_found(self, client, tmp_path):
+    def test_success_redirects_to_list_when_no_file_found(self, config_editor_client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()  # subprocess succeeds but creates no file
         r = MagicMock(returncode=0, stdout='', stderr='')
         with patch('subprocess.run', return_value=r), \
              patch('webapp.views.recipes._overrides_dir', return_value=od):
-            resp = client.post(self.url, {'identifier': 'Firefox.munki'})
+            resp = config_editor_client.post(self.url, {'identifier': 'Firefox.munki'})
         assert resp.status_code == 302
         assert 'list' in resp['Location']
 
-    def test_success_prefers_exact_stem_match(self, client, tmp_path):
+    def test_success_prefers_exact_stem_match(self, config_editor_client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
         # Subprocess creates two candidates — exact stem match should win
@@ -687,7 +687,7 @@ class TestOverrideCreateView:
 
         with patch('subprocess.run', side_effect=create_both), \
              patch('webapp.views.recipes._overrides_dir', return_value=od):
-            resp = client.post(self.url, {'identifier': 'Firefox.munki'})
+            resp = config_editor_client.post(self.url, {'identifier': 'Firefox.munki'})
         assert 'Firefox.recipe' in resp['Location']
 
 
@@ -700,57 +700,57 @@ class TestOverrideEditView:
         resp = anon_client.get(self._url('Test.recipe'))
         assert resp.status_code == 302
 
-    def test_get_renders_existing_file(self, client, tmp_path):
+    def test_get_renders_existing_file(self, config_editor_client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
         (od / 'Test.recipe').write_text('<plist><dict/></plist>')
         with patch('webapp.views.recipes._overrides_dir', return_value=od):
-            resp = client.get(self._url('Test.recipe'))
+            resp = config_editor_client.get(self._url('Test.recipe'))
         assert resp.status_code == 200
         assert resp.context['fname'] == 'Test.recipe'
         assert '<plist>' in resp.context['content']
 
-    def test_get_missing_file_redirects(self, client, tmp_path):
+    def test_get_missing_file_redirects(self, config_editor_client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()  # file doesn't exist inside
         with patch('webapp.views.recipes._overrides_dir', return_value=od):
-            resp = client.get(self._url('Missing.recipe'))
+            resp = config_editor_client.get(self._url('Missing.recipe'))
         assert resp.status_code == 302
 
-    def test_get_unsafe_path_redirects(self, client, tmp_path):
+    def test_get_unsafe_path_redirects(self, config_editor_client, tmp_path):
         # _safe_override_path raises ValueError for traversal; _get_path returns None
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
         with patch('webapp.views.recipes._safe_override_path',
                    side_effect=ValueError('Unsafe override path')):
-            resp = client.get(self._url('evil.recipe'))
+            resp = config_editor_client.get(self._url('evil.recipe'))
         assert resp.status_code == 302
 
-    def test_post_valid_xml_saves_file(self, client, tmp_path):
+    def test_post_valid_xml_saves_file(self, config_editor_client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
         f = od / 'Test.recipe'
         f.write_text('<plist/>')
         content = '<plist><dict><key>Identifier</key><string>com.test</string></dict></plist>'
         with patch('webapp.views.recipes._overrides_dir', return_value=od):
-            resp = client.post(self._url('Test.recipe'), {'content': content})
+            resp = config_editor_client.post(self._url('Test.recipe'), {'content': content})
         assert resp.status_code == 302
         assert f.read_text() == content
 
-    def test_post_invalid_xml_rerenders_with_error(self, client, tmp_path):
+    def test_post_invalid_xml_rerenders_with_error(self, config_editor_client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
         (od / 'Test.recipe').write_text('<plist/>')
         with patch('webapp.views.recipes._overrides_dir', return_value=od):
-            resp = client.post(self._url('Test.recipe'), {'content': '<unclosed'})
+            resp = config_editor_client.post(self._url('Test.recipe'), {'content': '<unclosed'})
         assert resp.status_code == 200
         assert resp.context['error'] is not None
         assert 'XML' in resp.context['error']
 
-    def test_post_unsafe_path_redirects(self, client, tmp_path):
+    def test_post_unsafe_path_redirects(self, config_editor_client, tmp_path):
         od = tmp_path / 'RecipeOverrides'
         od.mkdir()
         with patch('webapp.views.recipes._safe_override_path',
                    side_effect=ValueError('Unsafe override path')):
-            resp = client.post(self._url('evil.recipe'), {'content': '<plist/>'})
+            resp = config_editor_client.post(self._url('evil.recipe'), {'content': '<plist/>'})
         assert resp.status_code == 302

@@ -4,22 +4,92 @@
 {% block title %}Schedule - AutoPkg Runner{% endblock %}
 {% block nav_title %}{{ t.APP.VIEWS_SCHEDULES }}{% endblock %}
 
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
 {% block nav_right %}
 <button type="submit" form="schedule-form"
-        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+        :disabled="!canSubmit"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1
+               disabled:opacity-30 disabled:pointer-events-none">
   {{ t.APP.ACTION_SAVE }}
 </button>
 {% endblock %}
 
 {% block content %}
+<div x-data="{
+       enabled: {{ schedule.enabled|yesno:'true,false' }},
+       fields: {
+         minute:       '{{ schedule.minute|escapejs }}',
+         hour:         '{{ schedule.hour|escapejs }}',
+         day_of_week:  '{{ schedule.day_of_week|escapejs }}',
+         day_of_month: '{{ schedule.day_of_month|escapejs }}',
+         month:        '{{ schedule.month|escapejs }}'
+       },
+       ranges: {
+         minute:       [0, 59],
+         hour:         [0, 23],
+         day_of_week:  [0, 6],
+         day_of_month: [1, 31],
+         month:        [1, 12]
+       },
+       errors: {},
+       validateField(name) {
+         const val = this.fields[name].trim();
+         const [min, max] = this.ranges[name];
+         if (val === '*') { delete this.errors[name]; return; }
+         const parts = val.split(',');
+         for (const part of parts) {
+           const p = part.trim();
+           if (/^\*$/.test(p)) continue;
+           if (/^\*\/\d+$/.test(p)) {
+             const step = parseInt(p.split('/')[1]);
+             if (step < 1) { this.errors[name] = 'Step must be ≥ 1'; return; }
+             continue;
+           }
+           const rangeMatch = p.match(/^(\d+)-(\d+)$/);
+           if (rangeMatch) {
+             const a = parseInt(rangeMatch[1]), b = parseInt(rangeMatch[2]);
+             if (a < min || b > max || a > b) { this.errors[name] = `Range must be ${min}–${max}`; return; }
+             continue;
+           }
+           const stepRangeMatch = p.match(/^(\d+)-(\d+)\/(\d+)$/);
+           if (stepRangeMatch) {
+             const a = parseInt(stepRangeMatch[1]), b = parseInt(stepRangeMatch[2]);
+             if (a < min || b > max || a > b) { this.errors[name] = `Range must be ${min}–${max}`; return; }
+             continue;
+           }
+           if (/^\d+$/.test(p)) {
+             const n = parseInt(p);
+             if (n < min || n > max) { this.errors[name] = `Must be ${min}–${max} or *`; return; }
+             continue;
+           }
+           this.errors[name] = 'Invalid cron value'; return;
+         }
+         delete this.errors[name];
+       },
+       get hasErrors() { return Object.keys(this.errors).length > 0; },
+       get canSubmit() { return !this.enabled || !this.hasErrors; }
+     }">
+
 <div class="h-4"></div>
 
-<form method="post" id="schedule-form" x-data="{ enabled: {{ schedule.enabled|yesno:'true,false' }} }">
+<form method="post" id="schedule-form">
   {% csrf_token %}
 
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.APP.VIEWS_SCHEDULES }}</p>
 
   <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    {# Description row #}
+    <div class="px-4 py-3">
+      <p class="text-[13px] text-gray-500 dark:text-gray-400">{{ t.SCHEDULE_VIEW.DESC_SCHEDULER }}</p>
+    </div>
 
     {# Enable / disable toggle #}
     <div class="flex items-center justify-between px-4 py-[13px]">
@@ -41,13 +111,21 @@
     <p class="px-4 pb-2 text-[12px] text-gray-400 dark:text-gray-500">{{ t.SCHEDULE_VIEW.CRON_TZ_PREFIX }} {{ system_tz_name }} ({{ system_tz_abbr }})</p>
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
       {% for label, name, value, hint in cron_fields %}
-      <div class="flex items-center justify-between px-4 py-3">
-        <div class="flex-1 min-w-0 pr-4">
-          <span class="text-[16px] text-gray-900 dark:text-white">{{ label }}</span>
-          {% if hint %}<p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ hint }}</p>{% endif %}
+      <div class="px-4 py-3" x-data>
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <span class="text-[16px] text-gray-900 dark:text-white">{{ label }}</span>
+            <p x-show="errors['{{ name }}']" x-text="errors['{{ name }}']"
+               class="text-[12px] text-red-500 mt-0.5"></p>
+            <p x-show="!errors['{{ name }}']" class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ hint }}</p>
+          </div>
+          <input type="text" name="{{ name }}"
+                 x-model="fields.{{ name }}"
+                 @input="validateField('{{ name }}')"
+                 @blur="validateField('{{ name }}')"
+                 :class="errors['{{ name }}'] ? 'border-red-400 dark:border-red-600 ring-1 ring-red-400' : 'border-gray-300 dark:border-[#38383a]'"
+                 class="text-center w-20 text-[15px] font-mono rounded-lg border bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-        <input type="text" name="{{ name }}" value="{{ value }}"
-               class="text-center w-20 text-[15px] font-mono rounded-lg border border-gray-300 dark:border-[#38383a] bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
       </div>
       {% endfor %}
     </div>
@@ -71,4 +149,5 @@
 {% endif %}
 
 <div class="h-8"></div>
+</div>{# /x-data #}
 {% endblock %}

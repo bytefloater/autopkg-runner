@@ -316,6 +316,20 @@
       border-radius: 20px;
     }
 
+    /* Prevent text selection and link callout popups on all UI chrome */
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    /* Re-enable selection and callout for form fields and log output */
+    input, textarea, select,
+    .log-line, .select-all {
+      -webkit-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+
   </style>
 
 </head>

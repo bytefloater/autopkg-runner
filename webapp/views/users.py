@@ -2,9 +2,10 @@ import secrets
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView
+
+from webapp.perms import UserManagerRequired
 
 User = get_user_model()
 
@@ -13,7 +14,20 @@ def _generate_password() -> str:
     return secrets.token_urlsafe(16)
 
 
-class UsersView(LoginRequiredMixin, TemplateView):
+def _save_permissions(user, request):
+    """Persist the four permission checkboxes for a non-superuser."""
+    if user.is_superuser:
+        return
+    from webapp.models import UserPermission
+    row, _ = UserPermission.objects.get_or_create(user=user)
+    row.can_manage_users = request.POST.get('can_manage_users') == 'on'
+    row.can_trigger_runs = request.POST.get('can_trigger_runs') == 'on'
+    row.can_edit_config  = request.POST.get('can_edit_config') == 'on'
+    row.can_view_runs    = request.POST.get('can_view_runs') == 'on'
+    row.save()
+
+
+class UsersView(UserManagerRequired, TemplateView):
     template_name = 'webapp/users.html'
 
     def get_template_names(self):
@@ -21,20 +35,14 @@ class UsersView(LoginRequiredMixin, TemplateView):
             return ['webapp/mobile/users.html']
         return [self.template_name]
 
-    def dispatch(self, request, *args, **kwargs):
-        # Check before dispatching so post() is never reached by non-superusers.
-        if request.user.is_authenticated and not request.user.is_superuser:
-            messages.error(request, 'Administrator access required.')
-            return redirect('dashboard')
-        return super().dispatch(request, *args, **kwargs)
-
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['active_tab'] = 'config' if getattr(self.request, 'is_mobile', False) else 'users'
-        users = list(User.objects.order_by('username'))
+        users = list(User.objects.select_related('permissions_ext').order_by('username'))
         current_pk = self.request.user.pk
         for u in users:
             setattr(u, 'is_self', u.pk == current_pk)
+            setattr(u, 'perms_ext', getattr(u, 'permissions_ext', None))
         ctx['users'] = users
         ctx['new_user_creds'] = self.request.session.pop('new_user_creds', None)
         ctx['reset_creds']    = self.request.session.pop('reset_creds', None)
@@ -59,6 +67,8 @@ class UsersView(LoginRequiredMixin, TemplateView):
             user = User.objects.create_superuser(username=username, email=email, password=password) \
                    if is_admin else \
                    User.objects.create_user(username=username, email=email, password=password)
+            if not is_admin:
+                _save_permissions(user, request)
             request.session['new_user_creds'] = {
                 'username': user.username,
                 'password': password,
@@ -78,12 +88,10 @@ class UsersView(LoginRequiredMixin, TemplateView):
                 return redirect('users')
 
             if user == request.user:
-                # Self-edit: only allow email changes; ignore role/active inputs.
                 user.email = email
                 user.save(update_fields=['email'])
                 messages.success(request, 'Your email address has been updated.')
             else:
-                # Prevent removing the last superuser.
                 if user.is_superuser and not is_admin:
                     remaining = User.objects.filter(is_superuser=True).exclude(pk=user.pk).count()
                     if remaining == 0:
@@ -92,9 +100,10 @@ class UsersView(LoginRequiredMixin, TemplateView):
 
                 user.is_active    = is_active
                 user.is_superuser = is_admin
-                user.is_staff     = is_admin  # keep staff in sync with superuser
+                user.is_staff     = is_admin
                 user.email        = email
                 user.save(update_fields=['is_active', 'is_superuser', 'is_staff', 'email'])
+                _save_permissions(user, request)
                 messages.success(request, f'User "{user.username}" updated.')
 
         elif action == 'reset_password':
@@ -142,15 +151,9 @@ class UsersView(LoginRequiredMixin, TemplateView):
         return redirect('users')
 
 
-class UserEditView(LoginRequiredMixin, TemplateView):
-    """Mobile-only subpage for editing a single user (mirrors NotifierEditView pattern)."""
+class UserEditView(UserManagerRequired, TemplateView):
+    """Mobile-only subpage for editing a single user."""
     template_name = 'webapp/mobile/user_edit.html'
-
-    def _superuser_check(self, request):
-        if request.user.is_authenticated and not request.user.is_superuser:
-            messages.error(request, 'Administrator access required.')
-            return redirect('dashboard')
-        return None
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -158,20 +161,11 @@ class UserEditView(LoginRequiredMixin, TemplateView):
         ctx['active_tab']  = 'config'
         ctx['edit_user']   = edit_user
         ctx['is_self']     = (edit_user.pk == self.request.user.pk)
+        ctx['perms_ext']   = getattr(edit_user, 'permissions_ext', None)
         ctx['reset_creds'] = self.request.session.pop('reset_creds', None)
         return ctx
 
-    def get(self, request, pk):
-        redir = self._superuser_check(request)
-        if redir:
-            return redir
-        return super().get(request, pk=pk)
-
     def post(self, request, pk):
-        redir = self._superuser_check(request)
-        if redir:
-            return redir
-
         edit_user = get_object_or_404(User, pk=pk)
         action    = request.POST.get('action', 'update')
 
@@ -196,6 +190,7 @@ class UserEditView(LoginRequiredMixin, TemplateView):
                 edit_user.is_staff     = is_admin
                 edit_user.email        = email
                 edit_user.save(update_fields=['is_active', 'is_superuser', 'is_staff', 'email'])
+                _save_permissions(edit_user, request)
                 messages.success(request, f'User "{edit_user.username}" updated.')
             return redirect('user-edit', pk=pk)
 

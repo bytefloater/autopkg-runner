@@ -4,24 +4,96 @@
 {% block title %}Schedule - AutoPkg Runner{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-6"
+     x-data="{
+       enabled: {{ schedule.enabled|yesno:'true,false' }},
+       fields: {
+         minute:       '{{ schedule.minute|escapejs }}',
+         hour:         '{{ schedule.hour|escapejs }}',
+         day_of_week:  '{{ schedule.day_of_week|escapejs }}',
+         day_of_month: '{{ schedule.day_of_month|escapejs }}',
+         month:        '{{ schedule.month|escapejs }}'
+       },
+       ranges: {
+         minute:       [0, 59],
+         hour:         [0, 23],
+         day_of_week:  [0, 6],
+         day_of_month: [1, 31],
+         month:        [1, 12]
+       },
+       errors: {},
+       validateField(name) {
+         const val = this.fields[name].trim();
+         const [min, max] = this.ranges[name];
+         if (val === '*') { delete this.errors[name]; return; }
+         // Allow comma-separated values, ranges (n-m), steps (*/n or n/n)
+         const parts = val.split(',');
+         for (const part of parts) {
+           const p = part.trim();
+           if (/^\*$/.test(p)) continue;
+           if (/^\*\/\d+$/.test(p)) {
+             const step = parseInt(p.split('/')[1]);
+             if (step < 1) { this.errors[name] = 'Step must be ≥ 1'; return; }
+             continue;
+           }
+           const rangeMatch = p.match(/^(\d+)-(\d+)$/);
+           if (rangeMatch) {
+             const a = parseInt(rangeMatch[1]), b = parseInt(rangeMatch[2]);
+             if (a < min || b > max || a > b) { this.errors[name] = `Range must be ${min}–${max}`; return; }
+             continue;
+           }
+           const stepRangeMatch = p.match(/^(\d+)-(\d+)\/(\d+)$/);
+           if (stepRangeMatch) {
+             const a = parseInt(stepRangeMatch[1]), b = parseInt(stepRangeMatch[2]);
+             if (a < min || b > max || a > b) { this.errors[name] = `Range must be ${min}–${max}`; return; }
+             continue;
+           }
+           if (/^\d+$/.test(p)) {
+             const n = parseInt(p);
+             if (n < min || n > max) { this.errors[name] = `Must be ${min}–${max} or *`; return; }
+             continue;
+           }
+           this.errors[name] = 'Invalid cron value'; return;
+         }
+         delete this.errors[name];
+       },
+       get hasErrors() {
+         return Object.keys(this.errors).length > 0;
+       },
+       get canSubmit() {
+         return !this.enabled || !this.hasErrors;
+       }
+     }">
+
   <div>
     <div class="flex items-center justify-between min-h-9">
       <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_SCHEDULES }}</h1>
       <button type="submit" form="schedule-form"
+              :disabled="!canSubmit"
               class="px-5 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
-                     rounded-lg transition-colors shadow-sm">
+                     rounded-lg transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
         {{ t.SCHEDULE_VIEW.ACTION_SAVE }}
       </button>
     </div>
-    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t.SCHEDULE_VIEW.DESC_SCHEDULER }}</p>
+    <nav class="flex items-center gap-1.5 text-sm mt-1">
+      <a href="{% url 'config' %}"
+         class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ t.APP.VIEWS_CONFIG }}</a>
+      {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
+      <span class="text-gray-600 dark:text-gray-400">{{ t.APP.VIEWS_SCHEDULES }}</span>
+    </nav>
   </div>
 
-  <form id="schedule-form" method="post" x-data="{ enabled: {{ schedule.enabled|yesno:'true,false' }} }">
+  <form id="schedule-form" method="post">
     {% csrf_token %}
 
     <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
       <div class="p-6 space-y-5">
+
+        {# Description #}
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ t.SCHEDULE_VIEW.DESC_SCHEDULER }}</p>
+
+        {# Divider #}
+        <div class="border-t border-gray-100 dark:border-gray-800"></div>
 
         <!-- Enabled toggle -->
         <div class="flex items-center justify-between gap-4">
@@ -42,14 +114,20 @@
         <div x-show="enabled" x-transition class="space-y-4">
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {% for label, name, value, hint in cron_fields %}
-            <div>
+            <div x-data>
               <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ label }}</label>
-              <input type="text" name="{{ name }}" value="{{ value }}"
+              <input type="text" name="{{ name }}"
+                     x-model="fields.{{ name }}"
+                     @input="validateField('{{ name }}')"
+                     @blur="validateField('{{ name }}')"
                      placeholder="{{ hint }}"
-                     class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700
+                     :class="errors['{{ name }}'] ? 'border-red-400 dark:border-red-600 focus:ring-red-500' : 'border-gray-300 dark:border-gray-700 focus:ring-blue-500'"
+                     class="w-full px-3 py-2 text-sm rounded-lg border
                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                            focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <p class="text-xs text-gray-400 mt-0.5">{{ hint }}</p>
+                            focus:outline-none focus:ring-2">
+              <p x-show="errors['{{ name }}']" x-text="errors['{{ name }}']"
+                 class="text-xs text-red-500 mt-0.5"></p>
+              <p x-show="!errors['{{ name }}']" class="text-xs text-gray-400 mt-0.5">{{ hint }}</p>
             </div>
             {% endfor %}
           </div>
@@ -79,7 +157,6 @@
 
       </div>
     </div>{# /card #}
-
 
   </form>
 </div>

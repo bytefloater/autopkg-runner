@@ -91,6 +91,54 @@ def api_token(db, user):
 
 
 @pytest.fixture
+def grant_perm(db):
+    """Helper: create/update a UserPermission row for a user.
+
+    Usage::
+
+        def test_something(user, client, grant_perm):
+            grant_perm(user, can_trigger_runs=True)
+    """
+    def _grant(user, **perms):
+        from webapp.models import UserPermission
+        row, _ = UserPermission.objects.get_or_create(user=user)
+        for field, value in perms.items():
+            setattr(row, field, value)
+        row.save()
+    return _grant
+
+
+@pytest.fixture
+def run_manager_client(user, grant_perm):
+    """Client logged in as a user with can_trigger_runs + can_view_runs."""
+    grant_perm(user, can_trigger_runs=True, can_view_runs=True)
+    from django.test import Client
+    c = Client()
+    c.force_login(user)
+    return c
+
+
+@pytest.fixture
+def config_editor_client(user, grant_perm):
+    """Client logged in as a user with can_edit_config."""
+    grant_perm(user, can_edit_config=True)
+    from django.test import Client
+    c = Client()
+    c.force_login(user)
+    return c
+
+
+@pytest.fixture
+def api_run_manager_client(user, grant_perm):
+    """DRF APIClient force-authenticated with can_trigger_runs + can_view_runs."""
+    grant_perm(user, can_trigger_runs=True, can_view_runs=True)
+    from rest_framework.test import APIClient
+    c = APIClient()
+    c.force_authenticate(user=user)
+    return c
+
+
+@pytest.fixture
 def api_client(user):
     """DRF APIClient force-authenticated as the regular user.
 

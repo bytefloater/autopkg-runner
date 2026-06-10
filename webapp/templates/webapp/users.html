@@ -82,7 +82,7 @@
           <td class="px-5 py-3">
             <div class="flex items-center justify-end gap-2">
               {# Edit button - opens edit modal (visible for all users, including self) #}
-              <button @click="openEdit({{ u.pk }}, '{{ u.username|escapejs }}', '{{ u.email|escapejs }}', {{ u.is_active|yesno:'true,false' }}, {{ u.is_superuser|yesno:'true,false' }}, {{ u.is_self|yesno:'true,false' }})"
+              <button @click="openEdit({{ u.pk }}, '{{ u.username|escapejs }}', '{{ u.email|escapejs }}', {{ u.is_active|yesno:'true,false' }}, {{ u.is_superuser|yesno:'true,false' }}, {{ u.is_self|yesno:'true,false' }}, {{ u.perms_ext.can_manage_users|yesno:'true,false'|default:'false' }}, {{ u.perms_ext.can_trigger_runs|yesno:'true,false'|default:'false' }}, {{ u.perms_ext.can_edit_config|yesno:'true,false'|default:'false' }}, {{ u.perms_ext.can_view_runs|yesno:'true,false'|default:'false' }})"
                       class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 transition-colors">
                 {{ t.APP.ACTION_EDIT }}
               </button>
@@ -228,7 +228,7 @@
               </div>
               <div x-data="{ val: editAdmin }" x-init="$watch('editAdmin', v => val = v)">
                 <input type="hidden" name="is_superuser" :value="val ? 'on' : ''">
-                <button type="button" @click="val=!val"
+                <button type="button" @click="val=!val; editAdmin=val"
                         :class="val ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
                         class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
                   <span :class="val ? 'translate-x-5' : 'translate-x-0'"
@@ -236,6 +236,68 @@
                 </button>
               </div>
             </div>
+
+            {# Permission checkboxes — hidden when superuser is on (backend ignores them for superusers) #}
+            <div x-show="!editAdmin" x-transition>
+              <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide pt-3 pb-1">{{ t.USER_VIEW.SECTION_PERMISSIONS }}</p>
+
+              <div class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-slate-800"
+                   x-data="{ val: editPermManage }" x-init="$watch('editPermManage', v => val = v)">
+                <div>
+                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t.USER_VIEW.PERM_MANAGE_USERS }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ t.USER_VIEW.PERM_MANAGE_USERS_DESC }}</p>
+                </div>
+                <input type="hidden" name="can_manage_users" :value="val ? 'on' : ''">
+                <button type="button" @click="val = !val"
+                        :class="val ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'"
+                        class="w-[18px] h-[18px] flex-shrink-0 rounded border flex items-center justify-center transition-colors cursor-pointer">
+                  <span x-show="val">{% lucide "check" "w-3 h-3" %}</span>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-slate-800"
+                   x-data="{ val: editPermTrigger }" x-init="$watch('editPermTrigger', v => val = v)">
+                <div>
+                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t.USER_VIEW.PERM_TRIGGER_RUNS }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ t.USER_VIEW.PERM_TRIGGER_RUNS_DESC }}</p>
+                </div>
+                <input type="hidden" name="can_trigger_runs" :value="val ? 'on' : ''">
+                <button type="button" @click="val = !val"
+                        :class="val ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'"
+                        class="w-[18px] h-[18px] flex-shrink-0 rounded border flex items-center justify-center transition-colors cursor-pointer">
+                  <span x-show="val">{% lucide "check" "w-3 h-3" %}</span>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-slate-800"
+                   x-data="{ val: editPermConfig }" x-init="$watch('editPermConfig', v => val = v)">
+                <div>
+                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t.USER_VIEW.PERM_EDIT_CONFIG }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ t.USER_VIEW.PERM_EDIT_CONFIG_DESC }}</p>
+                </div>
+                <input type="hidden" name="can_edit_config" :value="val ? 'on' : ''">
+                <button type="button" @click="val = !val"
+                        :class="val ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'"
+                        class="w-[18px] h-[18px] flex-shrink-0 rounded border flex items-center justify-center transition-colors cursor-pointer">
+                  <span x-show="val">{% lucide "check" "w-3 h-3" %}</span>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between py-2 border-t border-gray-100 dark:border-slate-800"
+                   x-data="{ val: editPermView }" x-init="$watch('editPermView', v => val = v)">
+                <div>
+                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t.USER_VIEW.PERM_VIEW_RUNS }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ t.USER_VIEW.PERM_VIEW_RUNS_DESC }}</p>
+                </div>
+                <input type="hidden" name="can_view_runs" :value="val ? 'on' : ''">
+                <button type="button" @click="val = !val"
+                        :class="val ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'"
+                        class="w-[18px] h-[18px] flex-shrink-0 rounded border flex items-center justify-center transition-colors cursor-pointer">
+                  <span x-show="val">{% lucide "check" "w-3 h-3" %}</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </template>
         <template x-if="editIsSelf">
@@ -316,6 +378,10 @@ function usersPage() {
     editActive:   true,
     editAdmin:    false,
     editIsSelf:   false,
+    editPermManage:  false,
+    editPermTrigger: false,
+    editPermConfig:  false,
+    editPermView:    false,
 
     resetUserId:   null,
     resetUsername: '',
@@ -333,14 +399,18 @@ function usersPage() {
       });
     },
 
-    openEdit(id, username, email, isActive, isAdmin, isSelf) {
-      this.editId       = id;
-      this.editUsername = username;
-      this.editEmail    = email;
-      this.editActive   = isActive;
-      this.editAdmin    = isAdmin;
-      this.editIsSelf   = isSelf;
-      this.showEdit     = true;
+    openEdit(id, username, email, isActive, isAdmin, isSelf, permManage, permTrigger, permConfig, permView) {
+      this.editId          = id;
+      this.editUsername    = username;
+      this.editEmail       = email;
+      this.editActive      = isActive;
+      this.editAdmin       = isAdmin;
+      this.editIsSelf      = isSelf;
+      this.editPermManage  = permManage;
+      this.editPermTrigger = permTrigger;
+      this.editPermConfig  = permConfig;
+      this.editPermView    = permView;
+      this.showEdit        = true;
     },
 
     openResetConfirm(id, username) {
