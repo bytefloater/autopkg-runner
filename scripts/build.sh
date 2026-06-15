@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "==> Installing PyInstaller..."
-python3 -m pip install --quiet pyinstaller
+python3 -m pip install --quiet --disable-pip-version-check pyinstaller
 
 # PyInstaller's Django hook runs django.setup() in an isolated subprocess at
 # analysis time to find dotted-string imports (INSTALLED_APPS, MIDDLEWARE, etc.).
