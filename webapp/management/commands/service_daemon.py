@@ -1,24 +1,22 @@
 """
-manage.py install_service_daemon
----------------------------------
-Installs autopkg-runner as a macOS launchd system daemon under
-/Library/LaunchDaemons/.  The service is started via gunicorn (the
-production WSGI server) — not Django's built-in development server.
-
-Can be run as a normal user; a native macOS authentication dialog will
-appear to request administrator credentials for the privileged writes.
-Alternatively, run the whole command under sudo.
+manage.py service_daemon
+------------------------
+Install or remove the autopkg-runner launchd system daemon.
 
 Usage:
-    python3 manage.py install_service_daemon --user <username>
-    python3 manage.py install_service_daemon --user autopkg --port 8000 --bind 127.0.0.1
-    sudo python3 manage.py install_service_daemon --user autopkg   # skips the auth dialog
+    python manage.py service_daemon --install --user <username>
+    python manage.py service_daemon --install --user autopkg --port 8000 --bind 127.0.0.1
+    sudo python manage.py service_daemon --install --user autopkg
+    python manage.py service_daemon --remove
+
+Can be run as a normal user; a native macOS authentication dialog will appear
+to request administrator credentials for privileged writes.  Run under sudo to
+skip the dialog.
 
 Note on --workers:
-    APScheduler starts inside each gunicorn worker process.  Running more
-    than one worker will cause duplicate scheduled AutoPkg runs.  The
-    default of 1 is strongly recommended unless you disable the built-in
-    scheduler and manage it externally.
+    APScheduler starts inside each gunicorn worker process.  Running more than
+    one worker will cause duplicate scheduled AutoPkg runs.  The default of 1
+    is strongly recommended unless you disable the built-in scheduler.
 """
 
 import os
@@ -31,26 +29,35 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-
 from __info__ import BUNDLE_ID, APP_NAME
-PLIST_LABEL  = BUNDLE_ID
-PLIST_DEST   = Path('/Library/LaunchDaemons') / f'{PLIST_LABEL}.plist'
-LOG_DIR      = Path(f'/var/log/{APP_NAME}')
 
-# webapp/management/commands/ → webapp/management/ → webapp/ → project root
+PLIST_LABEL   = BUNDLE_ID
+PLIST_DEST    = Path('/Library/LaunchDaemons') / f'{PLIST_LABEL}.plist'
+LOG_DIR       = Path(f'/var/log/{APP_NAME}')
 PROJECT_ROOT  = Path(__file__).resolve().parents[3]
 TEMPLATE_PATH = PROJECT_ROOT / 'resources' / f'{PLIST_LABEL}.plist'
 
 
 class Command(BaseCommand):
-    help = 'Install autopkg-runner as a macOS launchd system daemon'
+    help = 'Install or remove the autopkg-runner launchd system daemon'
 
     def add_arguments(self, parser):
+        action = parser.add_mutually_exclusive_group(required=True)
+        action.add_argument(
+            '--install',
+            action='store_true',
+            help='Install the launchd system daemon.',
+        )
+        action.add_argument(
+            '--remove',
+            action='store_true',
+            help='Remove the launchd system daemon.',
+        )
+
         parser.add_argument(
             '--user',
-            required=True,
             metavar='USERNAME',
-            help='macOS username the service process will run as.',
+            help='macOS username the service process will run as (required with --install).',
         )
         parser.add_argument(
             '--bind',
@@ -70,8 +77,7 @@ class Command(BaseCommand):
             metavar='N',
             help=(
                 'Number of gunicorn worker processes (default: 1). '
-                'Increasing this will cause duplicate scheduled runs — '
-                'see the module docstring for details.'
+                'Increasing this will cause duplicate scheduled runs.'
             ),
         )
         parser.add_argument(
@@ -82,14 +88,26 @@ class Command(BaseCommand):
         )
 
     # ------------------------------------------------------------------
+
     def handle(self, *args, **options):
+        if options['install']:
+            if not options.get('user'):
+                raise CommandError('--user is required when using --install.')
+            self._do_install(options)
+        else:
+            self._do_remove()
+
+    # ------------------------------------------------------------------
+    # Install
+    # ------------------------------------------------------------------
+
+    def _do_install(self, options):
         user    = options['user']
         bind    = options['bind']
         port    = options['port']
         workers = options['workers']
         threads = options['threads']
 
-        # All validation runs before asking for credentials.
         self._validate_user(user)
         self._validate_port(port)
         self._validate_workers(workers)
@@ -131,15 +149,10 @@ class Command(BaseCommand):
             f'\n  Useful commands:'
             f'\n    Status  : launchctl list | grep autopkg-runner'
             f'\n    Stop    : launchctl unload {PLIST_DEST}  (requires admin)'
-            f'\n    Remove  : python3 manage.py remove_service_daemon'
+            f'\n    Remove  : python3 manage.py service_daemon --remove'
         ))
 
-    # ------------------------------------------------------------------
-    # Installation paths
-    # ------------------------------------------------------------------
-
     def _install_direct(self, content: str, user: str):
-        """Install when already running as root."""
         self._prepare_log_dir_as_root(user)
 
         if PLIST_DEST.exists():
@@ -166,12 +179,8 @@ class Command(BaseCommand):
             )
 
     def _install_escalated(self, content: str, user: str):
-        """Install as a standard user via an osascript-driven auth dialog."""
         tmp_plist = tmp_script = None
         try:
-            # Write the rendered plist to /private/tmp — always accessible by
-            # root, unlike $TMPDIR which expands to a user-specific
-            # /var/folders/… path that the elevated process cannot read.
             with tempfile.NamedTemporaryFile(
                 mode='w', suffix='.plist',
                 prefix='autopkg-runner-', delete=False, dir='/private/tmp',
@@ -179,7 +188,6 @@ class Command(BaseCommand):
                 f.write(content)
                 tmp_plist = f.name
 
-            # Build the privileged shell script.
             handle_existing = (
                 f"if launchctl list | grep -q '{PLIST_LABEL}' 2>/dev/null; then\n"
                 f"  launchctl unload '{PLIST_DEST}' 2>/dev/null || true\n"
@@ -187,28 +195,21 @@ class Command(BaseCommand):
             )
             script_body = '\n'.join([
                 '#!/bin/bash',
-                '# Move to a safe cwd — the elevated shell inherits the caller\'s',
-                '# cwd which may be on a TCC-restricted volume.',
-                'cd /',
+                "cd /",
                 'set -e',
                 '',
-                '# Unload any existing instance',
                 handle_existing,
                 '',
-                '# Create and configure the log directory',
                 f"mkdir -p '{LOG_DIR}'",
                 f"chmod 755 '{LOG_DIR}'",
                 f"chown '{user}' '{LOG_DIR}'",
                 '',
-                '# Install the plist',
                 f"cp '{tmp_plist}' '{PLIST_DEST}'",
                 f"chmod 644 '{PLIST_DEST}'",
                 f"chown root:wheel '{PLIST_DEST}'",
                 '',
-                '# Load the service',
                 f"launchctl load '{PLIST_DEST}'",
                 '',
-                '# Clean up temp plist',
                 f"rm -f '{tmp_plist}'",
             ])
 
@@ -235,37 +236,107 @@ class Command(BaseCommand):
                         pass
 
     # ------------------------------------------------------------------
-    # Helpers
+    # Remove
+    # ------------------------------------------------------------------
+
+    def _do_remove(self):
+        if not PLIST_DEST.exists():
+            self.stdout.write(self.style.WARNING(
+                f'\n  Service plist not found at {PLIST_DEST}\n'
+                '  Nothing to remove — the service may not be installed.\n'
+            ))
+            return
+
+        self.stdout.write('')
+
+        if os.geteuid() == 0:
+            self._remove_direct()
+        else:
+            self.stdout.write(
+                '  Administrator privileges are required to remove the service.\n'
+                '  A macOS authentication dialog will appear.\n'
+            )
+            self._remove_escalated()
+
+        self.stdout.write(self.style.SUCCESS(
+            '\n  ✓ Service removed.\n'
+            '\n  Note: log files in /var/log/autopkg-runner/ were left in place.'
+        ))
+
+    def _remove_direct(self):
+        self.stdout.write('  Stopping service…')
+        result = subprocess.run(
+            ['launchctl', 'unload', str(PLIST_DEST)],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            self.stdout.write(self.style.WARNING(
+                f'  launchctl unload returned non-zero '
+                f'(service may already be stopped): {result.stderr.strip()}'
+            ))
+        else:
+            self.stdout.write('  Service stopped.')
+
+        self.stdout.write(f'  Removing {PLIST_DEST}…')
+        PLIST_DEST.unlink()
+
+    def _remove_escalated(self):
+        script_body = '\n'.join([
+            '#!/bin/bash',
+            'cd /',
+            'set -e',
+            '',
+            f"launchctl unload '{PLIST_DEST}' 2>/dev/null || true",
+            '',
+            f"rm -f '{PLIST_DEST}'",
+        ])
+
+        tmp_script = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode='w', suffix='.sh',
+                prefix='autopkg-runner-remove-', delete=False, dir='/private/tmp',
+            ) as f:
+                f.write(script_body)
+                tmp_script = f.name
+
+            os.chmod(tmp_script, 0o755)
+
+            self._run_via_osascript(
+                script_path=tmp_script,
+                prompt='AutoPkg Runner needs administrator access to remove the system service.',
+            )
+
+        finally:
+            if tmp_script:
+                try:
+                    os.unlink(tmp_script)
+                except FileNotFoundError:
+                    pass
+
+    # ------------------------------------------------------------------
+    # Shared helpers
     # ------------------------------------------------------------------
 
     @staticmethod
     def _run_via_osascript(script_path: str, prompt: str):
-        """
-        Execute script_path with administrator privileges via AppleScript.
-        Shows the native macOS authentication dialog.
-        Raises CommandError on failure or user cancellation.
-        """
         safe_path   = script_path.replace('"', '\\"')
         safe_prompt = prompt.replace('"', '\\"')
-
         applescript = (
             f'do shell script "{safe_path}" '
             f'with administrator privileges '
             f'with prompt "{safe_prompt}"'
         )
-
         result = subprocess.run(
             ['osascript', '-e', applescript],
-            capture_output=True,
-            text=True,
+            capture_output=True, text=True,
         )
-
         if result.returncode != 0:
             stderr = result.stderr.strip()
             if '-128' in stderr or 'User canceled' in stderr:
-                raise CommandError('Installation cancelled — no changes were made.')
+                raise CommandError('Operation cancelled — no changes were made.')
             raise CommandError(
-                f'Privileged installation failed:\n{stderr or result.stdout.strip()}'
+                f'Privileged operation failed:\n{stderr or result.stdout.strip()}'
             )
 
     def _prepare_log_dir_as_root(self, user: str):
@@ -320,13 +391,6 @@ class Command(BaseCommand):
             )
 
     def _validate_project_location(self):
-        """Refuse to install if the project root is not under /opt/.
-
-        macOS TCC (Transparency, Consent, and Control) blocks launchd daemon
-        processes from accessing ~/Desktop, ~/Documents, ~/Downloads, and other
-        user-protected directories, causing PermissionError at startup.
-        Requiring /opt/ keeps the project on a non-TCC-protected volume.
-        """
         try:
             PROJECT_ROOT.relative_to(Path('/opt'))
         except ValueError:
@@ -342,11 +406,6 @@ class Command(BaseCommand):
             )
 
     def _validate_project_ownership(self, user: str):
-        """Refuse to install if any file in the project root is not owned by --user.
-
-        The daemon process runs as this user, so every file it needs to read
-        (settings, templates, static assets, the DB) must be owned by it.
-        """
         uid = pwd.getpwnam(user).pw_uid
         offenders: list[str] = []
 
@@ -376,18 +435,6 @@ class Command(BaseCommand):
             )
 
     def _find_gunicorn(self) -> list[str]:
-        """
-        Locate gunicorn and return the ProgramArguments prefix needed to invoke it.
-
-        Resolution order:
-          1. gunicorn binary in the same bin/ as the current interpreter (venv).
-          2. gunicorn binary anywhere on PATH.
-          3. python -m gunicorn (gunicorn installed as a module, no script wrapper).
-
-        Returns a list of one or more strings, e.g.:
-          ['/path/to/gunicorn']                    — binary found
-          ['/path/to/python3', '-m', 'gunicorn']   — module fallback
-        """
         candidate = Path(sys.executable).parent / 'gunicorn'
         if candidate.exists():
             return [str(candidate)]
@@ -424,7 +471,6 @@ class Command(BaseCommand):
             '--threads', str(threads),
             '--timeout', '120',
         ]
-        # Each argument on its own line, indented to match the <array> context.
         arg_lines = '\n\t\t'.join(f'<string>{a}</string>' for a in prog_args)
 
         content = TEMPLATE_PATH.read_text()
