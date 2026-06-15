@@ -48,7 +48,12 @@ class Command(BaseCommand):
         skip_superuser = options['skip_superuser'] or no_input
         username       = options['username']
 
-        width = 56
+        width = 60
+        inner = width - 6  # chars available between '  │  ' and '│'
+
+        def box_line(text=''):
+            return f'  │  {text:<{inner}}│'
+
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('═' * width))
         self.stdout.write(self.style.SUCCESS('  AutoPkg Runner - First-Time Setup'))
@@ -102,11 +107,11 @@ class Command(BaseCommand):
 
                 self.stdout.write('')
                 self.stdout.write(self.style.SUCCESS('  ┌' + '-' * (width - 4) + '┐'))
-                self.stdout.write(self.style.SUCCESS(f'  │  Admin account created' + ' ' * (width - 27) + '│'))
-                self.stdout.write(self.style.SUCCESS(f'  │  Username : {username:<{width - 17}}│'))
-                self.stdout.write(self.style.SUCCESS(f'  │  Password : {password:<{width - 17}}│'))
-                self.stdout.write(self.style.SUCCESS('  │' + ' ' * (width - 4) + '│'))
-                self.stdout.write(self.style.SUCCESS('  │  Save this password - it is not stored in plain text.' + ' ' * (width - 58) + '│'))
+                self.stdout.write(self.style.SUCCESS(box_line('Admin account created')))
+                self.stdout.write(self.style.SUCCESS(f'  │  Username : {username:<{inner - 11}}│'))
+                self.stdout.write(self.style.SUCCESS(f'  │  Password : {password:<{inner - 11}}│'))
+                self.stdout.write(self.style.SUCCESS(box_line()))
+                self.stdout.write(self.style.SUCCESS(box_line('Save this password - it is not stored in plain text.')))
                 self.stdout.write(self.style.SUCCESS('  └' + '-' * (width - 4) + '┘'))
                 self.stdout.write('')
 
