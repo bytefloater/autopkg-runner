@@ -1,0 +1,16 @@
+[run]
+branch = False
+
+[report]
+omit =
+    # macOS launchd/osascript integration — requires a live daemon environment
+    webapp/management/commands/install_service_daemon.py
+    webapp/management/commands/remove_service_daemon.py
+    webapp/management/commands/purge.py
+    # Frozen-bundle entry point — only runs inside a PyInstaller .app
+    run.py
+    libs/bundled_config.py
+    # Django boilerplate
+    autopkgrunner/asgi.py
+    manage.py
+    */migrations/*
