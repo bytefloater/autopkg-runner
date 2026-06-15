@@ -18,11 +18,11 @@ Or use the management command:
 """
 
 import json
-from typing import Any
+from typing import Any, Optional
 
 
-def send(configuration: dict, message: str, title: str | None = None,
-         url: str | None = None, url_title: str | None = None) -> None:
+def send(configuration: dict, message: str, title: Optional[str] = None,
+         url: Optional[str] = None, url_title: Optional[str] = None) -> None:
     """
     Send a push notification to all WebPushSubscription rows attached to
     the calling Notifier.
