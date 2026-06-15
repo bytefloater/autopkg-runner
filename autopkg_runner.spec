@@ -31,6 +31,11 @@ datas += collect_data_files('django_apscheduler')
 datas += collect_data_files('whitenoise')
 
 # Project assets
+# Strip any SQLite files collected by third-party hooks — the database lives
+# in Application Support at runtime, never inside the bundle.
+datas = [(s, d) for s, d in datas
+         if not s.endswith(('.sqlite3', '.sqlite3-journal', '.db'))]
+
 datas += [
     ('webapp/templates',    'webapp/templates'),
     ('webapp/static',       'webapp/static'),
