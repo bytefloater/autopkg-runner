@@ -35,9 +35,13 @@
 	<key>RunAtLoad</key>
 	<true/>
 
-	<!-- Restart the service if it exits for any reason -->
+	<!-- Restart on crash (non-zero exit) only. A clean exit (0) means setup has
+	     not been completed — restarting in that case would loop indefinitely. -->
 	<key>KeepAlive</key>
-	<true/>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/>
+	</dict>
 
 	<!-- Redirect stdout and stderr to a shared log file -->
 	<key>StandardOutPath</key>

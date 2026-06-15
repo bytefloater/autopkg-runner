@@ -41,11 +41,15 @@ def require_setup(command) -> None:
 
 
 def _fail(command) -> None:
+    frozen = getattr(sys, 'frozen', False)
+    setup_cmd = 'autopkg-runner setup' if frozen else 'python manage.py setup'
     command.stderr.write(command.style.ERROR(
         '[✗] AutoPkg Runner has not been set up.\n'
         '\n'
         '    Run the following command first:\n'
         '\n'
-        '      python manage.py setup\n'
+        f'      {setup_cmd}\n'
     ))
-    sys.exit(1)
+    # Exit 0 when frozen so launchd (KeepAlive SuccessfulExit=false) does not
+    # treat this as a crash and restart the process in a tight loop.
+    sys.exit(0 if frozen else 1)

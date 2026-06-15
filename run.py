@@ -25,6 +25,43 @@ def _gui_dialog(msg: str) -> None:
     )
 
 
+def _check_setup_or_exit() -> None:
+    """Verify the app has been initialised. Must be called before gunicorn forks
+    workers — if the check runs inside wsgi.py it fires in every worker and
+    gunicorn replaces each exiting worker indefinitely."""
+    import django
+    django.setup()
+
+    from pathlib import Path
+    from django.conf import settings
+    from django.db import OperationalError, ProgrammingError
+
+    db_name = str(settings.DATABASES.get('default', {}).get('NAME', ''))
+    is_memory = db_name == ':memory:' or 'mode=memory' in db_name
+
+    setup_ok = False
+    if is_memory or not db_name or Path(db_name).exists():
+        try:
+            from webapp.models import Schedule
+            Schedule.objects.get(pk=1)
+            setup_ok = True
+        except (OperationalError, ProgrammingError, Schedule.DoesNotExist):
+            pass
+
+    if not setup_ok:
+        frozen = getattr(sys, 'frozen', False)
+        setup_cmd = 'autopkg-runner setup' if frozen else 'python manage.py setup'
+        print(
+            f'[✗] AutoPkg Runner has not been set up.\n'
+            f'\n'
+            f'    Run the following command first:\n'
+            f'\n'
+            f'      {setup_cmd}\n',
+            file=sys.stderr,
+        )
+        sys.exit(0 if frozen else 1)
+
+
 def main() -> None:
     frozen = getattr(sys, 'frozen', False)
 
@@ -54,6 +91,11 @@ def main() -> None:
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'serve'
 
     if cmd == 'serve':
+        # Check setup before starting gunicorn. If the check runs inside wsgi.py
+        # instead, it fires in each worker process — gunicorn then sees the worker
+        # exit and spawns a replacement, creating an infinite restart loop.
+        _check_setup_or_exit()
+
         import logging
 
         class _NoWinch(logging.Filter):
