@@ -126,11 +126,17 @@ def reschedule_job():
 
 
 def start_scheduler():
+    from django.db import OperationalError, ProgrammingError
+
     scheduler = get_scheduler()
     if not scheduler.running:
         scheduler.start()
         logger.info('Scheduler started')
     try:
         reschedule_job()
+    except (OperationalError, ProgrammingError):
+        # Database tables don't exist yet (migrations haven't run).
+        # The job will be registered once the setup command completes.
+        logger.debug('Scheduler: skipping job registration — database not ready')
     except Exception:
         logger.exception('Failed to register scheduled job on startup')

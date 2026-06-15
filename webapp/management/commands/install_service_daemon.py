@@ -32,9 +32,10 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
 
-PLIST_LABEL  = 'com.bytefloater.autopkg-runner'
+from __info__ import BUNDLE_ID, APP_NAME
+PLIST_LABEL  = BUNDLE_ID
 PLIST_DEST   = Path('/Library/LaunchDaemons') / f'{PLIST_LABEL}.plist'
-LOG_DIR      = Path('/var/log/autopkg-runner')
+LOG_DIR      = Path(f'/var/log/{APP_NAME}')
 
 # webapp/management/commands/ → webapp/management/ → webapp/ → project root
 PROJECT_ROOT  = Path(__file__).resolve().parents[3]

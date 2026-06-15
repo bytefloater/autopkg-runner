@@ -252,16 +252,16 @@ class TestUserEditView:
         from django.test import Client
         c = Client()
         c.force_login(second)
-        resp = c.post(self._url(superuser.id), {'action': 'delete'})
+        resp = c.post(self._url(superuser.pk), {'action': 'delete'})
         # superuser should still exist since second superuser is trying to delete the last admin
         # Actually, since 'second' exists as another superuser, deleting superuser should succeed
         # Let me instead test deleting 'second' (the only remaining one) after removing superuser manually
         # Actually the simpler test: second tries to delete superuser when there are 2 superusers - SHOULD succeed
-        User.objects.filter(id=superuser.id).delete()
+        User.objects.filter(pk=superuser.pk).delete()
         # Now second is the only superuser. Try to delete second.
-        resp = c.post(self._url(second.id), {'action': 'delete'})
+        resp = c.post(self._url(second.pk), {'action': 'delete'})
         assert resp.status_code == 302
-        assert User.objects.filter(id=second.id).exists()  # prevented
+        assert User.objects.filter(pk=second.pk).exists()  # prevented
 
     def test_post_unknown_action_redirects(self, admin_client, user):
         resp = admin_client.post(self._url(user.id), {'action': 'unknown'})

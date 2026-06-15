@@ -28,6 +28,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        from webapp.management.commands._checks import require_setup
+        require_setup(self)
+
         from django.contrib.auth import get_user_model
         User = get_user_model()
 
@@ -47,18 +50,18 @@ class Command(BaseCommand):
         user.set_password(password)
         user.save(update_fields=['password'])
 
-        width = 60
-        inner = width - 6  # chars available between '  │  ' and '│'
+        disclaimer = 'Save this password - it is not stored in plain text.'
+        label_col  = 11
+        value_col  = 44
+        full_width = label_col + 1 + value_col
 
-        def box_line(text=''):
-            return f'  │  {text:<{inner}}│'
-
-        self.stdout.write('')
-        self.stdout.write(self.style.SUCCESS('  ┌' + '-' * (width - 4) + '┐'))
-        self.stdout.write(self.style.SUCCESS(box_line('Password reset')))
-        self.stdout.write(self.style.SUCCESS(f'  │  Username : {user.username:<{inner - 11}}│'))
-        self.stdout.write(self.style.SUCCESS(f'  │  Password : {password:<{inner - 11}}│'))
-        self.stdout.write(self.style.SUCCESS(box_line()))
-        self.stdout.write(self.style.SUCCESS(box_line('Save this password - it is not stored in plain text.')))
-        self.stdout.write(self.style.SUCCESS('  └' + '-' * (width - 4) + '┘'))
-        self.stdout.write('')
+        w = self.stdout.write
+        S = self.style.SUCCESS
+        w('')
+        w(S(f'  ┏{"━" * label_col}┳{"━" * value_col}┓'))
+        w(S(f'  ┃  {"Username":<{label_col - 2}}┃ {user.username:<{value_col - 1}}┃'))
+        w(S(f'  ┃  {"Password":<{label_col - 2}}┃ {password:<{value_col - 1}}┃'))
+        w(S(f'  ┣{"━" * label_col}┻{"━" * value_col}┫'))
+        w(S(f'  ┃  {disclaimer:<{full_width - 2}}┃'))
+        w(S(f'  ┗{"━" * full_width}┛'))
+        w('')

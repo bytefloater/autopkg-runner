@@ -422,7 +422,7 @@ class Task(models.Model):
     task_type    = models.CharField(max_length=30, choices=TYPE_CHOICES)
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING, db_index=True)
     run          = models.ForeignKey(Run, null=True, blank=True, on_delete=models.SET_NULL, related_name='tasks')
-    run_id       : uuid.UUID | None  # synthesised by Django from the ForeignKey; declared for type checkers
+    run_id       : Optional[uuid.UUID] # synthesised by Django from the ForeignKey; declared for type checkers
     created_at   = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     error        = models.TextField(blank=True)

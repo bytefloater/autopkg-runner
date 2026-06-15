@@ -44,7 +44,6 @@ class MobileAwareLoginView(DjangoLoginView):
             # Invalid ZK response — re-render login form with error flag.
             # We set an attribute the template checks to show the error banner.
             form = self.get_form()
-            form._zk_failed = True
             return self.render_to_response(self.get_context_data(form=form, zk_failed=True))
 
         return super().post(request, *args, **kwargs)

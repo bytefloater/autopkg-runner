@@ -119,59 +119,59 @@ def _make_stage(notifiers=None, ctx=None):
     config = MagicMock()
     config.notifiers = notifiers or []
     ctx = ctx or {}
-    logger = MagicMock()
-    return NotifyOnCompletion(config=config, ctx=ctx, logger=logger)
+    logger: MagicMock = MagicMock()
+    return NotifyOnCompletion(config=config, ctx=ctx, logger=logger), logger
 
 
 class TestGenPlainMsg:
     def test_basic_message_no_stats(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_plain_msg({'imports': 0, 'downloads': 0, 'failures': 0})
         assert 'AutoPkg run complete' in msg
 
     def test_includes_import_count(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_plain_msg({'imports': 3, 'downloads': 0, 'failures': 0})
         assert '3' in msg
         assert 'imported' in msg
 
     def test_includes_download_count(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_plain_msg({'imports': 0, 'downloads': 5, 'failures': 0})
         assert '5' in msg
         assert 'download' in msg
 
     def test_includes_failure_count(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_plain_msg({'imports': 0, 'downloads': 0, 'failures': 2})
         assert '2' in msg
         assert 'failure' in msg
 
     def test_includes_all_stats(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_plain_msg({'imports': 1, 'downloads': 2, 'failures': 3})
         assert '1' in msg and '2' in msg and '3' in msg
 
 
 class TestGenHtmlMsg:
     def test_basic_html_message(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_html_msg({'imports': 0, 'downloads': 0, 'failures': 0})
         assert '<b>' in msg
         assert 'AutoPkg run complete' in msg
 
     def test_html_includes_import_count(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_html_msg({'imports': 4, 'downloads': 0, 'failures': 0})
         assert '4' in msg and 'imported' in msg
 
     def test_html_no_stats_omits_bullet_line(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_html_msg({'imports': 0, 'downloads': 0, 'failures': 0})
         assert '·' not in msg
 
     def test_html_multiple_stats_joined(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         msg = stage._gen_html_msg({'imports': 1, 'downloads': 2, 'failures': 1})
         assert '·' in msg
 
@@ -181,7 +181,7 @@ class TestGenHtmlMsg:
 @pytest.mark.django_db
 class TestBuildSummary:
     def test_returns_zeroed_dict_when_run_id_is_none(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         summary = stage._build_summary(None)
         assert summary['imports'] == 0
         assert summary['failures'] == 0
@@ -193,7 +193,7 @@ class TestBuildSummary:
         RecipeResult.objects.create(run=run, result_type='munki_import', data={})
         RecipeResult.objects.create(run=run, result_type='failure', data={})
         RecipeResult.objects.create(run=run, result_type='url_downloaded', data={})
-        stage = _make_stage()
+        stage, _ = _make_stage()
         summary = stage._build_summary(run.id)
         assert summary['imports'] == 1
         assert summary['failures'] == 1
@@ -202,7 +202,7 @@ class TestBuildSummary:
     def test_builds_share_url_when_pwa_base_configured(self, run):
         from webapp.models import Setting
         Setting.set('notify.pwa_base_url', 'https://push.example.com')
-        stage = _make_stage()
+        stage, _ = _make_stage()
         summary = stage._build_summary(run.id)
         assert summary['share_url'] is not None
         assert 'https://push.example.com' in summary['share_url']
@@ -210,7 +210,7 @@ class TestBuildSummary:
     def test_no_share_url_without_pwa_base(self, run):
         from webapp.models import Setting
         Setting.set('notify.pwa_base_url', '')
-        stage = _make_stage()
+        stage, _ = _make_stage()
         summary = stage._build_summary(run.id)
         assert not summary['share_url']
 
@@ -220,13 +220,13 @@ class TestBuildSummary:
 @pytest.mark.django_db
 class TestBuildTemplateContext:
     def test_no_run_id_returns_defaults(self):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         ctx = stage._build_template_context({'imports': 0, 'failures': 0, 'downloads': 0, 'share_url': None}, None)
         assert ctx['status'] == 'succeeded'
         assert ctx['run_id'] == ''
 
     def test_with_run_id_includes_duration(self, run):
-        stage = _make_stage()
+        stage, _ = _make_stage()
         ctx = stage._build_template_context({'imports': 0, 'failures': 0, 'downloads': 0, 'share_url': None}, run.id)
         assert 'duration' in ctx
         assert 'date' in ctx
@@ -240,7 +240,7 @@ class TestBuildTemplateContext:
             started_at=datetime.now(timezone.utc),
             completed_at=datetime.now(timezone.utc),
         )
-        stage = _make_stage()
+        stage, _ = _make_stage()
         ctx = stage._build_template_context({'imports': 0, 'failures': 1, 'downloads': 0, 'share_url': None}, run.id)
         assert ctx['status'] == 'failed'
         assert ctx['status_emoji'] == '❌'
@@ -251,9 +251,9 @@ class TestBuildTemplateContext:
 @pytest.mark.django_db
 class TestNotifyRun:
     def test_skips_when_no_notifiers(self, run):
-        stage = _make_stage(notifiers=[], ctx={'run_id': run.id})
+        stage, logger = _make_stage(notifiers=[], ctx={'run_id': run.id})
         stage.run()  # must not raise; logger.info called
-        stage.logger.info.assert_called()
+        logger.info.assert_called()
 
     def test_dispatches_to_notifier_module(self, run):
         mock_notifier = MagicMock()
@@ -268,7 +268,7 @@ class TestNotifyRun:
         mock_send = MagicMock()
         mock_module.send = mock_send
 
-        stage = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
+        stage, _ = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
         with patch('importlib.import_module', return_value=mock_module):
             stage.run()
 
@@ -283,11 +283,11 @@ class TestNotifyRun:
         mock_notifier.config = {}
         mock_notifier.pk = str(uuid.uuid4())
 
-        stage = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
+        stage, logger = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
         with patch('importlib.import_module', side_effect=ModuleNotFoundError('nope')):
             stage.run()  # must not raise
 
-        stage.logger.error.assert_called()
+        logger.error.assert_called()
 
     def test_skips_when_send_function_missing(self, run):
         mock_notifier = MagicMock()
@@ -300,7 +300,7 @@ class TestNotifyRun:
 
         mock_module = MagicMock(spec=[])  # no 'send' attribute
 
-        stage = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
+        stage, _ = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
         with patch('importlib.import_module', return_value=mock_module):
             stage.run()  # must not raise
 
@@ -316,11 +316,11 @@ class TestNotifyRun:
         mock_module = MagicMock()
         mock_module.send.side_effect = Exception('network error')
 
-        stage = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
+        stage, logger = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
         with patch('importlib.import_module', return_value=mock_module):
             stage.run()  # must not raise
 
-        stage.logger.error.assert_called()
+        logger.error.assert_called()
 
     def test_uses_custom_title_template(self, run):
         mock_notifier = MagicMock()
@@ -332,7 +332,7 @@ class TestNotifyRun:
         mock_notifier.pk = str(uuid.uuid4())
 
         mock_module = MagicMock()
-        stage = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
+        stage, _ = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
         with patch('importlib.import_module', return_value=mock_module):
             stage.run()
 
@@ -350,7 +350,7 @@ class TestNotifyRun:
         mock_notifier.pk = str(uuid.uuid4())
 
         mock_module = MagicMock()
-        stage = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
+        stage, _ = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
         with patch('importlib.import_module', return_value=mock_module):
             stage.run()
 
@@ -367,7 +367,7 @@ class TestNotifyRun:
         mock_notifier.pk = str(uuid.uuid4())
 
         mock_module = MagicMock()
-        stage = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
+        stage, _ = _make_stage(notifiers=[mock_notifier], ctx={'run_id': run.id})
         with patch('importlib.import_module', return_value=mock_module):
             stage.run()
 

@@ -34,7 +34,7 @@ class TestRunShareView:
         run = Run.objects.create(status='success', config_snapshot={})
         token_obj = RunShareToken.objects.create(run=run, token='expired-token-abc123456789')
         # Manually backdate the created_at
-        RunShareToken.objects.filter(id=token_obj.id).update(created_at=old_time)
+        RunShareToken.objects.filter(pk=token_obj.pk).update(created_at=old_time)
 
         from django.test import Client
         resp = Client().get(self._url('expired-token-abc123456789'))
@@ -54,7 +54,8 @@ class TestRunShareView:
         resp = Client().get(self._url(token_obj.token))
         assert resp.status_code == 200
         # The context should have sanitised results
-        results = resp.context.get('recipe_results', [])
+        assert resp.context is not None
+        results = resp.context.get('recipe_results') or []
         for result in results:
             for item in (result.data if hasattr(result, 'data') else []):
                 assert 'traceback' not in item

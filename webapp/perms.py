@@ -67,14 +67,14 @@ class PermissionRequiredMixin(LoginRequiredMixin):
     """
     required_perm: str | tuple = ()
 
-    def _check_perm(self) -> bool:
+    def _check_perm(self, request) -> bool:
         perms = (self.required_perm,) if isinstance(self.required_perm, str) else self.required_perm
-        return any(user_has_perm(self.request.user, p) for p in perms)
+        return any(user_has_perm(request.user, p) for p in perms)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return super().dispatch(request, *args, **kwargs)
-        if not self._check_perm():
+        if not self._check_perm(request):
             return _denied_response(request)
         return super().dispatch(request, *args, **kwargs)
 

@@ -313,7 +313,7 @@ class TestWebPushSubscribeView:
         assert resp.status_code == 200
         data = json.loads(resp.content)
         assert data['created'] is False
-        sub.refresh_from_db()
+        sub.refresh_from_db()  # type: ignore[call-arg]
         assert sub.p256dh == 'NEWKEY'
 
     def test_returns_400_on_invalid_json(self, config_editor_client, webpush_notifier):

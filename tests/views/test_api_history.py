@@ -28,7 +28,7 @@ class TestListRunsView:
         from webapp.models import Run
         r = Run.objects.create(status='success', config_snapshot={})
         Run.objects.filter(pk=r.pk).update(started_at=dt)
-        r.refresh_from_db()
+        r.refresh_from_db()  # type: ignore[call-arg]
         return r
 
     def test_start_date_filters_older_runs(self, api_run_manager_client):

@@ -24,7 +24,8 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
 
-PLIST_LABEL = 'com.bytefloater.autopkg-runner'
+from __info__ import BUNDLE_ID
+PLIST_LABEL = BUNDLE_ID
 PLIST_DEST  = Path('/Library/LaunchDaemons') / f'{PLIST_LABEL}.plist'
 
 

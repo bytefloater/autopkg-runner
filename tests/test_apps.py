@@ -101,6 +101,7 @@ def _load_original_apps_module():
     import webapp.apps as apps_mod
 
     spec = importlib.util.spec_from_file_location('_apps_orig', apps_mod.__file__)
+    assert spec is not None and spec.loader is not None
     fresh = types.ModuleType('_apps_orig')
     fresh.__spec__ = spec
     spec.loader.exec_module(fresh)

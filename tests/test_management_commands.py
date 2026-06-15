@@ -94,7 +94,7 @@ class TestGenerateVapidKeys:
 
 @pytest.mark.django_db
 class TestResetPassword:
-    def test_resets_password_for_superuser(self, superuser):
+    def test_resets_password_for_superuser(self, superuser, schedule):
         old_hash = superuser.password
         out = io.StringIO()
         call_command('resetpassword', superuser.username, stdout=out, stderr=io.StringIO())
@@ -102,15 +102,15 @@ class TestResetPassword:
         assert superuser.password != old_hash
         assert 'Password' in out.getvalue()
 
-    def test_raises_for_nonexistent_user(self):
+    def test_raises_for_nonexistent_user(self, schedule):
         with pytest.raises(CommandError, match="No user found"):
             call_command('resetpassword', 'nosuchuser', stdout=io.StringIO(), stderr=io.StringIO())
 
-    def test_raises_for_non_superuser(self, user):
+    def test_raises_for_non_superuser(self, user, schedule):
         with pytest.raises(CommandError, match="not a superuser"):
             call_command('resetpassword', user.username, stdout=io.StringIO(), stderr=io.StringIO())
 
-    def test_output_contains_username(self, superuser):
+    def test_output_contains_username(self, superuser, schedule):
         out = io.StringIO()
         call_command('resetpassword', superuser.username, stdout=out, stderr=io.StringIO())
         assert superuser.username in out.getvalue()
@@ -120,15 +120,15 @@ class TestResetPassword:
 
 @pytest.mark.django_db
 class TestServeCommand:
-    def test_invalid_port_raises_error(self):
+    def test_invalid_port_raises_error(self, schedule):
         with pytest.raises(CommandError, match="Invalid port"):
             call_command('serve', '--port', 'abc', stdout=io.StringIO(), stderr=io.StringIO())
 
-    def test_port_out_of_range_raises_error(self):
+    def test_port_out_of_range_raises_error(self, schedule):
         with pytest.raises(CommandError, match="Invalid port"):
             call_command('serve', '--port', '99999', stdout=io.StringIO(), stderr=io.StringIO())
 
-    def test_network_flag_in_production_raises_error(self):
+    def test_network_flag_in_production_raises_error(self, schedule):
         from django.conf import settings
         original = settings.DEBUG
         settings.DEBUG = False
@@ -138,50 +138,31 @@ class TestServeCommand:
         finally:
             settings.DEBUG = original
 
-    def test_default_localhost_binding(self):
+    def test_default_localhost_binding(self, schedule):
         with patch('webapp.management.commands.serve.call_command') as mock_call:
-            with patch('django.db.migrations.executor.MigrationExecutor') as mock_exec:
-                mock_exec.return_value.migration_plan.return_value = []
-                call_command('serve', stdout=io.StringIO(), stderr=io.StringIO())
+            call_command('serve', stdout=io.StringIO(), stderr=io.StringIO())
         mock_call.assert_called_with('runserver', addrport='127.0.0.1:8000')
 
-    def test_custom_port(self):
+    def test_custom_port(self, schedule):
         with patch('webapp.management.commands.serve.call_command') as mock_call:
-            with patch('django.db.migrations.executor.MigrationExecutor') as mock_exec:
-                mock_exec.return_value.migration_plan.return_value = []
-                call_command('serve', '--port', '9000', stdout=io.StringIO(), stderr=io.StringIO())
+            call_command('serve', '--port', '9000', stdout=io.StringIO(), stderr=io.StringIO())
         mock_call.assert_called_with('runserver', addrport='127.0.0.1:9000')
 
-    def test_noreload_flag(self):
+    def test_noreload_flag(self, schedule):
         with patch('webapp.management.commands.serve.call_command') as mock_call:
-            with patch('django.db.migrations.executor.MigrationExecutor') as mock_exec:
-                mock_exec.return_value.migration_plan.return_value = []
-                call_command('serve', '--noreload', stdout=io.StringIO(), stderr=io.StringIO())
+            call_command('serve', '--noreload', stdout=io.StringIO(), stderr=io.StringIO())
         mock_call.assert_called_with('runserver', addrport='127.0.0.1:8000', use_reloader=False)
 
-    def test_network_flag_with_debug(self):
+    def test_network_flag_with_debug(self, schedule):
         from django.conf import settings as dj_settings
-        with patch('webapp.management.commands.serve.call_command') as mock_call, \
-             patch('django.db.migrations.executor.MigrationExecutor') as mock_exec, \
-             patch.object(type(dj_settings), 'DEBUG', new=True, create=True):
-            mock_exec.return_value.migration_plan.return_value = []
-            # Temporarily make DEBUG True so --network doesn't raise
-            original_debug = dj_settings.DEBUG
-            dj_settings.DEBUG = True
-            try:
+        original_debug = dj_settings.DEBUG
+        dj_settings.DEBUG = True
+        try:
+            with patch('webapp.management.commands.serve.call_command') as mock_call:
                 call_command('serve', '--network', stdout=io.StringIO(), stderr=io.StringIO())
-            finally:
-                dj_settings.DEBUG = original_debug
-        mock_call.assert_called_with('runserver', addrport='0.0.0.0:8000')
-
-    def test_pending_migrations_are_applied(self):
-        with patch('webapp.management.commands.serve.call_command') as mock_call:
-            with patch('django.db.migrations.executor.MigrationExecutor') as mock_exec:
-                mock_exec.return_value.migration_plan.return_value = [('app', 'migration')]
-                out = io.StringIO()
-                call_command('serve', stdout=out, stderr=io.StringIO())
-        calls = [str(c) for c in mock_call.call_args_list]
-        assert any('migrate' in c for c in calls)
+            mock_call.assert_called_with('runserver', addrport='0.0.0.0:8000')
+        finally:
+            dj_settings.DEBUG = original_debug
 
 
 # -- setup ---------------------------------------------------------------------

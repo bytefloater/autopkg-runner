@@ -11,6 +11,8 @@ Usage:
     python manage.py serve --host 0.0.0.0       # 0.0.0.0:8000
     python manage.py serve --network --noreload # no auto-reload
 """
+import os
+
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
@@ -44,6 +46,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from django.conf import settings
+        from webapp.management.commands._checks import require_setup
+
+        # -- Setup guard -------------------------------------------------------
+        require_setup(self)
 
         host = '0.0.0.0' if options['network'] else options['host']
         port = options['port']
@@ -69,38 +75,17 @@ class Command(BaseCommand):
             if '*' not in settings.ALLOWED_HOSTS:
                 settings.ALLOWED_HOSTS = list(settings.ALLOWED_HOSTS) + ['*']
 
-            self.stdout.write('')
-            self.stdout.write(
-                self.style.WARNING(f'  Binding to 0.0.0.0:{port} - reachable on all local interfaces.')
-            )
-            self.stdout.write(
-                self.style.WARNING( '  ALLOWED_HOSTS temporarily set to [*] (DEBUG mode).')
-            )
-            self.stdout.write('')
-        else:
-            self.stdout.write('')
-            self.stdout.write(
-                self.style.SUCCESS(f'  Starting dev server on http://{host}:{port}/')
-            )
-            self.stdout.write('')
-
-        # -- Migration check ---------------------------------------------------
-        # Run any unapplied migrations before the server starts so the DB is
-        # always in sync.  Prints nothing and exits cleanly if up to date.
-        from django.db import connection
-        from django.db.migrations.executor import MigrationExecutor
-        try:
-            executor = MigrationExecutor(connection)
-            pending = executor.migration_plan(executor.loader.graph.leaf_nodes())
-            if pending:
-                self.stdout.write(self.style.WARNING(
-                    f'  Applying {len(pending)} pending migration(s)…'
-                ))
-                call_command('migrate', '--run-syncdb', verbosity=1)
-                self.stdout.write(self.style.SUCCESS('  Migrations applied.'))
+            # Only print once — the StatReloader re-runs handle() in the child
+            # process with RUN_MAIN=true; suppress output there.
+            if not os.environ.get('RUN_MAIN'):
                 self.stdout.write('')
-        except Exception as exc:
-            self.stderr.write(self.style.WARNING(f'  Migration check failed: {exc}'))
+                self.stdout.write(
+                    self.style.WARNING(f'  Binding to 0.0.0.0:{port} — reachable on all local interfaces.')
+                )
+                self.stdout.write(
+                    self.style.WARNING('  ALLOWED_HOSTS temporarily set to [*] (DEBUG mode).')
+                )
+                self.stdout.write('')
 
         kwargs: dict[str, object] = {'addrport': f'{host}:{port}'}
         if options['noreload']:

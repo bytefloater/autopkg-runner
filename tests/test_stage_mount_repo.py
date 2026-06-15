@@ -46,8 +46,8 @@ def _make_local_stage(local_path=None, tmp_path=None):
     config.repository.local_path = local_path or (tmp_path or Path('/Volumes/Munki'))
     config.repository.mount_path = Path('/tmp/munki-mount')
     ctx = {'stage_outputs': {}}
-    logger = MagicMock()
-    return MountRepository(config, ctx, logger)
+    logger: MagicMock = MagicMock()
+    return MountRepository(config, ctx, logger), logger
 
 
 def _make_remote_stage(tmp_path):
@@ -62,106 +62,107 @@ def _make_remote_stage(tmp_path):
     config.repository.username = 'user'
     config.repository.password = 'pass'
     ctx = {'stage_outputs': {}}
-    logger = MagicMock()
+    logger: MagicMock = MagicMock()
+    mounter: MagicMock = MagicMock()
     with patch('stages.mount_repo.RemoteRepositoryMounter') as MockMounter, \
          patch('stages.mount_repo._build_host'):
+        MockMounter.return_value = mounter
         stage = MountRepository(config, ctx, logger)
-        stage.mounter = MockMounter.return_value
-    return stage
+        stage.mounter = mounter
+    return stage, logger, mounter
 
 
 class TestInit:
     def test_local_repo_has_no_mounter(self, tmp_path):
-        stage = _make_local_stage(tmp_path)
+        stage, _ = _make_local_stage(tmp_path)
         assert stage.mounter is None
         assert stage._is_local() is True
 
     def test_remote_repo_creates_mounter(self, tmp_path):
-        stage = _make_remote_stage(tmp_path)
-        assert stage.mounter is not None
+        stage, _, mounter = _make_remote_stage(tmp_path)
+        assert mounter is not None
 
     def test_is_local_false_for_smb(self, tmp_path):
-        stage = _make_remote_stage(tmp_path)
+        stage, _, _ = _make_remote_stage(tmp_path)
         assert stage._is_local() is False
 
 
 class TestCheckLocalPath:
     def test_returns_true_for_existing_dir(self, tmp_path):
-        stage = _make_local_stage(tmp_path)
+        stage, _ = _make_local_stage(tmp_path)
         assert stage._check_local_path() is True
 
     def test_returns_false_for_missing_dir(self, tmp_path):
-        stage = _make_local_stage(tmp_path / 'nonexistent')
+        stage, logger = _make_local_stage(tmp_path / 'nonexistent')
         assert stage._check_local_path() is False
-        stage.logger.error.assert_called()
+        logger.error.assert_called()
 
 
 class TestPreCheck:
     def test_local_existing_path_returns_true(self, tmp_path):
-        stage = _make_local_stage(tmp_path)
+        stage, _ = _make_local_stage(tmp_path)
         assert stage.pre_check() is True
 
     def test_local_missing_path_returns_false(self, tmp_path):
-        stage = _make_local_stage(tmp_path / 'missing')
+        stage, _ = _make_local_stage(tmp_path / 'missing')
         assert stage.pre_check() is False
 
     def test_remote_delegates_to_mounter(self, tmp_path):
-        stage = _make_remote_stage(tmp_path)
-        stage.mounter.is_reachable.return_value = True
-        stage.mounter.is_mount_point_available.return_value = True
+        stage, _, mounter = _make_remote_stage(tmp_path)
+        mounter.is_reachable.return_value = True
+        mounter.is_mount_point_available.return_value = True
         assert stage.pre_check() is True
-        stage.mounter.is_reachable.assert_called_once()
+        mounter.is_reachable.assert_called_once()
 
     def test_remote_not_reachable_returns_false(self, tmp_path):
-        stage = _make_remote_stage(tmp_path)
-        stage.mounter.is_reachable.return_value = False
-        stage.mounter.is_mount_point_available.return_value = True
+        stage, _, mounter = _make_remote_stage(tmp_path)
+        mounter.is_reachable.return_value = False
+        mounter.is_mount_point_available.return_value = True
         assert stage.pre_check() is False
 
 
 class TestRun:
     def test_local_logs_no_mount_required(self, tmp_path):
-        stage = _make_local_stage(tmp_path)
+        stage, logger = _make_local_stage(tmp_path)
         stage.run()
-        stage.logger.info.assert_called()
+        logger.info.assert_called()
         # mounter.mount() must not be called
         assert stage.mounter is None
 
     def test_remote_calls_mounter_mount(self, tmp_path):
-        stage = _make_remote_stage(tmp_path)
+        stage, _, mounter = _make_remote_stage(tmp_path)
         stage.run()
-        stage.mounter.mount.assert_called_once()
+        mounter.mount.assert_called_once()
 
 
 class TestPostCheck:
     def test_local_accessible_returns_true(self, tmp_path):
-        stage = _make_local_stage(tmp_path)
+        stage, _ = _make_local_stage(tmp_path)
         assert stage.post_check() is True
 
     def test_local_missing_returns_false(self, tmp_path):
-        stage = _make_local_stage(tmp_path / 'missing')
+        stage, logger = _make_local_stage(tmp_path / 'missing')
         assert stage.post_check() is False
-        stage.logger.error.assert_called()
+        logger.error.assert_called()
 
     def test_remote_accessible_mount_point_returns_true(self, tmp_path):
-        stage = _make_remote_stage(tmp_path)
-        # Mount point is tmp_path which exists
-        stage.mounter.mount_point = tmp_path
+        stage, _, mounter = _make_remote_stage(tmp_path)
+        mounter.mount_point = tmp_path
         assert stage.post_check() is True
 
     def test_remote_inaccessible_mount_point_returns_false(self, tmp_path):
-        stage = _make_remote_stage(tmp_path)
-        stage.mounter.mount_point = tmp_path / 'nonexistent'
+        stage, _, mounter = _make_remote_stage(tmp_path)
+        mounter.mount_point = tmp_path / 'nonexistent'
         assert stage.post_check() is False
 
 
 class TestCleanup:
     def test_local_cleanup_is_noop(self, tmp_path):
-        stage = _make_local_stage(tmp_path)
+        stage, _ = _make_local_stage(tmp_path)
         stage.cleanup()  # must not raise
         assert stage.mounter is None
 
     def test_remote_calls_unmount(self, tmp_path):
-        stage = _make_remote_stage(tmp_path)
+        stage, _, mounter = _make_remote_stage(tmp_path)
         stage.cleanup()
-        stage.mounter.unmount.assert_called_once()
+        mounter.unmount.assert_called_once()
