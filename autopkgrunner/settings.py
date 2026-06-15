@@ -51,6 +51,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'webapp.middleware.RemoveServerHeaderMiddleware',
     'webapp.middleware.DatabaseWriteGuardMiddleware',
     # WhiteNoise serves static files when running under gunicorn.
     # The Django dev server handles static files itself, so WhiteNoise is
@@ -190,6 +191,12 @@ LOGGING = {
         'apscheduler': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
+        },
+        # Demote DisallowedHost from ERROR+traceback to a one-line WARNING.
+        'django.security.DisallowedHost': {
+            'handlers': ['console'],
+            'level': 'WARNING',
             'propagate': False,
         },
     },

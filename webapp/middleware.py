@@ -123,6 +123,16 @@ _MOBILE_UA_RE = re.compile(
 )
 
 
+class RemoveServerHeaderMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        response.headers.pop('Server', None)
+        return response
+
+
 class MobileDetectionMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
