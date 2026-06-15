@@ -26,6 +26,20 @@
         <span class="text-sm font-medium text-gray-900 dark:text-white">{{ app_name }}</span>
         <span class="text-sm text-gray-500 dark:text-gray-400 font-mono">v{{ app_version }}</span>
       </div>
+      <div class="flex items-center justify-between px-4 py-3.5">
+        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t.ABOUT_VIEW.LABEL_PYTHON }}</span>
+        <span class="text-sm text-gray-500 dark:text-gray-400 font-mono">
+          {{ python_version }}{% if is_bundled %} <span class="font-sans text-xs text-gray-400 dark:text-gray-500">({{ t.ABOUT_VIEW.STATE_PYTHON_EMBEDDED }})</span>{% endif %}
+        </span>
+      </div>
+      <div class="flex items-center justify-between px-4 py-3.5">
+        <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t.ABOUT_VIEW.LABEL_RUNTIME }}</span>
+        {% if is_bundled %}
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{ t.ABOUT_VIEW.STATE_RUNTIME_BUNDLED }}</span>
+        {% else %}
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{ t.ABOUT_VIEW.STATE_RUNTIME_STANDARD }}</span>
+        {% endif %}
+      </div>
     </div>
   </div>
 

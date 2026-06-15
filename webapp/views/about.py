@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 import urllib.error
 import urllib.request
 from typing import Optional
@@ -118,5 +119,10 @@ class AboutView(LoginRequiredMixin, TemplateView):
 
         # -- MunkiTools --------------------------------------------------------
         ctx['munki_version'] = _munki_version()          # None = not installed
+
+        # -- Runtime -----------------------------------------------------------
+        vi = sys.version_info
+        ctx['python_version'] = f'{vi.major}.{vi.minor}.{vi.micro}'
+        ctx['is_bundled'] = getattr(sys, 'frozen', False)
 
         return ctx
