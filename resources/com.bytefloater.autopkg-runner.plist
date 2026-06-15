@@ -3,32 +3,32 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>com.bytefloater.autopkg-runner</string>
+	<string>{{bundle_id}}</string>
 
 	<!-- Run the service as this user (privileges are dropped by launchd) -->
 	<key>UserName</key>
 	<string>{{run_as_user}}</string>
 
-	<!-- Project root — also the working directory for gunicorn and dotenv -->
+	<!-- Project root — used as the working directory.
+	     For .app bundle deployments this is the directory containing the .app.
+	     For raw-Python deployments this is the repo/install root. -->
 	<key>WorkingDirectory</key>
 	<string>{{working_dir}}</string>
 
-	<!-- Each argument must be a separate <string> element -->
+	<!-- Each argument must be a separate <string> element.
+	     .app bundle:     /path/to/AutoPkg Runner.app/Contents/MacOS/autopkg-runner serve
+	     Raw Python:      /path/to/python3 -m gunicorn autopkgrunner.wsgi:application ... -->
 	<key>ProgramArguments</key>
 	<array>
 		{{program_args}}
 	</array>
 
-	<!-- Ensure the project root is on Python's module search path.
-	     WorkingDirectory alone is not sufficient — launchd sets the process
-	     cwd but does not modify sys.path, so autopkgrunner would not be
-	     importable without this. -->
-	<!-- Ensure the project root is on Python's module search path so that
-	     autopkgrunner is importable when running as a launchd daemon. -->
+	<!-- Environment variables injected by launchd into the process.
+	     For raw-Python deployments, add PYTHONPATH so the package root is importable.
+	     For .app bundle deployments this block can be omitted or left empty. -->
 	<key>EnvironmentVariables</key>
 	<dict>
-		<key>PYTHONPATH</key>
-		<string>{{working_dir}}</string>
+		{{environment_vars}}
 	</dict>
 
 	<!-- Start the service when the plist is loaded (boot / launchctl load) -->
@@ -41,9 +41,9 @@
 
 	<!-- Redirect stdout and stderr to a shared log file -->
 	<key>StandardOutPath</key>
-	<string>/var/log/autopkg-runner/server.log</string>
+	<string>/var/log/{{bundle_id}}/server.log</string>
 
 	<key>StandardErrorPath</key>
-	<string>/var/log/autopkg-runner/server.log</string>
+	<string>/var/log/{{bundle_id}}/server.log</string>
 </dict>
 </plist>

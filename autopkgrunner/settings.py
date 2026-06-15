@@ -2,17 +2,33 @@ import os
 import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+from __info__ import BUNDLE_ID
 
-SECRET_KEY = os.environ['DJANGO_SECRET_KEY']   # required - set in .env
+# In a frozen PyInstaller .app bundle, __file__ resolves inside the read-only
+# sys._MEIPASS tree.  Mutable runtime data (DB, collected static files) must
+# live in Application Support instead.
+if getattr(sys, 'frozen', False):
+    _data_home = Path(f'/Library/Application Support/{BUNDLE_ID}')
+    if not os.access(_data_home.parent, os.W_OK):
+        # Non-root invocation: fall back to user Application Support
+        _data_home = Path.home() / f'Library/Application Support/{BUNDLE_ID}'
+    _data_home.mkdir(parents=True, exist_ok=True)
+    BASE_DIR = _data_home
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']   # required - set in plist (bundle) or .env (dev)
 
 DEBUG = os.environ.get('DJANGO_DEBUG', 'false').lower() == 'true'
 
-# True when loaded via manage.py (dev server, management commands).
-# False when loaded directly by a WSGI server such as gunicorn.
-# Used to gate production-only behaviour (WhiteNoise, etc.) without
-# relying on the DEBUG flag, which may be True in both environments.
-_VIA_MANAGE = bool(sys.argv) and os.path.basename(sys.argv[0]) in ('manage.py', 'manage')
+# True when running Django management commands (migrate, createsuperuser, etc.).
+# False when serving via gunicorn.
+# In the frozen bundle the entrypoint sets AUTOPKG_MODE; in dev mode we
+# fall back to inspecting sys.argv[0] for manage.py.
+_VIA_MANAGE = (
+    (bool(sys.argv) and os.path.basename(sys.argv[0]) in ('manage.py', 'manage'))
+    or os.environ.get('AUTOPKG_MODE') == 'manage'
+)
 
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS',
