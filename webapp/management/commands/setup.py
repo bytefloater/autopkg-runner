@@ -44,7 +44,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from __info__ import FRIENDLY_APP_NAME
+        import sys
+        from __info__ import APP_NAME, FRIENDLY_APP_NAME
+        frozen = getattr(sys, 'frozen', False)
+        runner = APP_NAME if frozen else 'python run.py'
 
         no_input       = options['no_input']
         skip_superuser = options['skip_superuser'] or no_input
@@ -85,7 +88,7 @@ class Command(BaseCommand):
 
             if User.objects.filter(is_superuser=True).exists():
                 self._ok('A superuser already exists — skipping')
-                self._warn('Forgotten your password? Run: python manage.py resetpassword')
+                self._warn(f'Forgotten your password? Run: {runner} resetpassword <username>')
             else:
                 password = _generate_password()
                 try:
@@ -109,15 +112,36 @@ class Command(BaseCommand):
         self.stdout.write('')
         self.stdout.write('  Configure AutoPkg Runner via the web UI after starting.')
         self.stdout.write('')
-        self.stdout.write('  Start the development server:')
-        self.stdout.write(self.style.MIGRATE_HEADING('    python manage.py serve'))
-        self.stdout.write('  To bind to all interfaces (LAN access):')
-        self.stdout.write(self.style.MIGRATE_HEADING('    python manage.py serve --network'))
-        self.stdout.write('')
-        self.stdout.write('  For production (SSE / real-time logs require threading):')
-        self.stdout.write(self.style.MIGRATE_HEADING(
-            '    gunicorn autopkgrunner.wsgi:application --workers 1 --threads 8'
-        ))
+        if frozen:
+            from libs.bundled_config import _plist_path
+            plist_path = _plist_path()
+            self.stdout.write('  Start the server:')
+            self.stdout.write(self.style.MIGRATE_HEADING(f'    {runner} serve'))
+            self.stdout.write('  To use a different port:')
+            self.stdout.write(self.style.MIGRATE_HEADING(f'    {runner} serve --port 9000'))
+            self.stdout.write('')
+            self.stdout.write('  Install as a system daemon (runs on boot):')
+            self.stdout.write(self.style.MIGRATE_HEADING(
+                f'    {runner} service_daemon --install --user <username>'
+            ))
+            self.stdout.write('')
+            self.stdout.write('  Configuration file:')
+            self.stdout.write(self.style.MIGRATE_HEADING(f'    {plist_path}'))
+            self.stdout.write('  Set DJANGO_ALLOWED_HOSTS here to allow LAN or remote access.')
+        else:
+            self.stdout.write('  Start the server (gunicorn):')
+            self.stdout.write(self.style.MIGRATE_HEADING(f'    {runner} serve'))
+            self.stdout.write('  To bind to all interfaces (LAN access):')
+            self.stdout.write(self.style.MIGRATE_HEADING(f'    {runner} serve --bind 0.0.0.0'))
+            self.stdout.write('')
+            self.stdout.write('  Or use the Django development server:')
+            self.stdout.write(self.style.MIGRATE_HEADING('    python manage.py serve'))
+            self.stdout.write(self.style.MIGRATE_HEADING('    python manage.py serve --network'))
+            self.stdout.write('')
+            self.stdout.write('  Install as a system daemon (runs on boot):')
+            self.stdout.write(self.style.MIGRATE_HEADING(
+                f'    {runner} service_daemon --install --user <username>'
+            ))
         self.stdout.write('')
         self.stdout.write('  Protect the database file (contains credentials):')
         self.stdout.write(self.style.MIGRATE_HEADING('    chmod 600 db.sqlite3'))

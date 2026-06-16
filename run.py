@@ -3,10 +3,10 @@
 Entrypoint for the AutoPkg Runner .app bundle.
 
 Usage (via the binary inside the .app):
-  autopkg-runner          — start the gunicorn server (default)
-  autopkg-runner serve    — start the gunicorn server
-  autopkg-runner migrate  — run Django management commands
-  autopkg-runner <cmd>    — any other Django management command
+  autopkg-runner          — show this help
+  autopkg-runner serve    — start the development server
+  autopkg-runner setup    — first-time initialisation
+  autopkg-runner <cmd>    — run a management command
 
 When launched via Finder (double-click, no TTY) a dialog is shown explaining
 how to use the app from the command line.
@@ -15,6 +15,84 @@ import os
 import sys
 from pathlib import Path
 
+
+# ---------------------------------------------------------------------------
+# Curated command list
+# ---------------------------------------------------------------------------
+
+_COL = 30  # left column width for alignment
+
+_HELP_COMMANDS = [
+    ('serve', 'Start the server (gunicorn)', [
+        ('--bind ADDRESS', 'Bind address (default: 0.0.0.0)'),
+        ('--port PORT', 'Port (default: 8000)'),
+        ('--workers N', 'Worker processes (default: 2)'),
+        ('--threads N', 'Threads per worker (default: 4)'),
+    ]),
+    ('setup', 'First-time initialisation', [
+        ('--username USER', 'Admin username (default: admin)'),
+        ('--no-input', 'Non-interactive; skip account creation prompts'),
+        ('--skip-superuser', 'Skip admin account creation'),
+    ]),
+    ('migrate', 'Apply database migrations', []),
+    ('createsuperuser', 'Create a new admin account', []),
+    ('resetpassword <user>', "Reset a user's password", []),
+    ('service_daemon', 'Manage the launchd system daemon', [
+        ('--install', 'Install the daemon'),
+        ('--remove', 'Remove the daemon'),
+        ('--user USERNAME', 'Run as this macOS user (required with --install)'),
+        ('--port PORT', 'Port (default: 8000)'),
+        ('--bind ADDRESS', 'Bind address (default: 127.0.0.1)'),
+        ('--workers N', 'Gunicorn worker processes (default: 1)'),
+        ('--threads N', 'Threads per worker (default: 8)'),
+    ]),
+    ('purge', 'Remove all app artefacts (plist, DB, logs)', [
+        ('--keep-data', 'Preserve the database and Application Support directories'),
+        ('--force, -f', 'Skip confirmation prompt'),
+    ]),
+    ('generate_vapid_keys', 'Generate WebPush VAPID keys', [
+        ('--contact URI', 'Contact URI (mailto: or https:)'),
+        ('--force', 'Overwrite existing keys'),
+    ]),
+    ('install_sftp_deps', 'Install macFUSE and sshfs for SFTP connections', []),
+]
+
+# Commands accepted by the entrypoint (derived from the table above plus bare
+# Django builtins that need no advertising).
+_KNOWN_COMMANDS: set[str] = {
+    row[0].split()[0] for row in _HELP_COMMANDS
+} | {'changepassword'}
+
+
+# ---------------------------------------------------------------------------
+# Help
+# ---------------------------------------------------------------------------
+
+def _print_help() -> None:
+    from __info__ import FRIENDLY_APP_NAME, APP_NAME
+    flag_indent = ' ' * 4
+    lines = [
+        f'{FRIENDLY_APP_NAME}',
+        '',
+        'Usage:',
+        f'  {APP_NAME} <command> [options]',
+        '',
+        'Commands:',
+    ]
+    for cmd, desc, flags in _HELP_COMMANDS:
+        lines.append(f'  {cmd:<{_COL - 2}}{desc}')
+        for flag, fdesc in flags:
+            lines.append(f'{flag_indent}{flag:<{_COL - 4}}{fdesc}')
+        if flags:
+            lines.append('')
+    lines.append('')
+    lines.append(f"Run '{APP_NAME} <command> --help' for full details on any command.")
+    print('\n'.join(lines))
+
+
+# ---------------------------------------------------------------------------
+# Bundle helpers
+# ---------------------------------------------------------------------------
 
 def _gui_dialog(msg: str) -> None:
     import subprocess
@@ -32,7 +110,6 @@ def _check_setup_or_exit() -> None:
     import django
     django.setup()
 
-    from pathlib import Path
     from django.conf import settings
     from django.db import OperationalError, ProgrammingError
 
@@ -41,8 +118,8 @@ def _check_setup_or_exit() -> None:
 
     setup_ok = False
     if is_memory or not db_name or Path(db_name).exists():
+        from webapp.models import Schedule
         try:
-            from webapp.models import Schedule
             Schedule.objects.get(pk=1)
             setup_ok = True
         except (OperationalError, ProgrammingError, Schedule.DoesNotExist):
@@ -50,7 +127,7 @@ def _check_setup_or_exit() -> None:
 
     if not setup_ok:
         frozen = getattr(sys, 'frozen', False)
-        setup_cmd = 'autopkg-runner setup' if frozen else 'python manage.py setup'
+        setup_cmd = 'autopkg-runner setup' if frozen else 'python run.py setup'
         print(
             f'[✗] AutoPkg Runner has not been set up.\n'
             f'\n'
@@ -61,6 +138,10 @@ def _check_setup_or_exit() -> None:
         )
         sys.exit(0 if frozen else 1)
 
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 def main() -> None:
     frozen = getattr(sys, 'frozen', False)
@@ -88,7 +169,18 @@ def main() -> None:
 
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'autopkgrunner.settings')
 
-    cmd = sys.argv[1] if len(sys.argv) > 1 else 'serve'
+    cmd = sys.argv[1] if len(sys.argv) > 1 else None
+
+    # Help / no-args
+    if cmd is None or cmd in ('--help', '-h', 'help'):
+        _print_help()
+        return
+
+    # Guard against undocumented / internal Django commands
+    if cmd not in _KNOWN_COMMANDS:
+        print(f"Unknown command: '{cmd}'\n", file=sys.stderr)
+        _print_help()
+        sys.exit(1)
 
     if cmd == 'serve':
         # Check setup before starting gunicorn. If the check runs inside wsgi.py
@@ -96,7 +188,15 @@ def main() -> None:
         # exit and spawns a replacement, creating an infinite restart loop.
         _check_setup_or_exit()
 
+        import argparse
         import logging
+
+        p = argparse.ArgumentParser(prog=f'{sys.argv[0]} serve', add_help=True)
+        p.add_argument('--bind', default='0.0.0.0', metavar='ADDRESS')
+        p.add_argument('--port', default='8000', metavar='PORT')
+        p.add_argument('--workers', default='2', metavar='N')
+        p.add_argument('--threads', default='4', metavar='N')
+        opts = p.parse_args(sys.argv[2:])
 
         class _NoWinch(logging.Filter):
             def filter(self, record):
@@ -109,8 +209,12 @@ def main() -> None:
 
         os.environ['AUTOPKG_MODE'] = 'server'
         from gunicorn.app.wsgiapp import run as gunicorn_run
-        sys.argv = [sys.argv[0], 'autopkgrunner.wsgi:application',
-                    '--bind', '0.0.0.0:8000', '--workers', '2']
+        sys.argv = [
+            sys.argv[0], 'autopkgrunner.wsgi:application',
+            '--bind', f'{opts.bind}:{opts.port}',
+            '--workers', opts.workers,
+            '--threads', opts.threads,
+        ]
         gunicorn_run()
     else:
         os.environ['AUTOPKG_MODE'] = 'manage'
