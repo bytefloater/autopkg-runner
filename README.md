@@ -155,13 +155,13 @@ Open `http://127.0.0.1:8000` and log in with the credentials shown. All configur
 
 | Command | Description |
 |-|-|
-| `manage.py setup` | One-shot initialisation: migrate, create defaults, generate admin account |
-| `manage.py serve` | Start the development server (`--network` to bind to all interfaces, `--port` to change port) |
-| `manage.py resetpassword` | Generate and set a new random password for the admin account |
-| `manage.py generate_vapid_keys` | Generate VAPID keys for WebPush notifications and store them in the database |
-| `manage.py install_sftp_deps` | Install macFUSE and sshfs via Homebrew (required for SFTP repository connections) |
-| `manage.py install_service_daemon --user <username>` | Install autopkg-runner as a macOS launchd system daemon (see [Running as a system service](#running-as-a-system-service)) |
-| `manage.py remove_service_daemon` | Unload and remove the installed launchd system daemon |
+| `autopkg-runner setup` | One-shot initialisation: migrate, create defaults, generate admin account |
+| `autopkg-runner serve` | Start the server (`--bind`, `--port`, `--workers`, `--threads`) |
+| `autopkg-runner resetpassword <user>` | Generate and set a new random password for a user account |
+| `autopkg-runner generate_vapid_keys` | Generate VAPID keys for WebPush notifications and store them in the database |
+| `autopkg-runner install_sftp_deps` | Install macFUSE and sshfs via Homebrew (required for SFTP repository connections) |
+| `autopkg-runner service_daemon --install --user <username>` | Install autopkg-runner as a macOS launchd system daemon (see [Running as a system service](#running-as-a-system-service)) |
+| `autopkg-runner service_daemon --remove` | Stop and remove the installed launchd system daemon |
 
 
 
@@ -181,11 +181,15 @@ All settings are stored in the database and managed through the **Configuration*
 
 ### Environment variables
 
-| Variable | Default | Description |
-|-||-|
-| `DJANGO_SECRET_KEY` | (auto-generated) | Django secret key — set a stable value in production; also used as the master key for encrypting stored credentials |
-| `DJANGO_DEBUG` | `true` | Set to `false` in production |
-| `DJANGO_ALLOWED_HOSTS` | `localhost 127.0.0.1` | Space-separated list of allowed hostnames |
+In the **`.app` bundle** these are set via the launchd plist at `~/Library/Application Support/com.bytefloater.autopkg-runner/com.bytefloater.autopkg-runner.plist`. `DJANGO_SECRET_KEY` is auto-generated on first run if absent. In **dev** they are read from a `.env` file in the project root.
+
+| Variable | Required | Default | Description |
+|-|-|-|-|
+| `DJANGO_SECRET_KEY` | Yes | *(auto-generated in bundle)* | Django cryptographic secret. Auto-generated and persisted on first bundle launch. In dev, set this in `.env`. Must be kept stable across restarts — changing it invalidates all sessions and CSRF tokens. |
+| `DJANGO_ALLOWED_HOSTS` | No | `localhost 127.0.0.1` | Space-separated list of hostnames the server will respond to. Add your machine's hostname or IP address here to allow access from other devices on the network, e.g. `DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 myserver.local 192.168.1.10`. |
+| `DJANGO_DEBUG` | No | `false` | Set to `true` to enable Django debug mode. Enables detailed error pages and disables several security hardening settings. Never enable in production. |
+| `DJANGO_HTTPS_REDIRECT` | No | `false` | Set to `true` to redirect all HTTP traffic to HTTPS and enable `Strict-Transport-Security` headers. Only enable if the server is behind a TLS-terminating reverse proxy. |
+| `DJANGO_HSTS_SECONDS` | No | `31536000` | Max-age for the `Strict-Transport-Security` header in seconds (default: 1 year). Only applies when `DJANGO_HTTPS_REDIRECT=true`. |
 
 
 
@@ -277,56 +281,91 @@ autopkg-runner can be installed as a macOS launchd system daemon that starts aut
 
 ### Prerequisites
 
-- The project must be located under `/opt/` (e.g. `/opt/autopkg-runner`). macOS TCC blocks daemon processes from accessing user-protected directories such as `~/Desktop`, `~/Documents`, and `~/Downloads`; `/opt/` is not subject to these restrictions.
-- All files under the project root must be owned by the user account the daemon will run as.
-- [gunicorn](https://gunicorn.org) must be installed in the Python environment being used (`pip3 install gunicorn`).
+- The `.app` bundle must be installed in `/Applications/` or `~/Applications/`. macOS TCC blocks system daemon processes from accessing user-protected directories (Desktop, Documents, Downloads, etc.) when launched from other locations.
+- All files under the app must be owned by the user account the daemon will run as.
 
 ```bash
-# Move the project into /opt/ if it is not already there
-sudo mv /path/to/autopkg-runner /opt/autopkg-runner
-sudo chown -R autopkg /opt/autopkg-runner
-
-# Install the daemon
-python3 manage.py install_service_daemon --user autopkg
+# Install the daemon (a macOS authentication dialog will appear)
+autopkg-runner service_daemon --install --user autopkg
 ```
 
 A macOS authentication dialog will appear to request administrator credentials for the privileged writes. Alternatively, run the command under `sudo` to skip the dialog.
 
-The command will:
-1. Validate the user account, project location, and file ownership
-2. Render a launchd plist configured to launch gunicorn with the specified options
+
+1. Validate the user account, app location, and TCC status
+2. Render a launchd plist configured to launch the server with the specified options
 3. Write the plist to `/Library/LaunchDaemons/` with the correct ownership and permissions
-4. Create `/var/log/autopkg-runner/` for server logs
-5. Load the service immediately via `launchctl`
+4. Create `/var/log/com.bytefloater.autopkg-runner/` for server logs
+5. Load the service immediately via `launchctl bootstrap system`
 
 ### Options
 
 | Flag | Default | Description |
 |-|-|-|
 | `--user <username>` | *(required)* | macOS user account the service process runs as |
-| `--bind <address>` | `127.0.0.1` | Address gunicorn binds to |
-| `--port <port>` | `8000` | Port gunicorn listens on |
-| `--workers <n>` | `1` | Number of gunicorn worker processes — keep at 1 to avoid duplicate scheduled runs |
+| `--bind <address>` | `127.0.0.1` | Address the server binds to |
+| `--port <port>` | `8000` | Port the server listens on |
+| `--workers <n>` | `1` | Number of worker processes |
 | `--threads <n>` | `8` | Number of threads per worker |
 
 ### Useful commands
 
 ```bash
-# Check whether the service is running
-launchctl list | grep autopkg-runner
+# Check service status
+launchctl print system/com.bytefloater.autopkg-runner
 
 # View server logs
-tail -f /var/log/autopkg-runner/server.log
+tail -f /var/log/com.bytefloater.autopkg-runner/server.log
 
 # Remove the service
-python3 manage.py remove_service_daemon
+autopkg-runner service_daemon --remove
 ```
+
+### Granting Permissions — do this before installing the service daemon
+
+macOS permission prompts (TCC dialogs) can only be shown to the user when a process is running in an interactive session with a logged-in user. The launchd system daemon runs headlessly in the system session, so **it can never show permission prompts** — any access that hasn't already been approved is silently blocked.
+
+**Before** installing the service daemon, run the application at least once from a Terminal window while logged in as the user who will own the daemon:
+
+```
+autopkg-runner serve
+```
+
+Then open the web UI and trigger a manual AutoPkg run. Approve every permission dialog that appears — typically:
+
+- **Full Disk Access** — grant in System Settings → Privacy & Security → Full Disk Access
+- **Local Network** — click Allow when prompted
+- **Remote volume access** — click Allow when AutoPkg first accesses a network share (SMB/AFP/NFS)
+
+Once all prompts have been approved and a test run completes successfully, install the service daemon:
+
+```
+autopkg-runner service_daemon --install --user <username>
+```
+
+The daemon will inherit the approved permissions and operate without further prompts.
+
+> **Note for MDM deployments:** TCC permissions can be pre-granted via a `PrivacyPreferencesPolicyControl` configuration profile deployed through your MDM (Jamf, Mosyle, Kandji, etc.), bypassing the need for interactive approval. This only works on MDM-supervised devices.
 
 ### Full Disk Access
 
 When running as a launchd system daemon, the service operates in a system session with stricter macOS security policy than a normal user session. Both Python interpreters listed in [Requirements](#requirements) must be granted Full Disk Access, or AutoPkg recipes will fail at runtime with a permission error.
 
+### Local Network Access
 
+On macOS 11 and later, accessing local network services (including Bonjour/mDNS discovery used to locate shared repositories) requires explicit user approval. AutoPkg Runner will prompt for this permission automatically on first launch. If the prompt does not appear, check **System Settings → Privacy & Security → Local Network**.
+
+### Network Volume Access
+
+macOS gates access to SMB, AFP, and NFS mounts under a separate TCC permission — **Full Disk Access does not cover network volumes**. These are treated as a distinct category because the data traverses the network. When AutoPkg Runner first attempts to read from or write to a network-mounted share, macOS will show a prompt: *"AutoPkg Runner would like to access data on a remote volume."* Approve it to allow recipe syncing and package staging on network shares.
+
+This prompt fires on first access of a mounted network volume, not at startup. If it was dismissed or denied, reset it with:
+
+```
+tccutil reset SystemPolicyNetworkVolumes com.bytefloater.autopkg-runner
+```
+
+Then trigger a run in the Web Interface to re-trigger the prompt.
 
 ## License
 
