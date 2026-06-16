@@ -176,10 +176,24 @@ LOGGING = {
             'style': '{',
         },
     },
+    'filters': {
+        # Django logs DisallowedHost at ERROR with exc_info=True, producing a
+        # full traceback.  This filter strips exc_info so only the one-line
+        # message is emitted.
+        'strip_traceback': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda r: [setattr(r, 'exc_info', None), setattr(r, 'exc_text', None), True][-1],
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
+        },
+        'console_no_tb': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'filters': ['strip_traceback'],
         },
     },
     'loggers': {
@@ -193,9 +207,8 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        # Demote DisallowedHost from ERROR+traceback to a one-line WARNING.
         'django.security.DisallowedHost': {
-            'handlers': ['console'],
+            'handlers': ['console_no_tb'],
             'level': 'WARNING',
             'propagate': False,
         },
