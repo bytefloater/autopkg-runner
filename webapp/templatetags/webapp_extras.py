@@ -180,9 +180,15 @@ _RESULT_FIELD_KEYS = {
     'recipe_id':          'RESULT_FIELD_RECIPE_ID',
     'traceback':          'RESULT_FIELD_TRACEBACK',
     'pkg_path':           'RESULT_FIELD_PKG_PATH',
+    'pkg_repo_path':      'RESULT_FIELD_PKG_REPO_PATH',
     'download_path':      'RESULT_FIELD_DOWNLOAD_PATH',
     'warning':            'RESULT_FIELD_WARNING',
     'deprecation:name':   'RESULT_FIELD_DEPRECATION_NAME',
+    'name':               'RESULT_FIELD_NAME',
+    'catalogs':           'RESULT_FIELD_CATALOGS',
+    'icon_repo_path':     'RESULT_FIELD_ICON_REPO_PATH',
+    'pkginfo_path':       'RESULT_FIELD_PKGINFO_PATH',
+    'version':            'RESULT_FIELD_VERSION',
 }
 
 
