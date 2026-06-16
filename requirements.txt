@@ -13,3 +13,4 @@ pywebpush>=2.0
 gunicorn>=23.0.0
 whitenoise>=6.0
 pip-system-certs
+certifi

@@ -16,8 +16,12 @@ import urllib.error
 import urllib.request
 from typing import Optional
 
+import logging
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
+
+logger = logging.getLogger('autopkg_runner')
 
 
 def _run(*args: str, timeout: int = 5) -> str:
@@ -29,8 +33,14 @@ def _run(*args: str, timeout: int = 5) -> str:
             text=True,
             timeout=timeout,
         )
+        if result.returncode != 0 and result.stderr:
+            logger.debug('about: %s exited %d: %s', args[0], result.returncode, result.stderr.strip())
         return result.stdout.strip()
-    except Exception:
+    except FileNotFoundError:
+        logger.debug('about: command not found: %s', args[0])
+        return ''
+    except Exception as exc:
+        logger.warning('about: failed to run %s: %s: %s', args[0], type(exc).__name__, exc)
         return ''
 
 
@@ -42,15 +52,22 @@ def _autopkg_version(bin_path: str) -> Optional[str]:
 
 def _autopkg_latest_release() -> Optional[str]:
     """Fetch the latest AutoPkg release tag from GitHub. Returns None on failure."""
+    import ssl
+    import certifi
     url = 'https://api.github.com/repos/autopkg/autopkg/releases/latest'
     try:
+        # Use certifi's CA bundle explicitly. pip-system-certs patches certifi.where()
+        # on macOS to return the system keychain path, so this works in both frozen
+        # bundles and dev environments without trusting the default SSL context which
+        # may not find system certs in a PyInstaller bundle.
+        ctx = ssl.create_default_context(cafile=certifi.where())
         req = urllib.request.Request(url, headers={'User-Agent': 'autopkg-runner/3.0.0'})
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
             data = json.loads(resp.read())
             tag = data.get('tag_name', '')
-            # Tags are typically 'v2.7.2' - strip leading 'v'
             return tag.lstrip('v') or None
-    except Exception:
+    except Exception as exc:
+        logger.warning('about: autopkg update check failed: %s: %s', type(exc).__name__, exc)
         return None
 
 
@@ -73,8 +90,10 @@ def _munki_version() -> Optional[str]:
         data = plistlib.loads(pathlib.Path(plist_path).read_bytes())
         v = data.get('ManagedInstallVersion', '')
         return v or None
-    except Exception:
+    except FileNotFoundError:
         pass
+    except Exception as exc:
+        logger.warning('about: failed to read Munki plist: %s: %s', type(exc).__name__, exc)
 
     return None
 

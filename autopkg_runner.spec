@@ -29,6 +29,7 @@ datas += collect_data_files('django')
 datas += collect_data_files('rest_framework')
 datas += collect_data_files('django_apscheduler')
 datas += collect_data_files('whitenoise')
+datas += collect_data_files('certifi')  # CA bundle for TLS in frozen bundle
 
 # Project assets
 # Strip any SQLite files collected by third-party hooks — the database lives
