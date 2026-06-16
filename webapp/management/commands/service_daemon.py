@@ -33,7 +33,7 @@ from __info__ import BUNDLE_ID, APP_NAME
 
 PLIST_LABEL   = BUNDLE_ID
 PLIST_DEST    = Path('/Library/LaunchDaemons') / f'{PLIST_LABEL}.plist'
-LOG_DIR       = Path(f'/var/log/{APP_NAME}')
+LOG_DIR       = Path(f'/var/log/{PLIST_LABEL}')
 PROJECT_ROOT  = Path(__file__).resolve().parents[3]
 TEMPLATE_PATH = PROJECT_ROOT / 'resources' / f'{PLIST_LABEL}.plist'
 
@@ -112,20 +112,32 @@ class Command(BaseCommand):
         self._validate_port(port)
         self._validate_workers(workers)
         self._validate_threads(threads)
-        self._validate_project_location()
+        self._validate_project_location(user)
         self._validate_project_ownership(user)
 
-        gunicorn_prefix = self._find_gunicorn()
-        content = self._render_plist(user=user, bind=bind, port=port,
-                                     workers=workers, threads=threads,
-                                     gunicorn_prefix=gunicorn_prefix)
+        frozen = getattr(sys, 'frozen', False)
+        if frozen:
+            prog_args = [sys.executable, 'serve',
+                         '--bind', bind, '--port', port,
+                         '--workers', workers, '--threads', threads]
+        else:
+            gunicorn_prefix = self._find_gunicorn()
+            prog_args = gunicorn_prefix + [
+                '--chdir', str(PROJECT_ROOT),
+                'autopkgrunner.wsgi:application',
+                '--bind', f'{bind}:{port}',
+                '--workers', str(workers),
+                '--threads', str(threads),
+                '--timeout', '120',
+            ]
+
+        content = self._render_plist(user=user, prog_args=prog_args)
 
         self.stdout.write('')
         self.stdout.write('  Service configuration')
         self.stdout.write(f'  ├─ label    : {PLIST_LABEL}')
         self.stdout.write(f'  ├─ user     : {user}')
-        self.stdout.write(f'  ├─ project  : {PROJECT_ROOT}')
-        self.stdout.write(f'  ├─ gunicorn : {" ".join(gunicorn_prefix)}')
+        self.stdout.write(f'  ├─ binary   : {prog_args[0]}')
         self.stdout.write(f'  ├─ bind     : {bind}:{port}')
         self.stdout.write(f'  ├─ workers  : {workers}')
         self.stdout.write(f'  ├─ threads  : {threads}')
@@ -141,15 +153,17 @@ class Command(BaseCommand):
             )
             self._install_escalated(content, user)
 
+        from __info__ import APP_NAME
+        runner = APP_NAME if frozen else 'python run.py'
         self.stdout.write(self.style.SUCCESS(
             f'\n  ✓ Service installed and started.\n'
             f'\n  Plist   : {PLIST_DEST}'
             f'\n  Logs    : {LOG_DIR}/server.log'
             f'\n'
             f'\n  Useful commands:'
-            f'\n    Status  : launchctl list | grep autopkg-runner'
-            f'\n    Stop    : launchctl unload {PLIST_DEST}  (requires admin)'
-            f'\n    Remove  : python3 manage.py service_daemon --remove'
+            f'\n    Status  : launchctl print system/{PLIST_LABEL}'
+            f'\n    Stop    : launchctl bootout system/{PLIST_LABEL}  (requires admin)'
+            f'\n    Remove  : {runner} service_daemon --remove'
         ))
 
     def _install_direct(self, content: str, user: str):
@@ -157,23 +171,25 @@ class Command(BaseCommand):
 
         if PLIST_DEST.exists():
             self.stdout.write(self.style.WARNING(
-                '  Existing installation found — unloading before reinstalling…'
+                '  Existing installation found — stopping before reinstalling…'
             ))
-            subprocess.run(['launchctl', 'unload', str(PLIST_DEST)],
-                           capture_output=True)
+            subprocess.run(
+                ['launchctl', 'bootout', f'system/{PLIST_LABEL}'],
+                capture_output=True,
+            )
 
         PLIST_DEST.write_text(content)
         os.chmod(PLIST_DEST, 0o644)
         shutil.chown(PLIST_DEST, user='root', group='wheel')
 
         result = subprocess.run(
-            ['launchctl', 'load', str(PLIST_DEST)],
+            ['launchctl', 'bootstrap', 'system', str(PLIST_DEST)],
             capture_output=True, text=True,
         )
         if result.returncode != 0:
             PLIST_DEST.unlink(missing_ok=True)
             raise CommandError(
-                f'launchctl load failed (exit {result.returncode}):\n'
+                f'launchctl bootstrap failed (exit {result.returncode}):\n'
                 f'{result.stderr.strip()}\n\n'
                 'The plist has been removed. Fix the error and try again.'
             )
@@ -188,17 +204,12 @@ class Command(BaseCommand):
                 f.write(content)
                 tmp_plist = f.name
 
-            handle_existing = (
-                f"if launchctl list | grep -q '{PLIST_LABEL}' 2>/dev/null; then\n"
-                f"  launchctl unload '{PLIST_DEST}' 2>/dev/null || true\n"
-                f"fi"
-            )
             script_body = '\n'.join([
                 '#!/bin/bash',
                 "cd /",
                 'set -e',
                 '',
-                handle_existing,
+                f"launchctl bootout system/{PLIST_LABEL} 2>/dev/null || true",
                 '',
                 f"mkdir -p '{LOG_DIR}'",
                 f"chmod 755 '{LOG_DIR}'",
@@ -208,7 +219,7 @@ class Command(BaseCommand):
                 f"chmod 644 '{PLIST_DEST}'",
                 f"chown root:wheel '{PLIST_DEST}'",
                 '',
-                f"launchctl load '{PLIST_DEST}'",
+                f"launchctl bootstrap system '{PLIST_DEST}'",
                 '',
                 f"rm -f '{tmp_plist}'",
             ])
@@ -260,18 +271,18 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             '\n  ✓ Service removed.\n'
-            '\n  Note: log files in /var/log/autopkg-runner/ were left in place.'
+            f'\n  Note: log files in {LOG_DIR}/ were left in place.'
         ))
 
     def _remove_direct(self):
         self.stdout.write('  Stopping service…')
         result = subprocess.run(
-            ['launchctl', 'unload', str(PLIST_DEST)],
+            ['launchctl', 'bootout', f'system/{PLIST_LABEL}'],
             capture_output=True, text=True,
         )
         if result.returncode != 0:
             self.stdout.write(self.style.WARNING(
-                f'  launchctl unload returned non-zero '
+                f'  launchctl bootout returned non-zero '
                 f'(service may already be stopped): {result.stderr.strip()}'
             ))
         else:
@@ -286,7 +297,7 @@ class Command(BaseCommand):
             'cd /',
             'set -e',
             '',
-            f"launchctl unload '{PLIST_DEST}' 2>/dev/null || true",
+            f"launchctl bootout system/{PLIST_LABEL} 2>/dev/null || true",
             '',
             f"rm -f '{PLIST_DEST}'",
         ])
@@ -390,20 +401,96 @@ class Command(BaseCommand):
                 f"Invalid --threads value '{threads}'. Must be a positive integer."
             )
 
-    def _validate_project_location(self):
-        try:
-            PROJECT_ROOT.relative_to(Path('/opt'))
-        except ValueError:
-            raise CommandError(
-                f"Project root '{PROJECT_ROOT}' is not under /opt/.\n"
-                '\n'
-                '  macOS TCC blocks daemon processes from reading ~/Desktop,\n'
-                '  ~/Documents, ~/Downloads, and similar protected locations.\n'
-                '  Move the project to /opt/ before installing the service, e.g.:\n'
-                '\n'
-                f'    sudo mv {PROJECT_ROOT} /opt/autopkg-runner\n'
-                f'    sudo chown -R <username> /opt/autopkg-runner\n'
-            )
+    def _validate_project_location(self, user: str):
+        """Verify the project root won't be blocked by macOS TCC at runtime.
+
+        A launchd system daemon runs headlessly and cannot prompt for consent,
+        so it is blocked from reading TCC-protected directories (~/Desktop,
+        ~/Documents, ~/Downloads, ~/Movies, ~/Music, ~/Pictures) unless Full
+        Disk Access has been explicitly granted.
+
+        Safe locations (/Applications/, /opt/, /usr/local/, etc.) pass without
+        a TCC database check.
+        """
+        protected = self._tcc_protected_paths()
+        blocking = next(
+            (p for p in protected if PROJECT_ROOT.is_relative_to(p)), None
+        )
+        if blocking is None:
+            return  # path is outside all TCC-protected directories
+
+        # Path is TCC-protected — check whether FDA has already been granted.
+        if self._has_full_disk_access():
+            self.stdout.write(self.style.WARNING(
+                f'\n  ⚠ Project is under a TCC-protected directory ({blocking}).\n'
+                '    Full Disk Access is granted — the daemon should work.\n'
+                '    Consider moving to /Applications/ or /opt/ for a cleaner setup.\n'
+            ))
+            return
+
+        raise CommandError(
+            f"Project root '{PROJECT_ROOT}' is inside a TCC-protected directory:\n"
+            f'  {blocking}\n'
+            '\n'
+            '  macOS TCC blocks system daemon processes from reading protected\n'
+            '  user directories (Desktop, Documents, Downloads, Movies, Music,\n'
+            '  Pictures) unless Full Disk Access is explicitly granted.\n'
+            '\n'
+            '  Options:\n'
+            '  1. Move the project to a safe location (recommended):\n'
+            f'       sudo mv {PROJECT_ROOT} /Applications/autopkg-runner\n'
+            f'       sudo chown -R {user} /Applications/autopkg-runner\n'
+            '  2. Grant Full Disk Access to the app, then re-run:\n'
+            '       System Settings › Privacy & Security › Full Disk Access\n'
+        )
+
+    @staticmethod
+    def _tcc_protected_paths() -> list[Path]:
+        """Return the TCC-protected subdirectories for every real user account."""
+        _PROTECTED_SUBDIRS = (
+            'Desktop', 'Documents', 'Downloads',
+            'Movies', 'Music', 'Pictures',
+        )
+        paths: list[Path] = []
+        for entry in pwd.getpwall():
+            if entry.pw_uid < 500:
+                continue  # skip system accounts
+            home = Path(entry.pw_dir)
+            for sub in _PROTECTED_SUBDIRS:
+                paths.append(home / sub)
+        return paths
+
+    @staticmethod
+    def _has_full_disk_access() -> bool:
+        """Check the TCC database for a Full Disk Access grant for this app."""
+        import sqlite3
+        from __info__ import BUNDLE_ID
+
+        # Candidates: bundle ID (frozen .app) or the Python executable (dev).
+        clients = [BUNDLE_ID, sys.executable]
+        tcc_dbs = [
+            Path('/Library/Application Support/com.apple.TCC/TCC.db'),
+            Path.home() / 'Library/Application Support/com.apple.TCC/TCC.db',
+        ]
+        for db_path in tcc_dbs:
+            if not db_path.exists():
+                continue
+            try:
+                conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True)
+                for client in clients:
+                    row = conn.execute(
+                        "SELECT 1 FROM access "
+                        "WHERE service='kTCCServiceSystemPolicyAllFiles' "
+                        "AND client=? AND auth_value=2",
+                        (client,),
+                    ).fetchone()
+                    if row:
+                        conn.close()
+                        return True
+                conn.close()
+            except (sqlite3.OperationalError, PermissionError, OSError):
+                continue
+        return False
 
     def _validate_project_ownership(self, user: str):
         uid = pwd.getpwnam(user).pw_uid
@@ -455,26 +542,19 @@ class Command(BaseCommand):
             '  Install it with:  pip install gunicorn\n'
         )
 
-    def _render_plist(self, *, user, bind, port, workers, threads,
-                      gunicorn_prefix: list[str]) -> str:
+    def _render_plist(self, *, user: str, prog_args: list[str]) -> str:
         if not TEMPLATE_PATH.exists():
             raise CommandError(
                 f'Plist template not found: {TEMPLATE_PATH}\n'
                 'Ensure the resources/ directory was not removed from the project.'
             )
 
-        prog_args = gunicorn_prefix + [
-            '--chdir', str(PROJECT_ROOT),
-            'autopkgrunner.wsgi:application',
-            '--bind', f'{bind}:{port}',
-            '--workers', str(workers),
-            '--threads', str(threads),
-            '--timeout', '120',
-        ]
         arg_lines = '\n\t\t'.join(f'<string>{a}</string>' for a in prog_args)
 
         content = TEMPLATE_PATH.read_text()
+        content = content.replace('{{bundle_id}}', PLIST_LABEL)
         content = content.replace('{{run_as_user}}', user)
         content = content.replace('{{working_dir}}', str(PROJECT_ROOT))
         content = content.replace('{{program_args}}', arg_lines)
+        content = content.replace('{{environment_vars}}', '')
         return content
