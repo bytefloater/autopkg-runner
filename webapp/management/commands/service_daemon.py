@@ -276,17 +276,22 @@ class Command(BaseCommand):
 
     def _remove_direct(self):
         self.stdout.write('  Stopping service…')
-        result = subprocess.run(
-            ['launchctl', 'bootout', f'system/{PLIST_LABEL}'],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0:
-            self.stdout.write(self.style.WARNING(
-                f'  launchctl bootout returned non-zero '
-                f'(service may already be stopped): {result.stderr.strip()}'
-            ))
-        else:
+        stopped = False
+        for domain in self._launchd_domains():
+            result = subprocess.run(
+                ['launchctl', 'bootout', f'{domain}/{PLIST_LABEL}'],
+                capture_output=True, text=True,
+            )
+            if result.returncode == 0:
+                stopped = True
+        if stopped:
             self.stdout.write('  Service stopped.')
+        else:
+            self.stdout.write(self.style.WARNING(
+                '  Service may already be stopped (bootout returned non-zero for all domains).'
+            ))
+
+        self._kill_stale_workers()
 
         self.stdout.write(f'  Removing {PLIST_DEST}…')
         PLIST_DEST.unlink()
@@ -297,7 +302,16 @@ class Command(BaseCommand):
             'cd /',
             'set -e',
             '',
+            f"# Stop in system domain (new installs via bootstrap system).",
             f"launchctl bootout system/{PLIST_LABEL} 2>/dev/null || true",
+            '',
+            f"# Fallback: gui domain (legacy installs via launchctl load).",
+            f"for uid in $(dscl . -list /Users UniqueID 2>/dev/null | awk '$2 >= 500 {{print $2}}'); do",
+            f"  launchctl bootout \"gui/$uid/{PLIST_LABEL}\" 2>/dev/null || true",
+            f"done",
+            '',
+            "# Force-kill any orphaned gunicorn workers that bootout didn't reach.",
+            "pkill -KILL -f 'autopkgrunner.wsgi:application' 2>/dev/null || true",
             '',
             f"rm -f '{PLIST_DEST}'",
         ])
@@ -328,6 +342,41 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     # Shared helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _launchd_domains() -> list[str]:
+        """Return all launchd domains to attempt bootout against.
+
+        New installs use 'bootstrap system' → system domain.
+        Legacy installs used 'launchctl load' which registered in the
+        gui/<uid> domain of the calling user's session instead.
+        """
+        domains = ['system']
+        result = subprocess.run(
+            ['dscl', '.', '-list', '/Users', 'UniqueID'],
+            capture_output=True, text=True,
+        )
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) == 2 and parts[1].isdigit() and int(parts[1]) >= 500:
+                domains.append(f'gui/{parts[1]}')
+        return domains
+
+    def _kill_stale_workers(self) -> None:
+        """SIGKILL any gunicorn master/workers left behind after bootout.
+
+        launchctl bootout only kills processes it is currently tracking.
+        Legacy-API installs (launchctl load) left processes untracked, so
+        bootout removes the registration without sending any signal.  We
+        target processes by the wsgi app argument, which is unique to the
+        server and absent from management command processes.
+        """
+        result = subprocess.run(
+            ['pkill', '-KILL', '-f', 'autopkgrunner.wsgi:application'],
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            self.stdout.write('  Cleaned up stale worker processes.')
 
     @staticmethod
     def _run_via_osascript(script_path: str, prompt: str):
