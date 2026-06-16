@@ -46,6 +46,18 @@ class WebappConfig(AppConfig):
         # schedulers firing concurrently.  When --noreload is in argv there is
         # only a single process, so we skip the RUN_MAIN check entirely.
 
+        # AUTOPKG_MODE is set by run.py: 'server' for serve, 'manage' for everything else.
+        # Falls back to argv inspection for direct manage.py invocations.
+        autopkg_mode = os.environ.get('AUTOPKG_MODE')
+        if autopkg_mode == 'manage':
+            return
+        if autopkg_mode == 'server':
+            # Services are started in each gunicorn worker via the post_fork hook
+            # in autopkgrunner/gunicorn_conf.py.  Starting threads here (in the
+            # master process) would cause macOS ObjC fork-safety crashes when
+            # gunicorn forks workers.
+            return
+
         via_manage = sys.argv and os.path.basename(sys.argv[0]) in ('manage.py', 'manage')
 
         if via_manage:
@@ -70,14 +82,28 @@ class WebappConfig(AppConfig):
         threading.Thread(target=self._start_services, daemon=True).start()
 
     def _start_services(self):
-        """Start the APScheduler, clean up orphaned runs, and pre-warm caches.
+        """Start services for direct manage.py serving (runserver / --noreload).
         Runs in a daemon thread so it executes after the app registry is fully
         initialised."""
         from webapp.scheduler import start_scheduler
         from webapp.views.recipes import _start_cache_build
         start_scheduler()
         self._mark_interrupted_runs()
-        _start_cache_build()  # pre-warm recipe list cache before first request
+        _start_cache_build()
+
+    def _start_services_in_worker(self):
+        """Start services inside a gunicorn worker (called from post_fork hook).
+
+        All workers run the one-shot startup tasks.  Only the worker that wins
+        the scheduler lock starts APScheduler, preventing duplicate scheduled
+        runs when workers > 1.
+        """
+        from webapp.scheduler import acquire_scheduler_lock, start_scheduler
+        from webapp.views.recipes import _start_cache_build
+        self._mark_interrupted_runs()
+        _start_cache_build()
+        if acquire_scheduler_lock():
+            start_scheduler()
 
     def _mark_interrupted_runs(self):
         """

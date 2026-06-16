@@ -183,6 +183,12 @@ def main() -> None:
         sys.exit(1)
 
     if cmd == 'serve':
+        # Must be set before _check_setup_or_exit() calls django.setup(), which
+        # triggers WebappConfig.ready().  ready() checks AUTOPKG_MODE to decide
+        # whether to start background services; if the var isn't set yet it will
+        # start the scheduler in the master process before gunicorn forks workers.
+        os.environ['AUTOPKG_MODE'] = 'server'
+
         # Check setup before starting gunicorn. If the check runs inside wsgi.py
         # instead, it fires in each worker process — gunicorn then sees the worker
         # exit and spawns a replacement, creating an infinite restart loop.
@@ -206,11 +212,17 @@ def main() -> None:
         # runs. setup() replaces handlers but leaves logger-level filters intact,
         # so this survives into the master process and all forked workers.
         logging.getLogger('gunicorn.error').addFilter(_NoWinch())
-
-        os.environ['AUTOPKG_MODE'] = 'server'
+        # Defence-in-depth for subprocess.run() calls from gthread worker threads:
+        # if a worker thread has initialised ObjC and another thread calls
+        # subprocess.run() (which does fork+exec), the subprocess child would
+        # crash without this flag.  The master→worker fork is safe without it
+        # (the post_fork hook keeps the master thread-free), but subprocess calls
+        # from workers are not, so we keep it here.
+        os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
         from gunicorn.app.wsgiapp import run as gunicorn_run
         sys.argv = [
             sys.argv[0], 'autopkgrunner.wsgi:application',
+            '--config', 'python:autopkgrunner.gunicorn_conf',
             '--bind', f'{opts.bind}:{opts.port}',
             '--workers', opts.workers,
             '--threads', opts.threads,

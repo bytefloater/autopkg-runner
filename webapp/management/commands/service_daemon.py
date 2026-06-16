@@ -117,6 +117,8 @@ class Command(BaseCommand):
 
         frozen = getattr(sys, 'frozen', False)
         if frozen:
+            # Frozen bundle: run.py handles gunicorn config injection (including
+            # --config python:autopkgrunner.gunicorn_conf) transparently.
             prog_args = [sys.executable, 'serve',
                          '--bind', bind, '--port', port,
                          '--workers', workers, '--threads', threads]
@@ -124,6 +126,7 @@ class Command(BaseCommand):
             gunicorn_prefix = self._find_gunicorn()
             prog_args = gunicorn_prefix + [
                 '--chdir', str(PROJECT_ROOT),
+                '--config', 'python:autopkgrunner.gunicorn_conf',
                 'autopkgrunner.wsgi:application',
                 '--bind', f'{bind}:{port}',
                 '--workers', str(workers),
@@ -600,10 +603,12 @@ class Command(BaseCommand):
 
         arg_lines = '\n\t\t'.join(f'<string>{a}</string>' for a in prog_args)
 
+        env_vars = ''
+
         content = TEMPLATE_PATH.read_text()
         content = content.replace('{{bundle_id}}', PLIST_LABEL)
         content = content.replace('{{run_as_user}}', user)
         content = content.replace('{{working_dir}}', str(PROJECT_ROOT))
         content = content.replace('{{program_args}}', arg_lines)
-        content = content.replace('{{environment_vars}}', '')
+        content = content.replace('{{environment_vars}}', env_vars)
         return content
