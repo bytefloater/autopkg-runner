@@ -165,7 +165,15 @@ app = BUNDLE(
         # build.sh injects Assets.car and sets this key post-build; declaring it
         # here ensures Info.plist is valid even if that step is skipped.
         'CFBundleIconName': 'AppIcon',
-        # Privacy usage strings — required for apps accessing restricted paths
+        # Privacy usage strings — required for apps accessing restricted resources.
+        # NSLocalNetworkUsageDescription is required on macOS 11+ for the prompt
+        # that appears when the app first sends multicast traffic (mDNS/Bonjour
+        # via zeroconf).  Without this key the prompt is suppressed and local
+        # network access is silently blocked.
+        'NSLocalNetworkUsageDescription': (
+            'AutoPkg Runner uses local network discovery to find shared software '
+            'repositories and distribution points on your network.'
+        ),
         'NSSystemAdministrationUsageDescription': (
             'AutoPkg Runner requires Full Disk Access to read AutoPkg receipts '
             'and managed software caches.'
