@@ -216,6 +216,57 @@
     {% endif %}
     {% endwith %}
 
+  {% elif result.result_type == 'failure' %}
+    {% if result.data %}
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      {% for row in result.data %}
+      <div x-data="{ open: false }">
+        <button type="button" @click="open = !open"
+                class="w-full flex items-center gap-3 px-4 py-[11px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75 text-left">
+          <span class="flex-shrink-0 text-red-500">{% lucide "circle-x" "w-5 h-5" %}</span>
+          <span class="flex-1 min-w-0 text-[16px] font-mono text-gray-900 dark:text-white truncate">{{ row.recipe_id|default:row.recipe }}</span>
+          <span class="text-gray-300 dark:text-gray-600 flex-shrink-0 transition-transform duration-150" :class="open ? 'rotate-90' : ''">
+            {% lucide "chevron-right" "w-4 h-4" %}
+          </span>
+        </button>
+        <div x-show="open"
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             class="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-[#38383a]">
+          {% if row.message %}
+          <div class="pt-3">
+            <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1">{% result_field_label 'message' 'failure' t %}</p>
+            <p class="text-[15px] text-gray-800 dark:text-gray-200">{{ row.message }}</p>
+          </div>
+          {% endif %}
+          {% if row.recipe_id %}
+          <div>
+            <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">{% result_field_label 'recipe_id' 'failure' t %}</p>
+            <p class="text-[13px] font-mono text-gray-600 dark:text-gray-400 break-all">{{ row.recipe_id }}</p>
+          </div>
+          {% endif %}
+          {% if row.recipe and row.recipe != row.recipe_id %}
+          <div>
+            <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-0.5">{% result_field_label 'recipe' 'failure' t %}</p>
+            <p class="text-[13px] font-mono text-gray-600 dark:text-gray-400 break-all">{{ row.recipe }}</p>
+          </div>
+          {% endif %}
+          {% if row.traceback %}
+          <div>
+            <p class="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1">{% result_field_label 'traceback' 'failure' t %}</p>
+            <pre class="text-[12px] font-mono text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">{{ row.traceback }}</pre>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl px-4 py-3">
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
+    </div>
+    {% endif %}
+
   {% else %}
     {# Table-style list view for all other result types #}
     <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">

@@ -69,16 +69,16 @@
         {# Stage name #}
         <span class="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ stage.name }}</span>
 
+        {# Duration #}
+        {% if stage.started_at and stage.completed_at %}
+        <span class="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ stage.started_at|duration:stage.completed_at }}</span>
+        {% endif %}
+
         {# Status badge #}
         <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
               :class="stageBadgeClass(stageStatuses['{{ stage.name }}'] || '{{ stage.status }}')">
           <span x-text="statusLabel(stageStatuses['{{ stage.name }}'] || '{{ stage.status }}')"></span>
         </span>
-
-        {# Duration #}
-        {% if stage.started_at and stage.completed_at %}
-        <span class="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums ml-1">{{ stage.started_at|duration:stage.completed_at }}</span>
-        {% endif %}
       </button>
 
       {# Log body #}
@@ -217,7 +217,7 @@
     {% if result.result_type == 'munki_import' %}
       {% with rows=munki_import_rows|lookup:result.pk %}
       {% if rows %}
-      <div x-data="{ modal: null, showModal: false }" x-on:keydown.escape.window="showModal = false; setTimeout(() => modal = null, 100)">
+      <div x-data="{ modal: null, showModal: false }" x-on:keydown.escape.window="showModal = false; setTimeout(() => modal = null, 100)" x-effect="document.body.classList.toggle('overflow-hidden', showModal)">
 
         {# List #}
         <div class="divide-y divide-gray-100 dark:divide-slate-800">
@@ -291,26 +291,22 @@
             </div>
 
             {# Path rows #}
-            <div class="space-y-3">
-              <template x-if="modal && modal.pkginfo_path">
-                <div>
-                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-0.5">{% result_field_label 'pkginfo_path' 'munki_import' t %}</p>
+            <template x-if="modal">
+              <div class="flex flex-col gap-3">
+                <div x-show="modal.pkginfo_path">
+                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">{% result_field_label 'pkginfo_path' 'munki_import' t %}</p>
                   <p class="text-xs font-mono text-gray-700 dark:text-gray-300 break-all" x-text="modal.pkginfo_path"></p>
                 </div>
-              </template>
-              <template x-if="modal && modal.pkg_repo_path">
-                <div>
-                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-0.5">{% result_field_label 'pkg_repo_path' 'munki_import' t %}</p>
+                <div x-show="modal.pkg_repo_path">
+                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">{% result_field_label 'pkg_repo_path' 'munki_import' t %}</p>
                   <p class="text-xs font-mono text-gray-700 dark:text-gray-300 break-all" x-text="modal.pkg_repo_path"></p>
                 </div>
-              </template>
-              <template x-if="modal && modal.icon_repo_path">
-                <div>
-                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-0.5">{% result_field_label 'icon_repo_path' 'munki_import' t %}</p>
+                <div x-show="modal.icon_repo_path">
+                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">{% result_field_label 'icon_repo_path' 'munki_import' t %}</p>
                   <p class="text-xs font-mono text-gray-700 dark:text-gray-300 break-all" x-text="modal.icon_repo_path"></p>
                 </div>
-              </template>
-            </div>
+              </div>
+            </template>
 
           </div>
         </div>
@@ -320,6 +316,83 @@
       <p class="px-4 py-3 text-xs text-gray-400">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
       {% endif %}
       {% endwith %}
+
+    {% elif result.result_type == 'failure' %}
+      {% if result.data %}
+      <div x-data="{ modal: null, showModal: false }" x-on:keydown.escape.window="showModal = false; setTimeout(() => modal = null, 100)" x-effect="document.body.classList.toggle('overflow-hidden', showModal)">
+
+        {# List — one row per failure, keyed by recipe identifier #}
+        <div class="divide-y divide-gray-100 dark:divide-slate-800">
+          {% for row in result.data %}
+          <div class="flex items-center gap-3 pl-4 pr-4 py-2.5">
+            {# Recipe identifier #}
+            <span class="flex-1 min-w-0 text-sm font-mono text-gray-800 dark:text-gray-200 truncate">{{ row.recipe_id|default:row.recipe }}</span>
+            {# View details #}
+            <button @click="modal = {{ row|json_encode }}; showModal = true"
+                    class="flex-shrink-0 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              {{ t.RUN_DETAIL_VIEW.ACTION_VIEW_DETAILS }}
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+
+        {# Details modal — wider than imports modal to accommodate traceback #}
+        <div x-show="showModal" x-cloak
+             class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+             x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+               @click="showModal = false; setTimeout(() => modal = null, 75)"></div>
+          <div class="relative w-full max-w-2xl max-h-[80vh] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700"
+               x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+               x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+
+            {# Header #}
+            <div class="flex items-center gap-3 px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate font-mono" x-text="modal ? (modal.recipe_id || modal.recipe || '') : ''"></h3>
+              </div>
+              <button @click="showModal = false; setTimeout(() => modal = null, 75)"
+                      class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0">
+                {% lucide "x" "w-4 h-4" %}
+              </button>
+            </div>
+
+            {# Scrollable body #}
+            <div class="overflow-y-auto p-6">
+              <template x-if="modal">
+                <div class="flex flex-col gap-5">
+
+                  <div x-show="modal.message">
+                    <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">{% result_field_label 'message' 'failure' t %}</p>
+                    <p class="text-sm text-gray-800 dark:text-gray-200" x-text="modal.message"></p>
+                  </div>
+
+                  <div x-show="modal.recipe_id">
+                    <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">{% result_field_label 'recipe_id' 'failure' t %}</p>
+                    <p class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all" x-text="modal.recipe_id"></p>
+                  </div>
+
+                  <div x-show="modal.recipe && modal.recipe !== modal.recipe_id">
+                    <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">{% result_field_label 'recipe' 'failure' t %}</p>
+                    <p class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all" x-text="modal.recipe"></p>
+                  </div>
+
+                  <div x-show="modal.traceback">
+                    <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">{% result_field_label 'traceback' 'failure' t %}</p>
+                    <pre class="text-sm font-mono text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all" x-text="modal.traceback"></pre>
+                  </div>
+
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      {% else %}
+      <p class="px-4 py-3 text-xs text-gray-400">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
+      {% endif %}
 
     {% else %}
       {# Table view for all other result types #}
