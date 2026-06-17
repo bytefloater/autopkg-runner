@@ -42,7 +42,7 @@
   <main class="max-w-2xl mx-auto px-4 py-5 space-y-5">
 
     {# -- Run header -------------------------------------------------------- #}
-    <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] px-5 py-4">
+    <div class="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] px-5 py-4">
 
       {# Status badge #}
       <div class="flex items-center gap-3 mb-3">
@@ -92,7 +92,7 @@
     {% if stages %}
     <section>
       <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ t.SHARE_VIEW.SECTION_STAGES }}</h2>
-      <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e]
+      <div class="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2c2c2e]
                   divide-y divide-gray-100 dark:divide-[#38383a] overflow-hidden">
         {% for stage in stages %}
         <div class="flex items-center gap-3 px-4 py-3.5">
@@ -144,7 +144,7 @@
       <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ t.SHARE_VIEW.SECTION_AUTOPKG_OUTPUT }}</h2>
       <div class="space-y-3">
         {% for result in results %}
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] overflow-hidden">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] overflow-hidden">
 
           {# Section header #}
           <div class="px-4 py-3 border-b border-gray-100 dark:border-[#38383a] flex items-center gap-2.5">
@@ -177,8 +177,50 @@
             <span class="ml-auto text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ result.data|length }}</span>
           </div>
 
-          {# Data table #}
+          {# Data rows #}
           {% if result.data %}
+
+          {% if result.result_type == 'munki_import' %}
+          <div class="divide-y divide-gray-100 dark:divide-[#38383a]">
+            {% for row in result.data %}
+            <div class="flex items-center gap-3 px-4 py-2.5">
+              <span class="w-8 h-8 rounded-[7px] flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400">
+                {% if row.icon_url %}
+                <img src="{{ row.icon_url }}" class="w-full h-full object-contain"
+                     onerror="this.style.display='none';this.parentElement.querySelector('.icon-fallback').style.display='flex'">
+                <span class="icon-fallback w-full h-full hidden items-center justify-center text-gray-400">{% lucide "package" "w-4 h-4" %}</span>
+                {% else %}
+                {% lucide "package" "w-4 h-4" %}
+                {% endif %}
+              </span>
+              <span class="flex-1 min-w-0 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ row.name }}</span>
+              {% if row.catalogs %}
+              <div class="flex flex-wrap gap-1 flex-shrink-0">
+                {% for cat in row.catalogs|ensure_list %}
+                <span class="text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded-full px-2 py-0.5 whitespace-nowrap">{{ cat }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% if row.version %}
+              <span class="text-xs font-mono text-gray-500 dark:text-gray-400 flex-shrink-0 w-20 text-right">{{ row.version }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+
+          {% elif result.result_type == 'failure' %}
+          <div class="divide-y divide-gray-100 dark:divide-[#38383a]">
+            {% for row in result.data %}
+            <div class="pl-4 pr-4 py-3 flex flex-col gap-1">
+              <span class="text-sm font-mono text-gray-800 dark:text-gray-200">{{ row.recipe_id|default:row.recipe }}</span>
+              {% if row.message %}
+              <span class="text-sm text-gray-500 dark:text-gray-400">{{ row.message }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+
+          {% else %}
           <div class="result-table-wrap px-4 py-3">
             <table class="text-xs w-full min-w-max">
               <thead>
@@ -199,6 +241,8 @@
               </tbody>
             </table>
           </div>
+          {% endif %}
+
           {% else %}
           <p class="px-4 py-3 text-xs text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.EMPTY_NO_DATA }}</p>
           {% endif %}
@@ -211,7 +255,7 @@
 
     {# -- Empty state (no results and no stages) ---------------------------- #}
     {% if not stages and not results %}
-    <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] p-10 text-center">
+    <div class="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] p-10 text-center">
       <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.EMPTY_NO_RUN_DATA }}</p>
     </div>
     {% endif %}

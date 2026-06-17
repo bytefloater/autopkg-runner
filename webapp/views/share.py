@@ -16,8 +16,11 @@ from datetime import timedelta
 
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView
+
+from webapp.views.runs import _get_munki_icon_map, _make_auth_header
 
 # Keys that must never appear in the share report for security.
 _STRIPPED_KEYS = frozenset({'traceback', 'Traceback'})
@@ -71,12 +74,40 @@ class RunShareView(TemplateView):
         # Stages - status + duration only, no log content.
         stages = list(run.stage_executions.order_by('order'))
 
+        # Build icon map once if the repo URL is configured.
+        from webapp.models import Setting
+        public_url = Setting.get('repository.public_url', '')
+        icon_map = {}
+        if public_url:
+            auth_header = _make_auth_header(
+                Setting.get('repository.public_url_username', ''),
+                Setting.get('repository.public_url_password', ''),
+            )
+            proxy_base = reverse('munki-icon-proxy')
+            # Determine catalog from the first munki_import result.
+            catalog = 'all'
+            for rr in run.recipe_results.filter(result_type='munki_import'):
+                if rr.data:
+                    cats = rr.data[0].get('catalogs', [])
+                    if isinstance(cats, list) and cats:
+                        catalog = cats[0]
+                    elif isinstance(cats, str) and cats:
+                        catalog = cats
+                break
+            icon_map = _get_munki_icon_map(public_url, catalog, auth_header)
+
         # Recipe results - strip tracebacks for security.
         results = []
         for rr in run.recipe_results.all():
+            data = _sanitise_result_rows(rr.data)
+            if rr.result_type == 'munki_import' and icon_map:
+                data = [
+                    {**row, 'icon_url': f'{proxy_base}?path={icon_map[row["name"]]}' if row.get('name') and icon_map.get(row['name']) else ''}
+                    for row in data
+                ]
             results.append({
                 'result_type': rr.result_type,
-                'data':        _sanitise_result_rows(rr.data),
+                'data':        data,
             })
 
         ctx.update({
