@@ -152,6 +152,9 @@
     "RESULT_FIELD_ICON_REPO_PATH": "Icon Repo Path",
     "RESULT_FIELD_PKGINFO_PATH": "Pkginfo Path",
     "RESULT_FIELD_VERSION": "Version",
+    "CARD_SHOW_PATHS": "Show paths",
+    "CARD_HIDE_PATHS": "Hide paths",
+    "ACTION_VIEW_DETAILS": "View details",
 
     "RESULT_TYPE_FAILURE": "Failures",
     "RESULT_TYPE_PKG_COPIED": "Packages Copied",
@@ -472,6 +475,10 @@
     "OPT_SERVER_HOST": "Server Host",
     "OPT_SERVER_LOCAL_MNT_PATH": "Local Mount Path",
     "OPT_SERVER_PUBLIC_URL": "Public URL",
+    "OPT_SERVER_PUBLIC_URL_AUTH": "Public URL Authentication",
+    "OPT_SERVER_PUBLIC_URL_AUTH_HINT": "Leave blank if the public URL is unauthenticated. These credentials are independent of the repository mount credentials above.",
+    "PLACEHOLDER_USERNAME": "Username",
+    "PLACEHOLDER_PASSWORD": "Password",
     "OPT_SMB_SERVER_SHARE": "Server Share",
 
     "OPT_LOG_LEVEL": "Log Level",

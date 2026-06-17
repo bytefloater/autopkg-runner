@@ -149,6 +149,7 @@ def _section_keys(section: str) -> tuple:
              'repository.local_path',
              'repository.host', 'repository.share',
              'repository.mount_path', 'repository.public_url',
+             'repository.public_url_username', 'repository.public_url_password',
              'repository.username', 'repository.password'],
         )
     elif section == 'gc':

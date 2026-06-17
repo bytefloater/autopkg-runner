@@ -26,6 +26,8 @@
       x-data="{
         repoType: '{{ s|lookup:'repository.type'|default:'remote' }}',
         connType: '{{ s|lookup:'repository.connection_type'|default:'smb' }}',
+        pubUrlAuth: {{ s|lookup:'repository.public_url_username'|yesno:'true,false' }},
+        showPubUrlPw: false,
         sftpAvailable: {{ sftp_available|yesno:'true,false' }}
       }">
   {% csrf_token %}
@@ -143,14 +145,51 @@
                  class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
         </div>
 
-        <div class="px-4 py-3">
-          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_PUBLIC_URL }}</label>
-          <input type="url" name="repository.public_url" value="{{ s|lookup:'repository.public_url' }}"
-                 placeholder="https://munki.example.com"
-                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
-        </div>
-
       </div>
+    </div>
+
+    {# -- Public URL ----------------------------------------------------------- #}
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_SERVER_PUBLIC_URL }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_PUBLIC_URL }}</label>
+        <input type="url" name="repository.public_url" value="{{ s|lookup:'repository.public_url' }}"
+               placeholder="https://munki.example.com"
+               class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+      </div>
+
+      <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_SERVER_PUBLIC_URL_AUTH }}</span>
+        <button type="button" @click="pubUrlAuth = !pubUrlAuth"
+                class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="pubUrlAuth ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#48484a]'">
+          <span class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                :class="pubUrlAuth ? 'translate-x-[20px]' : 'translate-x-0'"></span>
+        </button>
+      </label>
+
+      <div x-show="pubUrlAuth" x-transition class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNAME_USERNAME }}</label>
+        <input type="text" name="repository.public_url_username"
+               value="{{ s|lookup:'repository.public_url_username' }}"
+               autocomplete="off"
+               class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none">
+      </div>
+
+      <div x-show="pubUrlAuth" x-transition class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNANE_PASSWORD }}</label>
+        <div class="flex gap-2">
+          <input :type="showPubUrlPw ? 'text' : 'password'" name="repository.public_url_password"
+                 value="{{ s|lookup:'repository.public_url_password' }}"
+                 autocomplete="new-password"
+                 class="flex-1 text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none">
+          <button type="button" @click="showPubUrlPw = !showPubUrlPw"
+                  class="flex-shrink-0 text-[13px] font-medium text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75"
+                  x-text="showPubUrlPw ? '{{ t.APP.ACTION_HIDE|escapejs }}' : '{{ t.APP.ACTION_SHOW|escapejs }}'"></button>
+        </div>
+      </div>
+
     </div>
 
   </div>{# end remote #}

@@ -213,24 +213,136 @@
     <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-800">
       <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ result.result_type|result_type_label:t }}</h3>
     </div>
-    <div class="px-4 py-3 overflow-x-auto">
-      {% if result.data %}
-      <table class="text-xs w-full">
-        <thead>
-          <tr class="text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-slate-800">
-            {% for key in result.data.0.keys %}<th class="text-left pb-1 pr-4 font-medium">{% result_field_label key result.result_type t %}</th>{% endfor %}
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
-          {% for row in result.data %}
-          <tr>{% for val in row.values %}<td class="py-1 pr-4 text-gray-700 dark:text-gray-300 max-w-xs truncate">{{ val }}</td>{% endfor %}</tr>
+
+    {% if result.result_type == 'munki_import' %}
+      {% with rows=munki_import_rows|lookup:result.pk %}
+      {% if rows %}
+      <div x-data="{ modal: null, showModal: false }" x-on:keydown.escape.window="showModal = false; setTimeout(() => modal = null, 100)">
+
+        {# List #}
+        <div class="divide-y divide-gray-100 dark:divide-slate-800">
+          {% for row in rows %}
+          <div class="flex items-center gap-3 px-4 py-2.5">
+
+            {# Icon #}
+            <span class="w-8 h-8 rounded-[7px] flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400">
+              {% if row.icon_url %}
+              <img src="{{ row.icon_url }}" class="w-full h-full object-contain"
+                   onerror="this.style.display='none';this.parentElement.querySelector('.icon-fallback').style.display='flex'">
+              <span class="icon-fallback w-full h-full hidden items-center justify-center text-gray-400">{% lucide "package" "w-4 h-4" %}</span>
+              {% else %}
+              {% lucide "package" "w-4 h-4" %}
+              {% endif %}
+            </span>
+
+            {# Name #}
+            <span class="text-sm font-medium text-gray-900 dark:text-gray-100 w-40 flex-shrink-0 truncate">{{ row.name }}</span>
+
+            {# Catalog pills #}
+            <div class="flex flex-wrap gap-1 flex-1 min-w-0">
+              {% for cat in row.catalogs|ensure_list %}
+              <span class="text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded-full px-2 py-0.5 whitespace-nowrap">{{ cat }}</span>
+              {% endfor %}
+            </div>
+
+            {# Version #}
+            {% if row.version %}
+            <span class="text-xs font-mono text-gray-500 dark:text-gray-400 flex-shrink-0 w-20 text-right">{{ row.version }}</span>
+            {% endif %}
+
+            {# View details #}
+            <button @click="modal = {{ row|json_encode }}; showModal = true"
+                    class="flex-shrink-0 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              {{ t.RUN_DETAIL_VIEW.ACTION_VIEW_DETAILS }}
+            </button>
+
+          </div>
           {% endfor %}
-        </tbody>
-      </table>
+        </div>
+
+        {# Details modal #}
+        <div x-show="showModal" x-cloak
+             class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+             x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+               @click="showModal = false; setTimeout(() => modal = null, 75)"></div>
+          <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 p-6"
+               x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+               x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+
+            {# Header #}
+            <div class="flex items-center gap-3 mb-5">
+              <span class="w-10 h-10 rounded-[9px] flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400">
+                <template x-if="modal && modal.icon_url">
+                  <img :src="modal.icon_url" class="w-full h-full object-contain"
+                       onerror="this.style.display='none'">
+                </template>
+                <template x-if="!modal || !modal.icon_url">{% lucide "package" "w-5 h-5" %}</template>
+              </span>
+              <div class="flex-1 min-w-0">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white truncate" x-text="modal ? modal.name : ''"></h3>
+                <p class="text-xs font-mono text-gray-400 dark:text-gray-500" x-text="modal ? modal.version : ''"></p>
+              </div>
+              <button @click="showModal = false; setTimeout(() => modal = null, 75)"
+                      class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                {% lucide "x" "w-4 h-4" %}
+              </button>
+            </div>
+
+            {# Path rows #}
+            <div class="space-y-3">
+              <template x-if="modal && modal.pkginfo_path">
+                <div>
+                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-0.5">{% result_field_label 'pkginfo_path' 'munki_import' t %}</p>
+                  <p class="text-xs font-mono text-gray-700 dark:text-gray-300 break-all" x-text="modal.pkginfo_path"></p>
+                </div>
+              </template>
+              <template x-if="modal && modal.pkg_repo_path">
+                <div>
+                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-0.5">{% result_field_label 'pkg_repo_path' 'munki_import' t %}</p>
+                  <p class="text-xs font-mono text-gray-700 dark:text-gray-300 break-all" x-text="modal.pkg_repo_path"></p>
+                </div>
+              </template>
+              <template x-if="modal && modal.icon_repo_path">
+                <div>
+                  <p class="text-xs font-medium text-gray-400 dark:text-gray-500 mb-0.5">{% result_field_label 'icon_repo_path' 'munki_import' t %}</p>
+                  <p class="text-xs font-mono text-gray-700 dark:text-gray-300 break-all" x-text="modal.icon_repo_path"></p>
+                </div>
+              </template>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
       {% else %}
-      <p class="text-xs text-gray-400">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
+      <p class="px-4 py-3 text-xs text-gray-400">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
       {% endif %}
-    </div>
+      {% endwith %}
+
+    {% else %}
+      {# Table view for all other result types #}
+      <div class="px-4 py-3 overflow-x-auto">
+        {% if result.data %}
+        <table class="text-xs w-full">
+          <thead>
+            <tr class="text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-slate-800">
+              {% for key in result.data.0.keys %}<th class="text-left pb-1 pr-4 font-medium">{% result_field_label key result.result_type t %}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
+            {% for row in result.data %}
+            <tr>{% for val in row.values %}<td class="py-1 pr-4 text-gray-700 dark:text-gray-300 max-w-xs truncate">{{ val }}</td>{% endfor %}</tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-xs text-gray-400">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
   </div>
   {% endfor %}
 

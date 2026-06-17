@@ -1,3 +1,4 @@
+import json
 import re
 
 from django import template
@@ -117,6 +118,27 @@ def lucide(name, classes='w-5 h-5'):
     # [^>]* matches newlines too, so this handles multi-line opening tags
     svg = re.sub(r'<svg\b[^>]*>', _process_root_tag, svg, count=1)
     return mark_safe(svg)
+
+
+@register.filter
+def json_encode(val):
+    """Serialize a value to JSON safe for use inside a double-quoted HTML attribute.
+
+    Double quotes in the JSON are HTML-escaped to &quot; so they don't break
+    the attribute delimiter. Browsers decode entities before Alpine.js evaluates
+    the expression, so Alpine receives valid JSON.
+    """
+    import html
+    return mark_safe(html.escape(json.dumps(val, default=str), quote=True))
+
+
+@register.filter
+def ensure_list(val):
+    if isinstance(val, list):
+        return val
+    if val:
+        return [val]
+    return []
 
 
 @register.filter

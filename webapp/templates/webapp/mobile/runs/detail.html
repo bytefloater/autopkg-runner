@@ -146,22 +146,96 @@
   <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
     {{ result.result_type|result_type_label:t }}
   </p>
-  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
-    {% if result.data %}
-    {% for row in result.data %}
-    {% for key, val in row.items %}
-    <div class="flex items-center justify-between px-4 py-3">
-      <span class="text-[16px] text-gray-900 dark:text-white">{% result_field_label key result.result_type t %}</span>
-      <span class="text-[16px] text-gray-500 dark:text-gray-400 text-right ml-4 min-w-0 break-all">{{ val }}</span>
+
+  {% if result.result_type == 'munki_import' %}
+    {% with rows=munki_import_rows|lookup:result.pk %}
+    {% if rows %}
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      {% for row in rows %}
+      <div x-data="{ showPaths: false }">
+
+        {# Main row #}
+        <button type="button" @click="showPaths = !showPaths"
+                class="w-full flex items-center gap-3 px-4 py-[11px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75 text-left">
+
+          {# App-icon format: 29px rounded-[7px] square #}
+          <span class="w-[29px] h-[29px] rounded-[7px] flex-shrink-0 overflow-hidden bg-gray-200 dark:bg-[#3a3a3c] flex items-center justify-center">
+            {% if row.icon_url %}
+            <img src="{{ row.icon_url }}"
+                 class="w-full h-full object-contain"
+                 onerror="this.style.display='none';this.parentElement.querySelector('.icon-fallback').style.display='flex'">
+            <span class="icon-fallback w-full h-full hidden items-center justify-center text-gray-400">
+              {% lucide "package" "w-4 h-4" %}
+            </span>
+            {% else %}
+            {% lucide "package" "w-4 h-4 text-gray-400" %}
+            {% endif %}
+          </span>
+
+          {# Name + catalog pills column #}
+          <div class="flex-1 min-w-0">
+            <p class="text-[16px] text-gray-900 dark:text-white truncate">{{ row.name }}</p>
+            {% if row.catalogs %}
+            <div class="flex flex-wrap gap-1 mt-1">
+              {% for cat in row.catalogs|ensure_list %}
+              <span class="text-[11px] bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded-full px-2 py-0.5">{{ cat }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          {# Version on the right #}
+          {% if row.version %}
+          <span class="text-[13px] font-mono text-gray-400 dark:text-gray-500 flex-shrink-0">{{ row.version }}</span>
+          {% endif %}
+
+          {# Chevron indicator #}
+          <span class="text-gray-300 dark:text-gray-600 flex-shrink-0 transition-transform duration-150"
+                :class="showPaths ? 'rotate-90' : ''">
+            {% lucide "chevron-right" "w-4 h-4" %}
+          </span>
+        </button>
+
+        {# Expandable paths #}
+        <div x-show="showPaths"
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             class="px-4 pb-3 text-[13px] text-gray-500 dark:text-gray-400 space-y-1 break-all border-t border-gray-100 dark:border-[#38383a]">
+          {% if row.pkginfo_path %}<div class="pt-2"><span class="font-medium text-gray-700 dark:text-gray-300">{% result_field_label 'pkginfo_path' 'munki_import' t %}</span><br>{{ row.pkginfo_path }}</div>{% endif %}
+          {% if row.pkg_repo_path %}<div class="pt-1"><span class="font-medium text-gray-700 dark:text-gray-300">{% result_field_label 'pkg_repo_path' 'munki_import' t %}</span><br>{{ row.pkg_repo_path }}</div>{% endif %}
+          {% if row.icon_repo_path %}<div class="pt-1"><span class="font-medium text-gray-700 dark:text-gray-300">{% result_field_label 'icon_repo_path' 'munki_import' t %}</span><br>{{ row.icon_repo_path }}</div>{% endif %}
+        </div>
+
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-    {% endfor %}
     {% else %}
-    <div class="px-4 py-3">
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl px-4 py-3">
       <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
     </div>
     {% endif %}
-  </div>
+    {% endwith %}
+
+  {% else %}
+    {# Table-style list view for all other result types #}
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      {% if result.data %}
+      {% for row in result.data %}
+      {% for key, val in row.items %}
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="text-[16px] text-gray-900 dark:text-white">{% result_field_label key result.result_type t %}</span>
+        <span class="text-[16px] text-gray-500 dark:text-gray-400 text-right ml-4 min-w-0 break-all">{{ val }}</span>
+      </div>
+      {% endfor %}
+      {% endfor %}
+      {% else %}
+      <div class="px-4 py-3">
+        <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
+      </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
   {% endfor %}
 
   {# -- Run metadata --------------------------------------------------------- #}

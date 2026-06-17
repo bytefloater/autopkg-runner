@@ -26,6 +26,7 @@ class Setting(models.Model):
     # Keys whose values are encrypted before being written to the database.
     SENSITIVE_KEYS: frozenset[str] = frozenset({
         'repository.password',
+        'repository.public_url_password',
         'webpush.vapid_private_key',
     })
 
@@ -45,9 +46,11 @@ class Setting(models.Model):
         'repository.host':            '',
         'repository.share':           '',
         'repository.mount_path':      '/tmp/Munki',
-        'repository.public_url':      '',
-        'repository.username':        '',
-        'repository.password':        '',
+        'repository.public_url':          '',
+        'repository.public_url_username': '',
+        'repository.public_url_password': '',
+        'repository.username':            '',
+        'repository.password':            '',
         # Garbage Collector
         'gc.keep_versions':     '3',
         'gc.clear_temp':        'true',

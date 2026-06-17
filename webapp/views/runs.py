@@ -1,5 +1,10 @@
+import os
+import plistlib
+import ssl
 import time
+import urllib.request
 
+import certifi
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
@@ -8,6 +13,56 @@ from django.http import StreamingHttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import TemplateView
+
+_MUNKI_CATALOG_CACHE: dict = {'data': None, 'url': '', 'auth': '', 'catalog': '', 'ts': 0.0}
+
+
+def _make_auth_header(username: str, password: str) -> str:
+    if not username:
+        return ''
+    import base64
+    creds = base64.b64encode(f'{username}:{password}'.encode()).decode()
+    return f'Basic {creds}'
+
+
+def _fetch_munki_catalog(public_url: str, catalog: str = 'all', auth_header: str = '') -> dict[str, str]:
+    """Return {name: icon_path} from <public_url>/catalogs/<catalog>. Empty on error."""
+    try:
+        ctx = ssl.create_default_context(cafile=certifi.where())
+        url = public_url.rstrip('/') + '/catalogs/' + catalog
+        headers = {'Authorization': auth_header} if auth_header else {}
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10, context=ctx) as r:
+            raw = r.read()
+        items = plistlib.loads(raw)
+        result = {}
+        for item in items:
+            name = item.get('name', '')
+            raw_icon = item.get('icon_name')
+            if raw_icon:
+                icon_name = raw_icon if os.path.splitext(raw_icon)[1] else raw_icon + '.png'
+            else:
+                icon_name = name + '.png'
+            if name:
+                result[name] = 'icons/' + icon_name
+        return result
+    except Exception:
+        return {}
+
+
+def _get_munki_icon_map(public_url: str, catalog: str = 'all', auth_header: str = '') -> dict[str, str]:
+    now = time.time()
+    if (
+        _MUNKI_CATALOG_CACHE['url'] == public_url
+        and _MUNKI_CATALOG_CACHE['auth'] == auth_header
+        and _MUNKI_CATALOG_CACHE['catalog'] == catalog
+        and _MUNKI_CATALOG_CACHE['data'] is not None
+        and now - _MUNKI_CATALOG_CACHE['ts'] < 300
+    ):
+        return _MUNKI_CATALOG_CACHE['data']
+    data = _fetch_munki_catalog(public_url, catalog, auth_header)
+    _MUNKI_CATALOG_CACHE.update({'data': data, 'url': public_url, 'auth': auth_header, 'catalog': catalog, 'ts': now})
+    return data
 
 from webapp.perms import (
     RunAccessRequired, RunManagerRequired,
@@ -61,6 +116,40 @@ class RunDetailView(RunAccessRequired, TemplateView):
         ctx['last_log_id'] = last_log_id
 
         ctx['results'] = run.recipe_results.all()
+
+        munki_import_rows = {}
+        try:
+            from webapp.models import Setting
+            from django.urls import reverse
+            public_url = Setting.get('repository.public_url', '')
+            if public_url:
+                auth_header = _make_auth_header(
+                    Setting.get('repository.public_url_username', ''),
+                    Setting.get('repository.public_url_password', ''),
+                )
+                catalog = 'all'
+                for r in ctx['results']:
+                    if r.result_type == 'munki_import' and r.data:
+                        cats = r.data[0].get('catalogs', [])
+                        if isinstance(cats, list) and cats:
+                            catalog = cats[0]
+                        elif isinstance(cats, str) and cats:
+                            catalog = cats
+                        break
+                icon_map = _get_munki_icon_map(public_url, catalog, auth_header)
+                proxy_base = reverse('munki-icon-proxy')
+                for result in ctx['results']:
+                    if result.result_type == 'munki_import':
+                        munki_import_rows[result.pk] = [
+                            {
+                                **row,
+                                'icon_url': f'{proxy_base}?path={icon_map[row["name"]]}' if row.get('name') and icon_map.get(row['name']) else '',
+                            }
+                            for row in result.data
+                        ]
+        except Exception:
+            pass
+        ctx['munki_import_rows'] = munki_import_rows
 
         return ctx
 
@@ -189,3 +278,36 @@ def run_stream(request, run_id):
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
     return response
+
+
+@login_required
+@perm_required(PERM_VIEW_RUNS)
+def munki_icon_proxy(request):
+    """Proxy Munki repo icon requests server-side so auth headers can be applied."""
+    from django.http import HttpResponse
+    from webapp.models import Setting
+
+    path = request.GET.get('path', '')
+    if not path.startswith('icons/') or '..' in path or '\x00' in path:
+        return HttpResponse(status=400)
+
+    public_url = Setting.get('repository.public_url', '').rstrip('/')
+    if not public_url:
+        return HttpResponse(status=404)
+
+    auth_header = _make_auth_header(
+        Setting.get('repository.public_url_username', ''),
+        Setting.get('repository.public_url_password', ''),
+    )
+    ctx = ssl.create_default_context(cafile=certifi.where())
+    headers = {'Authorization': auth_header} if auth_header else {}
+    req = urllib.request.Request(f'{public_url}/{path}', headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=10, context=ctx) as r:
+            content_type = r.headers.get('Content-Type', 'image/png')
+            data = r.read()
+        response = HttpResponse(data, content_type=content_type)
+        response['Cache-Control'] = 'public, max-age=3600'
+        return response
+    except Exception:
+        return HttpResponse(status=404)
