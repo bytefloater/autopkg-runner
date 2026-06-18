@@ -180,3 +180,91 @@ class TestCheckTokenView:
         anon_api_client.credentials(HTTP_AUTHORIZATION='Token ' + 'a' * 40)
         resp = anon_api_client.get(self.url)
         assert resp.status_code in (401, 403)
+
+
+@pytest.mark.django_db
+class TestHmacAuthenticationEdgeCases:
+    url = '/api/auth/check_token/'
+
+    def test_malformed_hmac_header_returns_401(self, anon_api_client):
+        """Line 49: header starts with hmac-sha256 but doesn't match full regex."""
+        anon_api_client.credentials(HTTP_AUTHORIZATION='HMAC-SHA256 InvalidFormat')
+        resp = anon_api_client.get(self.url)
+        assert resp.status_code in (401, 403)
+
+    def test_inactive_user_returns_401(self, anon_api_client, api_token, user):
+        """Line 66: user is inactive → AuthenticationFailed."""
+        user.is_active = False
+        user.save()
+        auth = _hmac_auth_header(
+            api_token.token_id,
+            api_token.decrypted_secret,
+            'GET', self.url,
+        )
+        anon_api_client.credentials(HTTP_AUTHORIZATION=auth)
+        resp = anon_api_client.get(self.url)
+        assert resp.status_code in (401, 403)
+
+    def test_timestamp_drift_returns_401(self, anon_api_client, api_token):
+        """Line 81: timestamp too old → AuthenticationFailed."""
+        import secrets as _secrets
+        import hashlib as _hashlib
+        old_ts = int(time.time()) - 700  # 700s ago, beyond tolerance
+        nonce = _secrets.token_hex(16)
+        body_hash = _hashlib.sha256(b'').hexdigest()
+        canonical = '\n'.join(['GET', self.url, '', str(old_ts), nonce, body_hash])
+        sig = hmac.new(api_token.decrypted_secret.encode(), canonical.encode(), hashlib.sha256).hexdigest()
+        auth = (
+            f'HMAC-SHA256 Credential={api_token.token_id}, Timestamp={old_ts}, '
+            f'Nonce={nonce}, Signature={sig}'
+        )
+        anon_api_client.credentials(HTTP_AUTHORIZATION=auth)
+        resp = anon_api_client.get(self.url)
+        assert resp.status_code in (401, 403)
+
+    def test_invalid_token_id_returns_401(self, anon_api_client, db):
+        """Lines 89-90: token_id not in DB → AuthenticationFailed."""
+        import secrets as _sec
+        # 32 lowercase hex chars — matches _HEADER_RE but no APIToken exists with this id
+        fake_id = _sec.token_hex(16)  # 32 hex chars
+        auth = _hmac_auth_header(fake_id, 'anysecret', 'GET', self.url)
+        anon_api_client.credentials(HTTP_AUTHORIZATION=auth)
+        resp = anon_api_client.get(self.url)
+        assert resp.status_code in (401, 403)
+
+
+@pytest.mark.django_db
+class TestHmacAuthenticationRareEdgeCases:
+    url = '/api/auth/check_token/'
+
+    def test_concurrent_nonce_replay_via_integrity_error(self, anon_api_client, api_token):
+        """Lines 111-113: IntegrityError in _record_nonce → AuthenticationFailed."""
+        from unittest.mock import patch
+        from django.db import IntegrityError
+
+        auth = _hmac_auth_header(
+            api_token.token_id,
+            api_token.decrypted_secret,
+            'GET', self.url,
+        )
+        anon_api_client.credentials(HTTP_AUTHORIZATION=auth)
+        with patch('webapp.models.UsedNonce.objects') as mock_mgr:
+            mock_mgr.filter.return_value.exists.return_value = False  # nonce not in DB yet
+            mock_mgr.create.side_effect = IntegrityError('duplicate key')
+            mock_mgr.filter.return_value.delete.return_value = None
+            resp = anon_api_client.get(self.url)
+        assert resp.status_code in (401, 403)
+
+    def test_compare_digest_type_error_returns_401(self, anon_api_client, api_token):
+        """Line 136: TypeError in hmac.compare_digest → AuthenticationFailed."""
+        from unittest.mock import patch
+
+        auth = _hmac_auth_header(
+            api_token.token_id,
+            api_token.decrypted_secret,
+            'GET', self.url,
+        )
+        anon_api_client.credentials(HTTP_AUTHORIZATION=auth)
+        with patch('hmac.compare_digest', side_effect=TypeError('bad type')):
+            resp = anon_api_client.get(self.url)
+        assert resp.status_code in (401, 403)
