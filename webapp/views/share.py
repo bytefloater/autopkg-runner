@@ -20,6 +20,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView
 
+from webapp.translations import load_all_raw
 from webapp.views.runs import _get_munki_icon_map, _make_auth_header
 
 # Keys that must never appear in the share report for security.
@@ -110,9 +111,14 @@ class RunShareView(TemplateView):
                 'data':        data,
             })
 
+        from webapp import translations as _trans
         ctx.update({
-            'run':     run,
-            'stages':  stages,
-            'results': results,
+            'run':              run,
+            'stages':           stages,
+            'results':          results,
+            # Always render the share page in the fallback language — the
+            # browser-side language picker handles translation independently.
+            't':                _trans.load(_trans.FALLBACK_LANG),
+            'all_translations': load_all_raw(),
         })
         return ctx

@@ -97,6 +97,23 @@ def load(lang: str) -> TranslationProxy:
     return TranslationProxy(resolved)
 
 
+def load_all_raw() -> dict[str, dict]:
+    """Return {code: resolved_dict} for every available translation file.
+
+    Values are plain Python dicts (JSON-serialisable), suitable for embedding
+    in a page as a JS object without further processing.
+    """
+    result: dict[str, dict] = {}
+    for f in sorted(TRANSLATIONS_DIR.glob('*.json')):
+        try:
+            with open(f, encoding='utf-8') as fh:
+                raw = json.load(fh)
+            result[f.stem] = _resolve_all(raw, raw)
+        except (json.JSONDecodeError, OSError):
+            pass
+    return result
+
+
 def available() -> list[tuple[str, str]]:
     """
     Return [(code, display_name), ...] for every .json file in the

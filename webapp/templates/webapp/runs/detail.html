@@ -31,8 +31,10 @@
   </div>
 
   {# ══════════════════════════════════════════════════════════════ #}
-  {# ACCORDION - one panel per stage                               #}
+  {# STAGES SECTION                                                #}
   {# ══════════════════════════════════════════════════════════════ #}
+  <section id="stages-section">
+  <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ t.RUN_DETAIL_VIEW.SECTION_STAGES }}</h2>
   <div class="space-y-2">
 
     {# -- Server-rendered stages (completed or partially started) -- #}
@@ -206,13 +208,17 @@
     {% endwith %}
 
   </div>{# end accordion #}
+  </section>{# end stages-section #}
 
-  {# -- Recipe results -- #}
+  {# ══════════════════════════════════════════════════════════════ #}
+  {# AUTOPKG OUTPUT — one section per result type                  #}
+  {# ══════════════════════════════════════════════════════════════ #}
+  {% if results %}
+  <div id="autopkg-output" class="space-y-4">
   {% for result in results %}
+  <section>
+  <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ result.result_type|result_type_label:t }}</h2>
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
-    <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-800">
-      <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ result.result_type|result_type_label:t }}</h3>
-    </div>
 
     {% if result.result_type == 'munki_import' %}
       {% with rows=munki_import_rows|lookup:result.pk %}
@@ -227,7 +233,7 @@
             {# Icon #}
             <span class="w-8 h-8 rounded-[7px] flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400">
               {% if row.icon_url %}
-              <img src="{{ row.icon_url }}" class="w-full h-full object-contain"
+              <img src="{{ row.icon_url }}" alt="{{ row.name }}" class="w-full h-full object-contain"
                    onerror="this.style.display='none';this.parentElement.querySelector('.icon-fallback').style.display='flex'">
               <span class="icon-fallback w-full h-full hidden items-center justify-center text-gray-400">{% lucide "package" "w-4 h-4" %}</span>
               {% else %}
@@ -275,7 +281,7 @@
             <div class="flex items-center gap-3 mb-5">
               <span class="w-10 h-10 rounded-[9px] flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-400">
                 <template x-if="modal && modal.icon_url">
-                  <img :src="modal.icon_url" class="w-full h-full object-contain"
+                  <img :src="modal.icon_url" :alt="modal.name" class="w-full h-full object-contain"
                        onerror="this.style.display='none'">
                 </template>
                 <template x-if="!modal || !modal.icon_url">{% lucide "package" "w-5 h-5" %}</template>
@@ -396,28 +402,31 @@
 
     {% else %}
       {# Table view for all other result types #}
-      <div class="px-4 py-3 overflow-x-auto">
+      <div class="overflow-x-auto">
         {% if result.data %}
         <table class="text-xs w-full">
           <thead>
             <tr class="text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-slate-800">
-              {% for key in result.data.0.keys %}<th class="text-left pb-1 pr-4 font-medium">{% result_field_label key result.result_type t %}</th>{% endfor %}
+              {% for key in result.data.0.keys %}<th class="text-left py-2.5 px-4 font-medium">{% result_field_label key result.result_type t %}</th>{% endfor %}
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
             {% for row in result.data %}
-            <tr>{% for val in row.values %}<td class="py-1 pr-4 text-gray-700 dark:text-gray-300 max-w-xs truncate">{{ val }}</td>{% endfor %}</tr>
+            <tr>{% for val in row.values %}<td class="py-2.5 px-4 text-gray-700 dark:text-gray-300 max-w-xs truncate">{{ val }}</td>{% endfor %}</tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-        <p class="text-xs text-gray-400">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
+        <p class="px-4 py-3 text-xs text-gray-400">{{ t.RUN_DETAIL_VIEW.RESULTS_NO_DATA }}</p>
         {% endif %}
       </div>
     {% endif %}
 
-  </div>
+  </div>{# end card #}
+  </section>{# end per-result section #}
   {% endfor %}
+  </div>{# end autopkg-output #}
+  {% endif %}
 
 </div>
 {% endblock %}
@@ -504,6 +513,9 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
           this.currentStatus = data.status;
           this.liveStatus = '';
           this._closeSSE();
+          if (data.status === 'success') {
+            this._fetchResults();
+          }
         }
       };
 
@@ -516,6 +528,23 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
         this.liveStatus = '{{ t.APP.STATE_DISCONNECTED|escapejs }}';
         this._closeSSE();
       };
+    },
+
+    _fetchResults() {
+      fetch(window.location.href)
+        .then(r => r.text())
+        .then(html => {
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const newSection = doc.getElementById('autopkg-output');
+          if (!newSection) return;
+          const currentSection = document.getElementById('autopkg-output');
+          if (currentSection) {
+            currentSection.replaceWith(newSection);
+          } else {
+            const stagesEl = document.getElementById('stages-section');
+            if (stagesEl) stagesEl.after(newSection);
+          }
+        });
     },
 
     _closeSSE() {

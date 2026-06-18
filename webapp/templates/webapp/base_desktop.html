@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block meta_description %}AutoPkg Runner — automated Mac software packaging and deployment.{% endblock %}">
   <title>{% block title %}AutoPkg Runner{% endblock %}</title>
   <link rel="icon" type="image/x-icon" href="{% static 'logos/favicon.ico' %}">
 
@@ -181,7 +182,7 @@
       <div class="flex items-center h-14 gap-2">
 
         {# Hamburger - LEFT of logo, visible below lg #}
-        <button @click="open=true"
+        <button @click="open=true" aria-label="Open navigation menu"
                 class="lg:hidden p-1.5 rounded-lg flex-shrink-0
                        text-gray-500 hover:text-gray-900 dark:hover:text-white
                        hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
@@ -328,7 +329,7 @@
     {# Drawer header - close button LEFT of logo, matching hamburger position in topbar #}
     <div class="flex items-center gap-3 h-14 px-4 flex-shrink-0
                 border-b border-gray-100 dark:border-slate-800">
-      <button @click="open=false"
+      <button @click="open=false" aria-label="Close navigation menu"
               class="p-1.5 rounded-lg flex-shrink-0
                      text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
                      hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">

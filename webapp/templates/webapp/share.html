@@ -15,6 +15,9 @@
     };
   </script>
 
+  {# Alpine.js for the language picker #}
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
   <style>
     /* Safe-area insets for notched devices */
     body {
@@ -23,25 +26,31 @@
     }
     /* Result tables - allow horizontal scroll on narrow screens */
     .result-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    [x-cloak] { display: none !important; }
   </style>
+
+  {# All translation dicts embedded as JSON — read by the language picker #}
+  {{ all_translations|json_script:"share-translations" }}
 </head>
 
-<body class="bg-gray-50 dark:bg-black min-h-screen text-gray-900 dark:text-white">
+<body class="bg-gray-50 dark:bg-black min-h-screen text-gray-900 dark:text-white"
+      x-data="sharePage()" x-init="init()">
 
-  {# -- Top bar - branding only, no navigation ------------------------------ #}
+  {# -- Top bar --------------------------------------------------------------- #}
   <header class="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-[#38383a]">
     <div class="max-w-2xl mx-auto px-4 h-12 flex items-center gap-2.5">
       <svg class="w-5 h-5 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
       </svg>
       <span class="text-sm font-semibold text-gray-800 dark:text-gray-100 tracking-tight">AutoPkg Runner</span>
-      <span class="ml-auto text-xs text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.LABEL_RUN_REPORT }}</span>
+
+      <span class="ml-auto text-xs text-gray-400 dark:text-gray-500" data-i18n="SHARE_VIEW.LABEL_RUN_REPORT">{{ t.SHARE_VIEW.LABEL_RUN_REPORT }}</span>
     </div>
   </header>
 
   <main class="max-w-2xl mx-auto px-4 py-5 space-y-5">
 
-    {# -- Run header -------------------------------------------------------- #}
+    {# -- Run header --------------------------------------------------------- #}
     <div class="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] px-5 py-4">
 
       {# Status badge #}
@@ -49,49 +58,60 @@
         {% if run.status == 'success' %}
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
           <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
-          {{ t.APP.STATE_SUCCESS }}
+          <span data-status="success">{{ t.APP.STATE_SUCCESS }}</span>
         </span>
         {% elif run.status == 'failed' %}
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
           <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
-          {{ t.APP.STATE_FAILED }}
+          <span data-status="failed">{{ t.APP.STATE_FAILED }}</span>
         </span>
         {% elif run.status == 'running' %}
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
           <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse flex-shrink-0"></span>
-          {{ t.APP.STATE_IN_PROGRESS }}
+          <span data-status="running">{{ t.APP.STATE_IN_PROGRESS }}</span>
+        </span>
+        {% elif run.status == 'cancelled' %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 flex-shrink-0"></span>
+          <span data-status="cancelled">{{ t.APP.STATE_CANCELLED }}</span>
         </span>
         {% else %}
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 dark:bg-[#2c2c2e] dark:text-gray-400">
           <span class="w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0"></span>
-          {{ run.status|capfirst }}
+          <span data-status="{{ run.status }}">{{ run.status|capfirst }}</span>
         </span>
         {% endif %}
       </div>
 
       {# Run meta #}
-      <dl class="space-y-1.5 text-sm">
-        <div class="flex gap-2">
-          <dt class="w-28 flex-shrink-0 text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.META_STARTED }}</dt>
-          <dd class="text-gray-800 dark:text-gray-200 font-medium">{{ run.started_at|timezone:local_tz|date:"d M Y, H:i:s" }}</dd>
-        </div>
+      <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-sm">
+        <dt class="text-gray-400 dark:text-gray-500" data-i18n="SHARE_VIEW.META_STARTED">{{ t.SHARE_VIEW.META_STARTED }}</dt>
+        <dd class="text-gray-800 dark:text-gray-200 font-medium">{{ run.started_at|timezone:local_tz|date:"d M Y, H:i:s" }}</dd>
         {% if run.completed_at %}
-        <div class="flex gap-2">
-          <dt class="w-28 flex-shrink-0 text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.META_DURATION }}</dt>
-          <dd class="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{{ run.started_at|duration:run.completed_at }}</dd>
-        </div>
+        <dt class="text-gray-400 dark:text-gray-500" data-i18n="SHARE_VIEW.META_DURATION">{{ t.SHARE_VIEW.META_DURATION }}</dt>
+        <dd class="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{{ run.started_at|duration:run.completed_at }}</dd>
         {% endif %}
-        <div class="flex gap-2">
-          <dt class="w-28 flex-shrink-0 text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.META_TRIGGERED_BY }}</dt>
-          <dd class="text-gray-800 dark:text-gray-200 font-medium capitalize">{{ run.triggered_by }}</dd>
-        </div>
+        <dt class="text-gray-400 dark:text-gray-500" data-i18n="SHARE_VIEW.META_TRIGGERED_BY">{{ t.SHARE_VIEW.META_TRIGGERED_BY }}</dt>
+        <dd class="text-gray-800 dark:text-gray-200 font-medium capitalize">{{ run.triggered_by }}</dd>
+        {% if available_languages|length > 1 %}
+        <dt class="text-gray-400 dark:text-gray-500 self-center" data-i18n="SHARE_VIEW.LABEL_LANGUAGE">Language</dt>
+        <dd>
+          <select x-model="lang"
+                  class="text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-md px-[1px] py-[1px] focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer">
+            {% for code, name in available_languages %}
+            <option value="{{ code }}">{{ name }}</option>
+            {% endfor %}
+          </select>
+        </dd>
+        {% endif %}
       </dl>
     </div>
 
-    {# -- Stages ------------------------------------------------------------ #}
+    {# -- Stages ------------------------------------------------------------- #}
     {% if stages %}
     <section>
-      <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ t.SHARE_VIEW.SECTION_STAGES }}</h2>
+      <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
+          data-i18n="SHARE_VIEW.SECTION_STAGES">{{ t.SHARE_VIEW.SECTION_STAGES }}</h2>
       <div class="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2c2c2e]
                   divide-y divide-gray-100 dark:divide-[#38383a] overflow-hidden">
         {% for stage in stages %}
@@ -128,8 +148,15 @@
             {% elif stage.status == 'failed' %}bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300
             {% elif stage.status == 'running' %}bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300
             {% elif stage.status == 'skipped' %}bg-gray-100 text-gray-400 dark:bg-[#2c2c2e] dark:text-gray-500
-            {% else %}bg-gray-100 text-gray-500 dark:bg-[#2c2c2e] dark:text-gray-400{% endif %}">
-            {{ stage.status|capfirst }}
+            {% else %}bg-gray-100 text-gray-500 dark:bg-[#2c2c2e] dark:text-gray-400{% endif %}"
+            data-status="{{ stage.status }}">
+            {% if stage.status == 'success' %}{{ t.APP.STATE_SUCCESS }}
+            {% elif stage.status == 'failed' %}{{ t.APP.STATE_FAILED }}
+            {% elif stage.status == 'running' %}{{ t.APP.STATE_IN_PROGRESS }}
+            {% elif stage.status == 'skipped' %}{{ t.APP.STATE_SKIPPED }}
+            {% elif stage.status == 'cancelled' %}{{ t.APP.STATE_CANCELLED }}
+            {% elif stage.status == 'pending' %}{{ t.APP.STATE_PENDING }}
+            {% else %}{{ stage.status|capfirst }}{% endif %}
           </span>
 
         </div>
@@ -138,10 +165,11 @@
     </section>
     {% endif %}
 
-    {# -- Recipe results ---------------------------------------------------- #}
+    {# -- Recipe results ----------------------------------------------------- #}
     {% if results %}
     <section>
-      <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ t.SHARE_VIEW.SECTION_AUTOPKG_OUTPUT }}</h2>
+      <h2 class="px-1 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider"
+          data-i18n="SHARE_VIEW.SECTION_AUTOPKG_OUTPUT">{{ t.SHARE_VIEW.SECTION_AUTOPKG_OUTPUT }}</h2>
       <div class="space-y-3">
         {% for result in results %}
         <div class="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] overflow-hidden">
@@ -164,13 +192,13 @@
             {% endif %}
 
             <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-              {% if result.result_type == 'munki_import' %}{{ t.SHARE_VIEW.RESULT_IMPORTED }}
-              {% elif result.result_type == 'failure' %}{{ t.SHARE_VIEW.RESULT_FAILURES }}
-              {% elif result.result_type == 'url_downloaded' %}{{ t.SHARE_VIEW.RESULT_DOWNLOADED }}
-              {% elif result.result_type == 'pkg_copied' %}{{ t.SHARE_VIEW.RESULT_COPIED }}
-              {% elif result.result_type == 'trust_updated' %}{{ t.SHARE_VIEW.RESULT_TRUST_UPDATED }}
-              {% elif result.result_type == 'deprecation' %}{{ t.SHARE_VIEW.RESULT_DEPRECATION }}
-              {% else %}{{ result.result_type|title }}
+              {% if result.result_type == 'munki_import' %}<span data-i18n="SHARE_VIEW.RESULT_IMPORTED">{{ t.SHARE_VIEW.RESULT_IMPORTED }}</span>
+              {% elif result.result_type == 'failure' %}<span data-i18n="SHARE_VIEW.RESULT_FAILURES">{{ t.SHARE_VIEW.RESULT_FAILURES }}</span>
+              {% elif result.result_type == 'url_downloaded' %}<span data-i18n="SHARE_VIEW.RESULT_DOWNLOADED">{{ t.SHARE_VIEW.RESULT_DOWNLOADED }}</span>
+              {% elif result.result_type == 'pkg_copied' %}<span data-i18n="SHARE_VIEW.RESULT_COPIED">{{ t.SHARE_VIEW.RESULT_COPIED }}</span>
+              {% elif result.result_type == 'trust_updated' %}<span data-i18n="SHARE_VIEW.RESULT_TRUST_UPDATED">{{ t.SHARE_VIEW.RESULT_TRUST_UPDATED }}</span>
+              {% elif result.result_type == 'deprecation' %}<span data-i18n="SHARE_VIEW.RESULT_DEPRECATION">{{ t.SHARE_VIEW.RESULT_DEPRECATION }}</span>
+              {% else %}<span>{{ result.result_type|title }}</span>
               {% endif %}
             </h3>
 
@@ -211,7 +239,7 @@
           {% elif result.result_type == 'failure' %}
           <div class="divide-y divide-gray-100 dark:divide-[#38383a]">
             {% for row in result.data %}
-            <div class="pl-4 pr-4 py-3 flex flex-col gap-1">
+            <div class="px-4 py-3 flex flex-col gap-1">
               <span class="text-sm font-mono text-gray-800 dark:text-gray-200">{{ row.recipe_id|default:row.recipe }}</span>
               {% if row.message %}
               <span class="text-sm text-gray-500 dark:text-gray-400">{{ row.message }}</span>
@@ -226,7 +254,8 @@
               <thead>
                 <tr class="text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-[#38383a]">
                   {% for key in result.data.0.keys %}
-                  <th class="text-left pb-2 pr-5 font-semibold">{{ key|title }}</th>
+                  <th class="text-left pb-2 pr-5 font-semibold"
+                      data-field-key="{{ key }}">{% result_field_label key result.result_type t %}</th>
                   {% endfor %}
                 </tr>
               </thead>
@@ -244,7 +273,8 @@
           {% endif %}
 
           {% else %}
-          <p class="px-4 py-3 text-xs text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.EMPTY_NO_DATA }}</p>
+          <p class="px-4 py-3 text-xs text-gray-400 dark:text-gray-500"
+             data-i18n="SHARE_VIEW.EMPTY_NO_DATA">{{ t.SHARE_VIEW.EMPTY_NO_DATA }}</p>
           {% endif %}
 
         </div>
@@ -253,18 +283,102 @@
     </section>
     {% endif %}
 
-    {# -- Empty state (no results and no stages) ---------------------------- #}
+    {# -- Empty state -------------------------------------------------------- #}
     {% if not stages and not results %}
     <div class="bg-white dark:bg-[#1c1c1e] rounded-xl shadow-sm border border-gray-100 dark:border-[#2c2c2e] p-10 text-center">
-      <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.SHARE_VIEW.EMPTY_NO_RUN_DATA }}</p>
+      <p class="text-sm text-gray-400 dark:text-gray-500"
+         data-i18n="SHARE_VIEW.EMPTY_NO_RUN_DATA">{{ t.SHARE_VIEW.EMPTY_NO_RUN_DATA }}</p>
     </div>
     {% endif %}
 
-    {# -- Footer ------------------------------------------------------------ #}
-    <p class="text-center text-xs text-gray-300 dark:text-gray-600 pb-2">
-      {{ t.SHARE_VIEW.FOOTER }}
-    </p>
+    {# -- Footer ------------------------------------------------------------- #}
+    <p class="text-center text-xs text-gray-300 dark:text-gray-600 pb-2"
+       data-i18n="SHARE_VIEW.FOOTER">{{ t.SHARE_VIEW.FOOTER }}</p>
 
   </main>
+
+  <script>
+    // Mirror of _RESULT_FIELD_KEYS in webapp_extras.py — maps raw field names
+    // to their RUN_DETAIL_VIEW translation keys.
+    const RESULT_FIELD_KEYS = {
+      message:        'RESULT_FIELD_MESSAGE',
+      recipe:         'RESULT_FIELD_RECIPE',
+      recipe_id:      'RESULT_FIELD_RECIPE_ID',
+      traceback:      'RESULT_FIELD_TRACEBACK',
+      pkg_path:       'RESULT_FIELD_PKG_PATH',
+      pkg_repo_path:  'RESULT_FIELD_PKG_REPO_PATH',
+      download_path:  'RESULT_FIELD_DOWNLOAD_PATH',
+      warning:        'RESULT_FIELD_WARNING',
+      name:           'RESULT_FIELD_NAME',
+      catalogs:       'RESULT_FIELD_CATALOGS',
+      icon_repo_path: 'RESULT_FIELD_ICON_REPO_PATH',
+      pkginfo_path:   'RESULT_FIELD_PKGINFO_PATH',
+      version:        'RESULT_FIELD_VERSION',
+    };
+
+    // Maps run/stage status values to APP translation keys.
+    const STATUS_KEYS = {
+      success:   'STATE_SUCCESS',
+      failed:    'STATE_FAILED',
+      running:   'STATE_IN_PROGRESS',
+      skipped:   'STATE_SKIPPED',
+      pending:   'STATE_PENDING',
+      cancelled: 'STATE_CANCELLED',
+    };
+
+    const TRANSLATIONS = JSON.parse(
+      document.getElementById('share-translations').textContent
+    );
+
+    function sharePage() {
+      return {
+        lang: localStorage.getItem('share_report_lang') || 'en-US',
+
+        init() {
+          // Ensure the select reflects the stored preference on load.
+          this.$nextTick(() => {
+            const stored = localStorage.getItem('share_report_lang');
+            if (stored && TRANSLATIONS[stored]) this.lang = stored;
+          });
+
+          this.$watch('lang', v => {
+            localStorage.setItem('share_report_lang', v);
+            this.applyTranslations();
+          });
+
+          this.applyTranslations();
+        },
+
+        applyTranslations() {
+          const t = TRANSLATIONS[this.lang] || TRANSLATIONS['en-US'] || {};
+
+          // Generic keyed elements: data-i18n="SECTION.KEY"
+          document.querySelectorAll('[data-i18n]').forEach(el => {
+            const attr = el.getAttribute('data-i18n');
+            const parts = attr.split('.');
+            let val = t;
+            for (const p of parts) val = val?.[p];
+            el.textContent = (typeof val === 'string' && val) ? val : attr;
+          });
+
+          // Status badges and labels: data-status="success|failed|..."
+          document.querySelectorAll('[data-status]').forEach(el => {
+            const status = el.getAttribute('data-status');
+            const key = STATUS_KEYS[status];
+            const val = key ? t?.APP?.[key] : undefined;
+            el.textContent = (typeof val === 'string' && val) ? val : (key ? `APP.${key}` : status);
+          });
+
+          // Generic table headers: data-field-key="download_path" etc.
+          document.querySelectorAll('[data-field-key]').forEach(el => {
+            const fieldKey = el.getAttribute('data-field-key');
+            const translationKey = RESULT_FIELD_KEYS[fieldKey];
+            const val = translationKey ? t?.RUN_DETAIL_VIEW?.[translationKey] : undefined;
+            el.textContent = (typeof val === 'string' && val) ? val : (translationKey ? `RUN_DETAIL_VIEW.${translationKey}` : fieldKey);
+          });
+        },
+      };
+    }
+  </script>
 </body>
 </html>

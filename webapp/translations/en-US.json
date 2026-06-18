@@ -2,7 +2,6 @@
   "NAME": "English (United States)",
   "APP": {
     "NAME": "AutoPkg Runner",
-
     "STATE_SUCCESS": "Success",
     "STATE_RUNNING": "Running",
     "STATE_FAILURE": "Failure",
@@ -14,11 +13,9 @@
     "STATE_SKIPPED": "Skipped",
     "STATE_DONE": "Done",
     "STATE_DISCONNECTED": "Disconnected",
-
     "DARKMODE_STATE_LIGHT": "Light",
     "DARKMODE_STATE_DARK": "Dark",
     "DARKMODE_STATE_SYSTEM": "System",
-
     "ACTION_TRIGGER_RUN": "Trigger Run",
     "ACTION_VIEW_LOGS": "View Logs",
     "ACTION_CHANGE_PWD": "Change Password",
@@ -35,7 +32,6 @@
     "ACTION_HIDE": "Hide",
     "ACTION_MANAGE": "Manage",
     "ACTION_DONE": "Done",
-
     "VIEWS_DASHBOARD": "Dashboard",
     "VIEWS_RUNS": "Runs",
     "VIEWS_SCHEDULES": "Schedule",
@@ -43,100 +39,79 @@
     "VIEWS_CONFIG": "Configuration",
     "VIEWS_TOKENS": "Tokens",
     "VIEWS_USERS": "Users",
-
     "FIELDNAME_USERNAME": "Username",
     "FIELDNANE_PASSWORD": "Password",
-
     "ROLE_SUPERUSER": "Administrator",
-
     "ACCOUNT_APPEARANCE": "Appearance",
     "CHANGE_PWD_CURRENT": "Current Password",
     "CHANGE_PWD_NEW": "New Password",
     "CHANGE_PWD_CONFIRM": "Confirm New Password",
     "CHANGE_PWD_HINT": "Minimum 8 characters. You will stay logged in."
   },
-
   "LOGIN_VIEW": {
     "TAGLINE": "Sign in to continue",
     "ERROR_INVALID_CREDENTIALS": "Invalid username or password."
   },
-
   "DASHBOARD_VIEW": {
     "HEADER_RUN_COUNT_30D": "Runs (30d)",
     "HEADER_SUCCESS_RATE": "Success Rate",
     "HEADER_SUCCESS_RATE_30D": "Success Rate (30d)",
     "HEADER_NEXT_RUN": "Next Scheduled Run",
     "HEADER_NEXT_RUN_SHORT": "Next Run",
-
     "SECTION_LAST_RUN": "Last Run",
     "SECTION_RECENT_RUNS": "Recent Runs",
-
     "META_TRIGGERED_BY": "Triggered by",
-
     "STATE_NO_RUN_SCHEDULED": "Not Scheduled",
     "STATE_STARTING": "Starting…",
-
     "ACTION_VIEW_ALL": "View All",
     "ACTION_RUN_NOW": "Run Now",
-
     "EMPTY_NO_RUNS": "No runs yet. Click Trigger Run to start the pipeline.",
     "EMPTY_NO_RUNS_MOBILE": "No runs yet. Tap Run Now to start."
   },
-
   "RUNS_VIEW": {
     "NAV_ALL_RUNS": "All Runs",
-
     "COL_STATUS": "Status",
     "COL_STARTED": "Started",
     "COL_DURATION": "Duration",
     "COL_TRIGGERED_BY": "Triggered by",
-
     "PAGINATION_PAGE": "Page",
     "PAGINATION_OF": "of",
     "PAGINATION_PREV": "← Prev",
     "PAGINATION_NEXT": "Next →",
     "PAGINATION_PREV_LONG": "Previous Page",
     "PAGINATION_NEXT_LONG": "Next Page",
-
     "RUN_COUNT_SINGULAR": "Run",
     "RUN_COUNT_PLURAL": "Runs",
-
     "ACTION_MANAGE": "@:APP.ACTION_MANAGE",
     "ACTION_DONE": "@:APP.ACTION_DONE",
     "ACTION_DELETE": "@:APP.ACTION_DELETE",
     "ACTION_VIEW": "View →",
-
     "EMPTY_NO_RUNS": "No runs yet. Trigger one to get started.",
     "EMPTY_NO_RUNS_SHORT": "No runs yet."
   },
-
   "RUN_DETAIL_VIEW": {
     "META_TRIGGERED_BY": "@:DASHBOARD_VIEW.META_TRIGGERED_BY",
     "META_STARTED": "Started",
     "META_DURATION": "Duration",
     "META_RUN_ID": "Run ID",
-
     "SECTION_DETAILS": "Details",
     "SECTION_STAGES": "Stages",
+    "SECTION_AUTOPKG_OUTPUT": "AutoPkg Output",
     "SECTION_GENERAL_LOGS": "General",
     "SECTION_LIVE_OUTPUT": "Live Output",
     "LABEL_OUTPUT": "Output",
-
     "LOG_EMPTY_STAGE": "No log output for this stage yet.",
     "LOG_EMPTY_STAGE_MOBILE": "No log entries for this stage.",
     "LOG_WAITING": "Waiting for log output…",
-
     "STATE_WAITING_PIPELINE": "Waiting for pipeline to start…",
     "STATE_CONNECTING": "Connecting…",
     "STATE_NO_STAGES": "No stage data yet.",
-
     "STATUS_IN_PROGRESS": "@:APP.STATE_IN_PROGRESS",
     "STATUS_SUCCESS": "@:APP.STATE_SUCCESS",
     "STATUS_FAILURE": "@:APP.STATE_FAILURE",
     "STATUS_PENDING": "@:APP.STATE_PENDING",
     "STATUS_CANCELLED": "@:APP.STATE_CANCELLED",
     "STATUS_SKIPPED": "@:APP.STATE_SKIPPED",
-
     "RESULTS_NO_DATA": "No data.",
     "RESULT_FIELD_MESSAGE": "Message",
     "RESULT_FIELD_RECIPE": "Recipe",
@@ -155,7 +130,6 @@
     "CARD_SHOW_PATHS": "Show paths",
     "CARD_HIDE_PATHS": "Hide paths",
     "ACTION_VIEW_DETAILS": "View details",
-
     "RESULT_TYPE_FAILURE": "Failures",
     "RESULT_TYPE_PKG_COPIED": "Packages Copied",
     "RESULT_TYPE_URL_DOWNLOADED": "URLs Downloaded",
@@ -163,12 +137,10 @@
     "RESULT_TYPE_MUNKI_IMPORT": "Munki Imports",
     "RESULT_TYPE_TRUST_UPDATED": "Trust Updated"
   },
-
   "SCHEDULE_VIEW": {
     "DESC_SCHEDULER": "Configure when the AutoPkg pipeline runs automatically. Use standard cron syntax.",
     "ENABLE_SCHEDULER_TOGGLE_HEADER": "Enable Scheduled Runs",
     "ENABLE_SCHEDULER_TOGGLE_DESC": "When disabled, the pipeline only runs when triggered via the WebUI or API.",
-
     "SECTION_CRON_EXPRESSION": "Cron Expression",
     "CRON_FORMAT_HINT": "minute  hour  day-of-week  day-of-month  month",
     "CRON_FORMAT_EXAMPLE": "Use * for every value, e.g. 0 2 * * * runs daily at 02:00.",
@@ -176,22 +148,17 @@
     "CRON_TZ_CURRENTLY": "currently",
     "CRON_TZ_PREFIX": "Times are in",
     "LABEL_NEXT_RUN": "Next run:",
-
     "ACTION_SAVE": "Save Schedule"
   },
-
   "TOKENS_VIEW": {
     "TITLE": "API Tokens",
     "SUBTITLE": "Manage API keys for external access",
-
     "SECTION_API_TOKENS": "API Tokens",
     "SECTION_API_REFERENCE": "API Reference",
     "SECTION_NEW_TOKEN_CREATED": "New Token Created",
     "SECTION_ENDPOINTS": "Endpoints",
-
     "FIELD_TOKEN_NAME": "Token name",
     "FIELD_TOKEN_NAME_HINT": "Give it a name that identifies where it will be used.",
-
     "ACTION_ADD": "@:APP.ACTION_ADD",
     "ACTION_NEW_TOKEN": "New Token",
     "ACTION_ADD_TOKEN": "Add Token",
@@ -201,39 +168,29 @@
     "ACTION_CREATE_TOKEN": "Create Token",
     "ACTION_CREATE": "Create",
     "ACTION_CREATE_FIRST": "Create your first token",
-
     "HINT_COPY_NOW": "Copy this token now - it won't be shown again.",
     "BANNER_TOKEN_CREATED_PREFIX": "Token",
     "BANNER_TOKEN_CREATED_SUFFIX": "created - copy it now. It won't be shown again.",
-
     "MODAL_TITLE": "New API Token",
-
     "EMPTY_NO_TOKENS": "No API tokens yet.",
     "CONFIRM_REVOKE_DESC": "Any integrations using this token will stop working immediately."
   },
-
   "USER_VIEW": {
     "SECTION_ACCOUNT": "Account",
     "SECTION_ROLE_STATUS": "Role/Status",
     "SECTION_PERMISSIONS": "Permissions",
     "SECTION_ACTIONS": "Actions",
-
     "TABLE_CAT_USERNAME": "Username",
     "TABLE_CAT_EMAIL": "Email",
     "TABLE_CAT_ACTIVE": "Active",
     "TABLE_CAT_ROLE": "Role",
-
     "LABEL_YOU": "(you)",
     "LABEL_EMAIL_OPTIONAL": "Email (optional)",
-
     "ROLE_USER": "User",
     "ROLE_ADMIN_DESC": "Full access to all settings and users",
     "ROLE_ADMIN_DESC_SHORT": "Full access to all settings",
-
     "STATUS_INACTIVE": "Inactive",
-
     "FIELD_ACTIVE_DESC": "Allow this user to sign in",
-
     "ACTION_ADD_USER": "Add User",
     "ACTION_ADD": "Add",
     "ACTION_CREATE_USER": "Create User",
@@ -241,25 +198,18 @@
     "ACTION_SAVE_CHANGES": "Save Changes",
     "ACTION_DELETE_USER": "Delete User",
     "ACTION_RESET_PW_SHORT": "Reset PW",
-
     "CREDS_BANNER_CREATED": "Account created - save these credentials now.",
     "CREDS_BANNER_RESET": "Password reset - save the new password now.",
     "CREDS_BANNER_DISCLAIMER": "These credentials are not stored in plain text and will not be shown again.",
     "CREDS_BANNER_DISCLAIMER_SHORT": "These credentials will not be shown again.",
-
     "HINT_PASSWORD_GENERATED": "A secure password will be generated and shown once after creation.",
     "HINT_PASSWORD_GENERATED_SHORT": "A secure password will be generated and shown once.",
-
     "SELF_EDIT_NOTICE": "You cannot change your own role or active status.",
     "SELF_EDIT_NOTICE_LONG": "You cannot change your own role or active status. Use the account menu to change your password.",
-
     "RESET_PWD_DESC": "Generate a new random password for",
     "RESET_PWD_HINT": "The new password will be shown once immediately after resetting.",
-
     "CONFIRM_DELETE_DESC": "This user will be permanently removed and cannot be recovered.",
-
     "EMPTY_NO_USERS": "No users found.",
-
     "PERM_MANAGE_USERS": "Manage Users",
     "PERM_MANAGE_USERS_DESC": "Add/remove users, reset passwords",
     "PERM_TRIGGER_RUNS": "Run Manager",
@@ -269,7 +219,6 @@
     "PERM_VIEW_RUNS": "Run Viewer",
     "PERM_VIEW_RUNS_DESC": "View run details and logs"
   },
-
   "NOTIFICATIONS_VIEW": {
     "SECTION_SETTINGS": "Settings",
     "SECTION_SHARING": "Sharing",
@@ -278,14 +227,12 @@
     "SECTION_SUBSCRIBED_DEVICES": "Subscribed Devices",
     "SECTION_MESSAGE_TEMPLATE": "Message Template",
     "SECTION_SMTP_CREDENTIALS": "Credentials",
-
     "OPT_APP_URL": "Base URL",
     "OPT_APP_URL_DESC": "Base URL of this AutoPkg Runner instance, used for notification links.",
     "OPT_APP_URL_DESC_SHORT": "The public base URL of this server.",
     "OPT_SHARE_LINK_EXPIRY": "Share Link Expiry",
     "OPT_SHARE_LINK_EXPIRY_DESC": "Number of days before share links expire.",
     "OPT_SHARE_LINK_EXPIRY_DESC_SHORT": "Days before share links expire.",
-
     "OPT_APP_TOKEN": "App Token",
     "OPT_USER_TOKEN": "User Token",
     "OPT_SUPPORTS_HTML": "HTML Messages",
@@ -303,9 +250,7 @@
     "OPT_SMTP_PASSWORD": "Password",
     "OPT_EMAIL_TEMPLATE": "Email Template",
     "OPT_EMAIL_TEMPLATE_NONE": "None (plain text)",
-
     "UNIT_DAYS": "days",
-
     "FIELD_NAME": "Name",
     "FIELD_ENABLED": "Enabled",
     "FIELD_TYPE": "Type",
@@ -313,7 +258,6 @@
     "FIELD_MESSAGE": "Message",
     "LABEL_AVAILABLE_VARS": "Available variables",
     "DEVICE_ADDED_PREFIX": "Added",
-
     "ACTION_ADD": "Add",
     "ACTION_ADD_NOTIFIER": "Add Notifier",
     "ACTION_ADD_FIRST": "Add your first notifier",
@@ -329,25 +273,19 @@
     "ACTION_SUBSCRIBE_DEVICE": "Subscribe This Device",
     "ACTION_ENABLE": "Enable",
     "ACTION_DISABLE": "Disable",
-
     "STATE_SENDING": "Sending…",
     "STATE_SUBSCRIBED": "Subscribed ✓",
     "STATE_SUBSCRIBED_DEVICE": "This device is subscribed",
     "STATE_SUBSCRIBING": "Subscribing...",
-
     "EMPTY_NO_NOTIFIERS": "No notifiers configured.",
     "EMPTY_NO_DEVICES": "No devices subscribed.",
     "EMPTY_NO_DEVICES_MOBILE": "No devices subscribed yet.",
-
     "MODAL_NEW_NOTIFIER_TITLE": "New Notifier",
-
     "WARN_VAPID_NOT_CONFIGURED": "VAPID keys not configured",
     "DEFAULT_DEVICE_LABEL": "Unknown Device",
-
     "TEST_SUCCESS": "Test sent successfully.",
     "TEST_FAILED": "Test failed.",
     "CONFIRM_DELETE_DESC": "This notifier will stop sending alerts immediately. This action cannot be undone.",
-
     "TMPLT_STATUS_VARHINT": "\"succeeded\" or \"failed\"",
     "TMPLT_STATUS_EMOJI_VARHINT": "",
     "TMPLT_IMPORTS_VARHINT": "Number of Munki Imports",
@@ -361,58 +299,45 @@
     "TMPLT_DATE_VARHINT": "Run Date",
     "TMPLT_TIME_VARHINT": "Run Time"
   },
-
   "ABOUT_VIEW": {
     "TITLE": "About",
     "SUBTITLE": "Version info and installed tools",
-
     "SECTION_APPLICATION": "Application",
     "SECTION_EXTERNAL_TOOLS": "External Tools",
-
     "LABEL_PYTHON": "Python",
     "LABEL_RUNTIME": "Runtime",
-
     "STATE_NOT_INSTALLED": "Not installed",
     "STATE_UPDATE_CHECK_FAILED": "Could not check for updates.",
     "STATE_PYTHON_EMBEDDED": "Embedded",
     "STATE_RUNTIME_BUNDLED": "Bundled Application",
     "STATE_RUNTIME_STANDARD": "Standard",
-
     "UPDATE_AVAILABLE_PREFIX": "Update available -",
     "UPDATE_AVAILABLE_SUFFIX": "is the latest release.",
     "UP_TO_DATE_PREFIX": "Up to date (latest:",
     "UP_TO_DATE_SUFFIX": ")",
-
     "ACTION_VIEW_RELEASE": "View release →",
     "ACTION_VIEW_RELEASE_GITHUB": "View release on GitHub →"
   },
-
   "SHARE_VIEW": {
     "LABEL_RUN_REPORT": "Run report",
-
     "META_STARTED": "Started",
     "META_DURATION": "Duration",
     "META_TRIGGERED_BY": "Triggered by",
-
     "SECTION_STAGES": "Stages",
     "SECTION_AUTOPKG_OUTPUT": "AutoPkg Output",
-
     "RESULT_IMPORTED": "Imported Packages",
     "RESULT_FAILURES": "Failures",
     "RESULT_DOWNLOADED": "Downloaded Packages",
     "RESULT_COPIED": "Copied Packages",
     "RESULT_TRUST_UPDATED": "Trust Info Updated",
     "RESULT_DEPRECATION": "Deprecation Warnings",
-
     "EMPTY_NO_DATA": "No data available.",
     "EMPTY_NO_RUN_DATA": "No data available for this run yet.",
-
-    "FOOTER": "Shared via AutoPkg Runner"
+    "FOOTER": "Shared via AutoPkg Runner",
+    "LABEL_LANGUAGE": "Language"
   },
-
   "CONFIG_VIEW": {
     "HEADER_CONFIG": "@:APP.VIEWS_CONFIG",
-
     "SECTION_PIPELINE": "Pipeline",
     "SECTION_SYSTEM": "System",
     "SECTION_ADMINISTRATION": "Administration",
@@ -421,7 +346,6 @@
     "SECTION_SMB_SERVER": "SMB Server",
     "SECTION_REPOCLEAN": "RepoClean",
     "SECTION_LOG_FILE": "Log File",
-
     "TAB_SCHEDULE": "Schedule",
     "TAB_AUTOPKG": "AutoPkg",
     "TAB_REPO": "Repository",
@@ -430,7 +354,6 @@
     "TAB_NOTIFICATIONS": "Notifications",
     "TAB_LOGGING": "Logging",
     "TAB_WEBINTERFACE": "User Interface",
-
     "SUBTITLE_SCHEDULE": "When the pipeline runs automatically",
     "SUBTITLE_AUTOPKG": "Binary path, cache, recipe list",
     "SUBTITLE_WORKFLOW": "Run behaviour and repo updates",
@@ -438,16 +361,13 @@
     "SUBTITLE_GC": "Version retention and cleanup",
     "SUBTITLE_NOTIFICATIONS": "Pushover, Discord and other notifiers",
     "SUBTITLE_LOGGING": "Log level and file output",
-
     "REPOTYPE_LOCAL": "Local",
     "REPOTYPE_REMOTE": "Remote",
     "CONNECTION_TYPE_SSH": "SSH",
     "CONNECTION_TYPE_SMB": "SMB",
-
     "ACTION_SAVE_CONFIG": "Save Configuration",
     "ACTION_SAVE_CONFIG_INFO": "Settings are applied to all new runs",
     "ACTION_BROWSE": "Browse",
-
     "FILE_BROWSER_TITLE": "Select Directory",
     "FILE_BROWSER_SELECT": "Select This Folder",
     "FILE_BROWSER_NEW_FOLDER": "New Folder",
@@ -456,7 +376,6 @@
     "FILE_BROWSER_LOADING": "Loading…",
     "FILE_BROWSER_FOLDER_NAME": "Folder name",
     "FILE_BROWSER_CREATE_HERE": "Create folder here",
-
     "OPT_AUTOPKG_BINARY": "AutoPkg Binary",
     "OPT_AUTOPKG_BINARY_DESC": "Path to the AutoPkg Binary",
     "OPT_AUTOPKG_CACHE_PATH": "Cache Path",
@@ -469,7 +388,6 @@
     "OPT_AUTOPKG_REPOS_DIR_DESC": "Where autopkg repo-add installs recipe repositories",
     "OPT_UPDATE_REPOS": "Update Repos",
     "OPT_UPDATE_REPOS_DESC": "Update remote Git repositories before each run",
-
     "OPT_REPO_TYPE": "Repository Type",
     "OPT_CONNECTION_TYPE": "Connection Method",
     "OPT_SERVER_HOST": "Server Host",
@@ -480,13 +398,11 @@
     "PLACEHOLDER_USERNAME": "Username",
     "PLACEHOLDER_PASSWORD": "Password",
     "OPT_SMB_SERVER_SHARE": "Server Share",
-
     "OPT_LOG_LEVEL": "Log Level",
     "OPT_LOG_PATH": "Log Path",
     "OPT_LOGGING_TO_FILE": "Write Logs to File",
     "OPT_LOGGING_TO_FILE_DESC": "Persist pipeline logs to disk in addition to the database",
     "LOG_LEVEL_HINT": "Changes take effect after saving on the Logging settings page.",
-
     "OPT_GC_KEEP_VERSIONS": "Keep Versions",
     "OPT_GC_KEEP_VERSIONS_DESC": "Number of package versions to retain per recipe",
     "OPT_GC_CLEAR_TEMP": "Clear Temporary Files",
@@ -494,34 +410,26 @@
     "OPT_GC_CLEAN_REPO": "Clean Repo",
     "OPT_GC_CLEAN_REPO_DESC": "Run repoclean to remove old package versions from the Munki repo",
     "OPT_GC_REPOCLEAN_BIN": "RepoClean Binary",
-
     "OPT_LOCAL_REPO_PATH": "Repository Path",
     "OPT_LANG_SELECT": "Display Language",
-
     "WARN_SFTP_DEPS_MISSING": "SFTP dependencies not installed",
     "WARN_SFTP_DEPS_INSTRUCTION": "Run python manage.py install_sftp_deps to install macFUSE and sshfs, then restart the server."
   },
-
   "RECIPES_VIEW": {
     "TITLE": "Recipes",
-
     "SUBTAB_REPOS": "Repositories",
     "SUBTAB_RECIPES": "Recipes",
     "SUBTAB_LIST": "Run List",
     "SUBTAB_OVERRIDES": "Overrides",
-
     "COL_NAME": "Recipe",
     "COL_IDENTIFIER": "Identifier",
     "COL_TYPE": "Type",
     "COL_ACTIONS": "Actions",
-
     "BADGE_OVERRIDE": "Override",
     "BADGE_PARENT": "Parent",
     "BADGE_ACTIVE": "In run list",
-
     "LABEL_SELECTED": "selected",
     "SEARCH_PLACEHOLDER": "Filter recipes…",
-
     "ACTION_UPDATE": "Update",
     "ACTION_UPDATE_ALL": "Update All",
     "ACTION_ADD_REPO": "Add Repository",
@@ -532,27 +440,22 @@
     "ACTION_EDIT": "Edit",
     "ACTION_SAVE_LIST": "Save Run List",
     "ACTION_CHECKED_FIRST": "Checked First",
-
     "REPOS_EMPTY": "No repositories configured.",
     "DELETE_REPO_TITLE": "Remove Repository",
     "DELETE_REPO_DESC": "Are you sure you want to remove this repository?",
     "REPO_STATUS_UPTODATE": "Up to date",
     "REPO_STATUS_BEHIND": "commits behind",
     "REPO_STATUS_UNKNOWN": "Unknown",
-
     "EDITOR_TITLE": "Edit Override",
     "EDITOR_SAVE": "Save",
     "OVERRIDES_EMPTY": "No overrides found.",
-
     "LIST_LOADING": "Loading recipe list…",
     "LIST_EMPTY": "No recipes available. Add repositories first.",
     "LIST_NO_RESULTS": "No recipes match your search.",
     "LIST_AVAILABLE": "Available Recipes",
     "LIST_LOAD_ERROR": "Could not load recipe list from autopkg.",
-
     "OVERRIDE_CREATE_IDENTIFIER_PLACEHOLDER": "e.g. Firefox.pkg.recipe",
     "REPO_URL_PLACEHOLDER": "e.g. https://github.com/autopkg/recipes",
-
     "WARNING_ORPHANED_LABEL": "run list entries with no matching recipe found",
     "WARNING_ORPHANED_TITLE": "These identifiers are in your run list but no recipe file was found for them:",
     "WARNING_MISSING_PARENT_LABEL": "recipes with a missing parent recipe",
