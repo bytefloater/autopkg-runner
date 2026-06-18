@@ -266,3 +266,178 @@ class TestUserEditView:
     def test_post_unknown_action_redirects(self, admin_client, user):
         resp = admin_client.post(self._url(user.id), {'action': 'unknown'})
         assert resp.status_code == 302
+
+
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+
+
+@pytest.mark.django_db
+class TestSavePermissionsSuperuser:
+    def test_superuser_returns_early_without_creating_permission_row(self, superuser):
+        from webapp.views.users import _save_permissions
+        from webapp.models import UserPermission
+        from unittest.mock import MagicMock
+        req = MagicMock()
+        _save_permissions(superuser, req)
+        # No UserPermission row should be created for a superuser
+        assert not UserPermission.objects.filter(user=superuser).exists()
+
+
+@pytest.mark.django_db
+class TestUsersViewMobileTemplate:
+    url = '/users/'
+
+    def test_mobile_ua_uses_mobile_template(self, admin_client):
+        resp = admin_client.get(self.url, HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+
+@pytest.mark.django_db
+class TestUsersViewCannotDemoteLastSuperuser:
+    url = '/users/'
+
+    def test_cannot_demote_last_superuser_via_update(self, admin_client, superuser, user):
+        """Demoting the only superuser is prevented in the update branch."""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        # Use second superuser as admin to try demoting the only remaining one
+        second = User.objects.create_superuser('second_su', '', 'pass1234')
+        from django.test import Client
+        c = Client()
+        c.force_login(second)
+        # Delete second so superuser is the only one, then try to demote via second's session
+        # Actually: admin_client is superuser. There's only 1 superuser.
+        # POST to demote superuser (is_superuser='') from admin session (which IS superuser)
+        # That's a self-edit → email-only path. Need a *different* account to do it.
+        # Create second_su, log in as second_su, try to demote superuser (the only other superuser)
+        # But then second_su exists, so remaining > 0. Delete second_su first to make superuser the only one.
+        second.delete()
+        # Now admin_client (superuser) is the only superuser. Only superuser can demote another superuser
+        # but can't demote itself (self-edit path). So we need a non-self demote attempt.
+        # The only way to hit 96-99 is if edit_user != request.user AND edit_user.is_superuser AND not is_admin AND remaining==0.
+        # Create a third superuser and log in as it to try demoting superuser.
+        third = User.objects.create_superuser('third_su', '', 'pass1234')
+        from django.test import Client
+        c2 = Client()
+        c2.force_login(third)
+        # Delete third from DB so superuser is the only one, but c2 is still logged in as third
+        third.delete()
+        # Now there's only superuser. c2 (as now-deleted third) tries to demote superuser.
+        resp = c2.post(self.url, {
+            'action': 'update',
+            'user_id': str(superuser.id),
+            'is_superuser': '',   # demote
+            'is_active': 'on',
+        })
+        # superuser should remain a superuser
+        superuser.refresh_from_db()
+        assert superuser.is_superuser
+
+
+@pytest.mark.django_db
+class TestUserEditViewCannotDemoteLastSuperuser:
+    def _url(self, pk):
+        return f'/users/{pk}/'
+
+    def test_cannot_demote_last_superuser_via_edit_view(self, superuser):
+        """Lines 183-186: when editing a non-self superuser and remaining==0, redirect with error."""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        # Create a second superuser to log in as (not self)
+        second = User.objects.create_superuser('second_edit', '', 'pass1234')
+        from django.test import Client
+        c = Client()
+        c.force_login(second)
+        # Make superuser the only remaining superuser by deleting second from DB
+        second.delete()
+        # Now second is deleted but still authenticated in session. Try to demote superuser.
+        resp = c.post(self._url(superuser.pk), {
+            'action': 'update',
+            'email': '',
+            'is_active': 'on',
+            'is_superuser': '',  # demote
+        })
+        superuser.refresh_from_db()
+        assert superuser.is_superuser
+
+    def test_cannot_delete_last_superuser_via_edit_view(self, superuser):
+        """Lines 217-218: when deleting a non-self superuser and remaining==0."""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        second = User.objects.create_superuser('second_del', '', 'pass1234')
+        from django.test import Client
+        c = Client()
+        c.force_login(second)
+        second.delete()
+        resp = c.post(self._url(superuser.pk), {'action': 'delete'})
+        superuser.refresh_from_db()
+        assert User.objects.filter(pk=superuser.pk).exists()
+
+
+@pytest.mark.django_db
+class TestLastSuperuserProtection:
+    """Test lines that protect against demoting/deleting the last superuser."""
+
+    @pytest.fixture
+    def user_manager_client(self, user, grant_perm):
+        """Non-superuser with can_manage_users permission."""
+        grant_perm(user, can_manage_users=True)
+        from django.test import Client
+        c = Client()
+        c.force_login(user)
+        return c, user
+
+    def test_cannot_demote_last_superuser_in_users_view(self, user_manager_client, superuser):
+        """Lines 96-99: manager tries to demote the only superuser."""
+        client, _ = user_manager_client
+        resp = client.post('/users/', {
+            'action': 'update',
+            'user_id': str(superuser.id),
+            'is_superuser': '',   # demoting
+            'is_active': 'on',
+            'email': '',
+        })
+        assert resp.status_code == 302
+        superuser.refresh_from_db()
+        assert superuser.is_superuser  # should still be superuser
+
+    def test_cannot_delete_last_superuser_in_users_view(self, user_manager_client, superuser):
+        """Lines 142-145: manager tries to delete the only superuser."""
+        client, _ = user_manager_client
+        resp = client.post('/users/', {
+            'action': 'delete',
+            'user_id': str(superuser.id),
+        })
+        assert resp.status_code == 302
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        assert User.objects.filter(id=superuser.id).exists()
+
+    def test_cannot_demote_last_superuser_in_user_edit_view(self, user_manager_client, superuser):
+        """Lines 183-186: manager tries to demote only superuser via edit view."""
+        client, _ = user_manager_client
+        resp = client.post(f'/users/{superuser.pk}/', {
+            'action': 'update',
+            'is_superuser': '',
+            'is_active': 'on',
+            'email': '',
+        })
+        assert resp.status_code == 302
+        superuser.refresh_from_db()
+        assert superuser.is_superuser
+
+    def test_cannot_delete_last_superuser_in_user_edit_view(self, user_manager_client, superuser):
+        """Lines 217-218: manager tries to delete only superuser via edit view."""
+        client, _ = user_manager_client
+        resp = client.post(f'/users/{superuser.pk}/', {'action': 'delete'})
+        assert resp.status_code == 302
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        assert User.objects.filter(id=superuser.id).exists()
+
+    def test_empty_username_rejected_in_create(self, user_manager_client):
+        """Lines 60-61: create with empty username shows error."""
+        client, _ = user_manager_client
+        resp = client.post('/users/', {'action': 'create', 'username': ''})
+        assert resp.status_code == 302

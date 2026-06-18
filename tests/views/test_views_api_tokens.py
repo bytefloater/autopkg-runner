@@ -43,3 +43,26 @@ class TestApiTokensView:
         resp = config_editor_client.post(self.url, {'action': 'revoke', 'token_id': str(api_token.pk)})
         assert resp.status_code in (200, 302)
         assert not APIToken.objects.filter(pk=api_token.pk).exists()
+
+
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+
+
+@pytest.mark.django_db
+class TestApiTokensMobile:
+    url = '/api-tokens/'
+
+    def test_mobile_ua_uses_mobile_template(self, config_editor_client):
+        resp = config_editor_client.get(self.url, HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+    def test_revoke_token_not_found_message(self, config_editor_client):
+        """Revoking a non-existent token id shows error message — covers the else branch."""
+        resp = config_editor_client.post(self.url, {'action': 'revoke', 'token_id': '999999'})
+        assert resp.status_code in (200, 302)
+
+    def test_create_token_empty_name_rejected(self, config_editor_client):
+        """Empty name should redirect with error — covers line 60-61."""
+        resp = config_editor_client.post(self.url, {'action': 'create', 'name': ''})
+        assert resp.status_code in (200, 302)

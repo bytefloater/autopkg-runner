@@ -360,3 +360,90 @@ class TestWebPushUnsubscribeView:
     def test_404_for_unknown_subscription(self, config_editor_client, webpush_notifier):
         resp = config_editor_client.post(self._url(webpush_notifier.pk, 99999))
         assert resp.status_code == 404
+
+
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+
+
+@pytest.mark.django_db
+class TestNotificationsMobileTemplates:
+    def test_notifications_view_mobile_template(self, config_editor_client):
+        resp = config_editor_client.get('/config/notifications/', HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+    def test_notifier_edit_view_mobile_template(self, config_editor_client, notifier):
+        resp = config_editor_client.get(f'/config/notifications/{notifier.pk}/', HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+    def test_notification_settings_view_mobile_template(self, config_editor_client):
+        resp = config_editor_client.get('/config/notifications/settings/', HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+
+@pytest.mark.django_db
+class TestNotifierEditViewEmailContext:
+    def test_email_notifier_includes_email_templates(self, config_editor_client):
+        from webapp.models import Notifier
+        email_notifier = Notifier.objects.create(
+            name='Email Notifier', notifier_type='email', enabled=True, config={},
+        )
+        resp = config_editor_client.get(f'/config/notifications/{email_notifier.pk}/')
+        assert resp.status_code == 200
+        assert 'email_templates' in resp.context
+
+
+@pytest.mark.django_db
+class TestWebPushSubscribeDeviceLabelUpdate:
+    def _url(self, pk):
+        return f'/config/notifications/{pk}/subscribe/'
+
+    def test_updates_device_label_on_existing_subscription(self, config_editor_client, webpush_notifier):
+        from webapp.models import WebPushSubscription
+        sub = WebPushSubscription.objects.create(
+            notifier=webpush_notifier,
+            endpoint='https://push.example.com/endpoint2',
+            p256dh='OLD',
+            auth='OLD',
+            device_label='Old Label',
+        )
+        payload = json.dumps({
+            'endpoint': 'https://push.example.com/endpoint2',
+            'p256dh': 'NEWKEY',
+            'auth': 'NEWAUTH',
+            'label': 'New Label',
+        })
+        resp = config_editor_client.post(
+            self._url(webpush_notifier.pk),
+            data=payload,
+            content_type='application/json',
+        )
+        assert resp.status_code == 200
+        sub.refresh_from_db()
+        assert sub.device_label == 'New Label'
+
+
+@pytest.mark.django_db
+class TestNotifierEditViewExceptionBranches:
+    def test_setting_get_exception_uses_en_us_fallback(self, config_editor_client, notifier):
+        """Lines 92-93: if Setting.get raises, lang falls back to en-US."""
+        from webapp.models import Setting
+        with patch.object(Setting, 'get', side_effect=Exception('db error')):
+            resp = config_editor_client.get(f'/config/notifications/{notifier.pk}/')
+        assert resp.status_code == 200
+
+    def test_post_text_field_sets_cfg_key_line138(self, config_editor_client):
+        """Line 138: non-password (text) field sets cfg[key] = val directly."""
+        from webapp.models import Notifier
+        slack = Notifier.objects.create(name='Slack Notif', notifier_type='slack', config={})
+        resp = config_editor_client.post(f'/config/notifications/{slack.pk}/', {
+            'name': 'Slack Notif',
+            'webhook_url': 'https://hooks.slack.com/xxx',
+            'title_template': '',
+            'message_template': '',
+        })
+        assert resp.status_code == 302
+        slack.refresh_from_db()
+        assert slack.config.get('webhook_url') == 'https://hooks.slack.com/xxx'

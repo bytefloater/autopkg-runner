@@ -52,3 +52,14 @@ class TestDashboardView:
         s.save()
         resp = client.get(self.url)
         assert resp.context['next_run_formatted'] is None
+
+
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+
+
+@pytest.mark.django_db
+class TestDashboardMobileTemplate:
+    def test_mobile_ua_uses_mobile_template(self, client):
+        resp = client.get('/dashboard/', HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]

@@ -1,7 +1,51 @@
-"""Tests for webapp.views.account.ChangePasswordView."""
+"""Tests for webapp.views.account: login and ChangePasswordView."""
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
+
+
+@pytest.mark.django_db
+class TestMobileAwareLoginView:
+    url = '/login/'
+
+    def test_get_renders_login_page(self, anon_client):
+        resp = anon_client.get(self.url)
+        assert resp.status_code == 200
+
+    def test_zk_login_success_redirects(self, anon_client, user):
+        with patch('webapp.views.account.authenticate', return_value=user), \
+             patch('webapp.views.account.auth_login'):
+            resp = anon_client.post(self.url, {
+                'username': user.username,
+                'challenge_id': 'fake-challenge-id',
+                'response': 'fake-response-hex',
+            })
+        assert resp.status_code == 302
+
+    def test_zk_login_failure_rerenders_form(self, anon_client, user):
+        with patch('webapp.views.account.authenticate', return_value=None):
+            resp = anon_client.post(self.url, {
+                'username': user.username,
+                'challenge_id': 'bad-challenge-id',
+                'response': 'bad-response',
+            })
+        assert resp.status_code == 200
+        assert resp.context.get('zk_failed') is True
+
+    def test_standard_password_login_falls_through(self, anon_client, user):
+        resp = anon_client.post(self.url, {
+            'username': user.username,
+            'password': 'testpass123',
+        })
+        assert resp.status_code in (200, 302)
+
+    def test_mobile_ua_uses_mobile_template(self, anon_client):
+        ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)'
+        resp = anon_client.get(self.url, HTTP_USER_AGENT=ua)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
 
 
 @pytest.mark.django_db
