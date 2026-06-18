@@ -176,3 +176,52 @@ class TestAboutView:
         # When autopkg is not installed, update_available is falsy (None or False)
         assert not resp.context['autopkg_update_available']
         assert resp.context['autopkg_latest'] is None
+
+
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+
+
+@pytest.mark.django_db
+class TestAboutViewMobileTemplate:
+    def test_mobile_ua_uses_mobile_template(self, client):
+        with patch('webapp.views.about._autopkg_version', return_value=None), \
+             patch('webapp.views.about._autopkg_latest_release', return_value=None), \
+             patch('webapp.views.about._munki_version', return_value=None):
+            resp = client.get('/about/', HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+
+class TestRunFileNotFoundAndGenericException:
+    def test_file_not_found_returns_empty(self):
+        from webapp.views.about import _run
+        with patch('subprocess.run', side_effect=FileNotFoundError('not found')):
+            assert _run('/nonexistent/bin') == ''
+
+    def test_generic_exception_returns_empty(self):
+        from webapp.views.about import _run
+        with patch('subprocess.run', side_effect=RuntimeError('crash')):
+            assert _run('/some/bin') == ''
+
+
+class TestMunkiVersionFileNotFoundAndGenericException:
+    def test_generic_plist_exception_returns_none(self):
+        from webapp.views.about import _munki_version
+        with patch('webapp.views.about._run', return_value=''), \
+             patch('pathlib.Path.read_bytes', side_effect=OSError('permission denied')):
+            result = _munki_version()
+            assert result is None
+
+
+class TestParseVersionEdgeCases:
+    def test_none_input_returns_fallback(self):
+        from webapp.views.about import _parse_version
+        # None.split() raises AttributeError → except → (0,)
+        result = _parse_version(None)
+        assert result == (0,)
+
+    def test_integer_input_returns_fallback(self):
+        from webapp.views.about import _parse_version
+        # int has no .split() → AttributeError → except → (0,)
+        result = _parse_version(42)
+        assert result == (0,)

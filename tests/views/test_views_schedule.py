@@ -230,3 +230,22 @@ class TestScheduleView:
                 'month': '*',
             })
         assert resp.status_code == 302
+
+
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+
+
+@pytest.mark.django_db
+class TestScheduleViewMobileTemplate:
+    def test_mobile_ua_uses_mobile_template(self, config_editor_client, schedule):
+        resp = config_editor_client.get('/schedule/', HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+
+class TestSystemTzContext:
+    def test_returns_fallback_on_exception(self):
+        from webapp.views.schedule import _system_tz_context
+        with patch('webapp.scheduler.get_system_timezone', side_effect=Exception('boom')):
+            result = _system_tz_context()
+        assert result == {'system_tz_name': 'UTC', 'system_tz_abbr': 'UTC'}

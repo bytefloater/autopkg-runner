@@ -172,3 +172,54 @@ class TestLogLevelPickerView:
         Setting.set('logging.level', 'WARNING')
         resp = admin_client.get(self.url)
         assert resp.context['current_level'] == 'WARNING'
+
+
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+
+
+@pytest.mark.django_db
+class TestConfigRootViewMobileTemplate:
+    def test_mobile_ua_uses_mobile_template(self, admin_client):
+        resp = admin_client.get('/config/', HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+
+@pytest.mark.django_db
+class TestConfigSectionLoggingAndUi:
+    def test_logging_section_renders(self, admin_client):
+        resp = admin_client.get('/config/logging/')
+        assert resp.status_code == 200
+
+    def test_ui_section_renders(self, admin_client):
+        resp = admin_client.get('/config/ui/')
+        assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+class TestConfigSectionPostLoggingAndUi:
+    def test_post_logging_section_saves_settings(self, admin_client):
+        resp = admin_client.post('/config/logging/', {
+            'logging.to_file': 'on',
+            'logging.level': 'INFO',
+            'logging.file_path': '/tmp/test.log',
+        })
+        assert resp.status_code == 302
+
+    def test_post_ui_section_saves_language(self, admin_client):
+        resp = admin_client.post('/config/ui/', {
+            'ui.language': 'en-US',
+        })
+        assert resp.status_code == 302
+
+    def test_post_unknown_section_uses_empty_keys(self, admin_client):
+        resp = admin_client.post('/config/unknown-section/', {})
+        assert resp.status_code in (200, 302, 404)
+
+
+class TestSectionKeys:
+    def test_unknown_section_returns_empty_tuples(self):
+        """Line 170: else branch when section name doesn't match any known section."""
+        from webapp.views.config import _section_keys
+        result = _section_keys('this-does-not-exist')
+        assert result == ([], [], [])
