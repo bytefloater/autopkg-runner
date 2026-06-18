@@ -28,8 +28,7 @@ jobs:
       - name: Run tests with coverage
         run: |
           pytest tests/ -v --tb=short \
-            --cov=webapp --cov=api --cov=libs --cov=stages --cov=notifiers \
-            --cov-report=xml --cov-fail-under=80
+            --cov --cov-report=xml --cov-fail-under=80
 
       - name: Upload coverage report
         if: matrix.python-version == '3.13'
