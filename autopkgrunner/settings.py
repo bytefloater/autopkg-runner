@@ -50,6 +50,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'webapp.middleware.RemoveServerHeaderMiddleware',
     'webapp.middleware.DatabaseWriteGuardMiddleware',
