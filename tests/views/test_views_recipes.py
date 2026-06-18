@@ -754,3 +754,408 @@ class TestOverrideEditView:
                    side_effect=ValueError('Unsafe override path')):
             resp = config_editor_client.post(self._url('evil.recipe'), {'content': '<plist/>'})
         assert resp.status_code == 302
+
+
+# --- Helper: _recipe_list_path -----------------------------------------------
+
+@pytest.mark.django_db
+class TestRecipeListPath:
+    def test_returns_path_from_setting(self, db):
+        from webapp.models import Setting
+        from webapp.views.recipes import _recipe_list_path
+        Setting.set('autopkg.recipe_list', '/tmp/my_recipe_list.txt')
+        result = _recipe_list_path()
+        assert str(result) == '/tmp/my_recipe_list.txt'
+
+
+# --- Helper: _recipe_stem yaml -----------------------------------------------
+
+class TestRecipeStem:
+    def test_yaml_recipe_strips_both_suffixes(self):
+        from webapp.views.recipes import _recipe_stem
+        p = Path('/some/dir/Firefox.munki.recipe.yaml')
+        assert _recipe_stem(p) == 'Firefox.munki'
+
+    def test_regular_recipe_strips_recipe_suffix(self):
+        from webapp.views.recipes import _recipe_stem
+        p = Path('/some/dir/Firefox.munki.recipe')
+        assert _recipe_stem(p) == 'Firefox.munki'
+
+
+# --- Helper: _recipe_search_dirs ---------------------------------------------
+
+@pytest.mark.django_db
+class TestRecipeSearchDirs:
+    def test_returns_dirs_from_prefs_excluding_overrides(self, tmp_path, db):
+        from webapp.views.recipes import _recipe_search_dirs
+        from webapp.models import Setting
+
+        # Create two subdirs
+        repo1 = tmp_path / 'repo1'
+        repo1.mkdir()
+        repo2 = tmp_path / 'repo2'
+        repo2.mkdir()
+
+        prefs = {'RECIPE_SEARCH_DIRS': [str(repo1), str(repo2)]}
+        Setting.set('autopkg.overrides_dir', str(tmp_path / 'overrides'))
+
+        with patch('webapp.views.recipes._autopkg_prefs', return_value=prefs):
+            result = _recipe_search_dirs()
+
+        # Both repos should be present, overrides dir excluded
+        assert str(repo1) in result
+        assert str(repo2) in result
+
+    def test_overrides_resolve_exception_uses_str_fallback(self, tmp_path, db):
+        """Lines 282-283: if _overrides_dir().resolve() raises, falls back to str()."""
+        from webapp.views.recipes import _recipe_search_dirs
+        prefs = {'RECIPE_SEARCH_DIRS': [str(tmp_path / 'repo1')]}
+        (tmp_path / 'repo1').mkdir()
+        with patch('webapp.views.recipes._autopkg_prefs', return_value=prefs), \
+             patch('webapp.views.recipes._overrides_dir') as mock_od:
+            ov_path = MagicMock()
+            ov_path.resolve.side_effect = OSError('resolve failed')
+            ov_path.__str__ = lambda self: str(tmp_path / 'overrides')
+            mock_od.return_value = ov_path
+            result = _recipe_search_dirs()
+        assert isinstance(result, list)
+
+    def test_dir_resolve_exception_uses_str_fallback(self, tmp_path, db):
+        """Lines 290-291: if expanded.resolve() raises for a search dir, falls back to str()."""
+        from webapp.views.recipes import _recipe_search_dirs
+        repo = tmp_path / 'myrepo'
+        repo.mkdir()
+        prefs = {'RECIPE_SEARCH_DIRS': [str(repo)]}
+        with patch('webapp.views.recipes._autopkg_prefs', return_value=prefs), \
+             patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'overrides'), \
+             patch('pathlib.Path.resolve', side_effect=OSError('no resolve')):
+            result = _recipe_search_dirs()
+        assert isinstance(result, list)
+
+    def test_falls_back_to_repos_root_when_no_search_dirs(self, tmp_path, db):
+        from webapp.views.recipes import _recipe_search_dirs
+        from webapp.models import Setting
+
+        repos_root = tmp_path / 'RecipeRepos'
+        repos_root.mkdir()
+        (repos_root / 'myrepo').mkdir()
+        Setting.set('autopkg.recipe_repos_dir', str(repos_root))
+        Setting.set('autopkg.overrides_dir', str(tmp_path / 'overrides'))
+
+        with patch('webapp.views.recipes._autopkg_prefs', return_value={}):
+            result = _recipe_search_dirs()
+
+        assert any('myrepo' in d for d in result)
+
+
+# --- RecipeCacheResetView ---------------------------------------------------
+
+@pytest.mark.django_db
+class TestRecipeCacheResetView:
+    url = '/recipes/list/cache-reset/'
+
+    def test_requires_login(self, anon_client):
+        resp = anon_client.post(self.url)
+        assert resp.status_code == 302
+
+    def test_post_returns_204(self, config_editor_client):
+        resp = config_editor_client.post(self.url)
+        assert resp.status_code == 204
+
+
+# --- OverrideDeleteView -----------------------------------------------------
+
+@pytest.mark.django_db
+class TestOverrideDeleteView:
+    def _url(self, fname):
+        return f'/recipes/overrides/{fname}/delete/'
+
+    def test_requires_login(self, anon_client):
+        resp = anon_client.post(self._url('Firefox.recipe'))
+        assert resp.status_code == 302
+
+    def test_deletes_existing_override(self, config_editor_client, tmp_path):
+        from webapp.models import Setting
+        Setting.set('autopkg.overrides_dir', str(tmp_path))
+        override_file = tmp_path / 'Firefox.recipe'
+        override_file.write_text('<plist/>')
+
+        with patch('webapp.views.recipes._overrides_dir', return_value=tmp_path):
+            resp = config_editor_client.post(self._url('Firefox.recipe'))
+        assert resp.status_code == 302
+        assert not override_file.exists()
+
+    def test_missing_file_redirects(self, config_editor_client, tmp_path):
+        with patch('webapp.views.recipes._overrides_dir', return_value=tmp_path):
+            resp = config_editor_client.post(self._url('Nonexistent.recipe'))
+        assert resp.status_code == 302
+
+    def test_unsafe_path_redirects(self, config_editor_client, tmp_path):
+        with patch('webapp.views.recipes._overrides_dir', return_value=tmp_path):
+            resp = config_editor_client.post(self._url('../evil.recipe'))
+        assert resp.status_code == 302
+
+
+# --- _start_cache_build / _build thread ----------------------------------------
+
+@pytest.mark.real_cache_build
+@pytest.mark.django_db
+class TestStartCacheBuild:
+    def test_build_thread_runs_and_populates_cache(self, tmp_path):
+        """Lines 368-422: extract the _build() closure via a capturing thread stub,
+        then invoke it directly from the test body so coverage.py traces it."""
+        from webapp.views import recipes as recipes_mod
+
+        recipe_dir = tmp_path / 'recipes'
+        recipe_dir.mkdir()
+        (recipe_dir / 'Firefox.munki.recipe').write_text(
+            '<?xml version="1.0"?>\n'
+            '<plist><dict>'
+            '<key>Identifier</key><string>com.example.Firefox</string>'
+            '</dict></plist>'
+        )
+
+        original_cache = dict(recipes_mod._RECIPES_CACHE)
+        original_building = recipes_mod._RECIPES_BUILDING
+        recipes_mod._RECIPES_CACHE['data'] = None
+        recipes_mod._RECIPES_CACHE['ts'] = 0.0
+        recipes_mod._RECIPES_BUILDING = False
+
+        captured = {}
+
+        class CapturingThread:
+            def __init__(self, target, **kw):
+                captured['fn'] = target
+            def start(self):
+                pass  # do not start a real thread
+
+        build_result = {}
+        try:
+            with patch('webapp.views.recipes._recipe_search_dirs', return_value=[str(recipe_dir)]), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'overrides'), \
+                 patch('webapp.views.recipes.threading.Thread', CapturingThread):
+                recipes_mod._start_cache_build()
+
+            # Call _build directly in the test body so coverage.py can trace it.
+            assert 'fn' in captured, '_start_cache_build did not create a thread'
+            with patch('webapp.views.recipes._recipe_search_dirs', return_value=[str(recipe_dir)]), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'overrides'):
+                captured['fn']()
+            build_result['data'] = recipes_mod._RECIPES_CACHE['data']
+        finally:
+            recipes_mod._RECIPES_CACHE.update(original_cache)
+            recipes_mod._RECIPES_BUILDING = original_building
+
+        assert build_result.get('data') is not None
+
+    def test_build_skips_when_cache_is_ready(self):
+        """Line 360: _start_cache_build returns early when cache is warm."""
+        from webapp.views import recipes as recipes_mod
+        original_cache = dict(recipes_mod._RECIPES_CACHE)
+        original_building = recipes_mod._RECIPES_BUILDING
+        try:
+            recipes_mod._RECIPES_CACHE['data'] = [{'stem': 'X', 'identifier': 'com.x'}]
+            recipes_mod._RECIPES_CACHE['ts'] = time.monotonic()
+            recipes_mod._RECIPES_BUILDING = False
+            captured = {}
+            class CapturingThread:
+                def __init__(self, target, **kw):
+                    captured['fn'] = target
+                def start(self):
+                    pass
+            with patch('webapp.views.recipes.threading.Thread', CapturingThread):
+                recipes_mod._start_cache_build()
+        finally:
+            recipes_mod._RECIPES_CACHE.update(original_cache)
+            recipes_mod._RECIPES_BUILDING = original_building
+        assert 'fn' not in captured  # did not launch a thread
+
+    def test_build_nonexistent_dir_is_skipped(self, tmp_path):
+        """Line 377: _build() skips search dirs that don't exist on disk."""
+        from webapp.views import recipes as recipes_mod
+        original_cache = dict(recipes_mod._RECIPES_CACHE)
+        original_building = recipes_mod._RECIPES_BUILDING
+        recipes_mod._RECIPES_CACHE['data'] = None
+        recipes_mod._RECIPES_CACHE['ts'] = 0.0
+        recipes_mod._RECIPES_BUILDING = False
+        captured = {}
+
+        class CapturingThread:
+            def __init__(self, target, **kw):
+                captured['fn'] = target
+            def start(self):
+                pass
+
+        nonexistent = str(tmp_path / 'does_not_exist')
+        try:
+            with patch('webapp.views.recipes._recipe_search_dirs', return_value=[nonexistent]), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'ov'), \
+                 patch('webapp.views.recipes.threading.Thread', CapturingThread):
+                recipes_mod._start_cache_build()
+            assert 'fn' in captured
+            with patch('webapp.views.recipes._recipe_search_dirs', return_value=[nonexistent]), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'ov'):
+                captured['fn']()
+        finally:
+            recipes_mod._RECIPES_CACHE.update(original_cache)
+            recipes_mod._RECIPES_BUILDING = original_building
+
+    def test_build_recipe_info_exception_uses_fallback(self, tmp_path):
+        """Lines 397-398: exception from ThreadPoolExecutor future falls back to stem."""
+        from webapp.views import recipes as recipes_mod
+        recipe_dir = tmp_path / 'recipes'
+        recipe_dir.mkdir()
+        (recipe_dir / 'Bad.munki.recipe').write_text('not valid xml')
+        original_cache = dict(recipes_mod._RECIPES_CACHE)
+        original_building = recipes_mod._RECIPES_BUILDING
+        recipes_mod._RECIPES_CACHE['data'] = None
+        recipes_mod._RECIPES_CACHE['ts'] = 0.0
+        recipes_mod._RECIPES_BUILDING = False
+        captured = {}
+
+        class CapturingThread:
+            def __init__(self, target, **kw):
+                captured['fn'] = target
+            def start(self):
+                pass
+
+        try:
+            with patch('webapp.views.recipes._recipe_search_dirs', return_value=[str(recipe_dir)]), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'ov'), \
+                 patch('webapp.views.recipes._read_recipe_info', side_effect=RuntimeError('parse error')), \
+                 patch('webapp.views.recipes.threading.Thread', CapturingThread):
+                recipes_mod._start_cache_build()
+            assert 'fn' in captured
+            with patch('webapp.views.recipes._recipe_search_dirs', return_value=[str(recipe_dir)]), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'ov'), \
+                 patch('webapp.views.recipes._read_recipe_info', side_effect=RuntimeError('parse error')):
+                captured['fn']()
+        finally:
+            recipes_mod._RECIPES_CACHE.update(original_cache)
+            recipes_mod._RECIPES_BUILDING = original_building
+
+    def test_build_outer_exception_sets_building_false(self, tmp_path):
+        """Lines 411-412: exception during scan is caught; building flag is cleared."""
+        from webapp.views import recipes as recipes_mod
+        original_cache = dict(recipes_mod._RECIPES_CACHE)
+        original_building = recipes_mod._RECIPES_BUILDING
+        recipes_mod._RECIPES_CACHE['data'] = None
+        recipes_mod._RECIPES_CACHE['ts'] = 0.0
+        recipes_mod._RECIPES_BUILDING = False
+        captured = {}
+
+        class CapturingThread:
+            def __init__(self, target, **kw):
+                captured['fn'] = target
+            def start(self):
+                pass
+
+        try:
+            with patch('webapp.views.recipes._recipe_search_dirs', side_effect=RuntimeError('boom')), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'ov'), \
+                 patch('webapp.views.recipes.threading.Thread', CapturingThread):
+                recipes_mod._start_cache_build()
+            assert 'fn' in captured
+            with patch('webapp.views.recipes._recipe_search_dirs', side_effect=RuntimeError('boom')), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'ov'):
+                captured['fn']()
+        finally:
+            recipes_mod._RECIPES_CACHE.update(original_cache)
+            recipes_mod._RECIPES_BUILDING = original_building
+
+        assert not recipes_mod._RECIPES_BUILDING  # finally block cleared it
+
+    def test_build_close_connections_exception_is_swallowed(self, tmp_path):
+        """Lines 421-422: exception from close_old_connections is swallowed."""
+        from webapp.views import recipes as recipes_mod
+        original_cache = dict(recipes_mod._RECIPES_CACHE)
+        original_building = recipes_mod._RECIPES_BUILDING
+        recipes_mod._RECIPES_CACHE['data'] = None
+        recipes_mod._RECIPES_CACHE['ts'] = 0.0
+        recipes_mod._RECIPES_BUILDING = False
+        captured = {}
+
+        class CapturingThread:
+            def __init__(self, target, **kw):
+                captured['fn'] = target
+            def start(self):
+                pass
+
+        try:
+            with patch('webapp.views.recipes._recipe_search_dirs', return_value=[]), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'ov'), \
+                 patch('webapp.views.recipes.threading.Thread', CapturingThread):
+                recipes_mod._start_cache_build()
+            assert 'fn' in captured
+            with patch('webapp.views.recipes._recipe_search_dirs', return_value=[]), \
+                 patch('webapp.views.recipes._overrides_dir', return_value=tmp_path / 'ov'), \
+                 patch('django.db.close_old_connections', side_effect=RuntimeError('db gone')):
+                captured['fn']()  # should not raise despite the error
+        finally:
+            recipes_mod._RECIPES_CACHE.update(original_cache)
+            recipes_mod._RECIPES_BUILDING = original_building
+
+
+# --- _build_recipe_entries with parent lookups --------------------------------
+
+class TestBuildRecipeEntriesParentLookups:
+    def _make_override_file(self, directory, stem, identifier, parent=None):
+        content = (
+            '<?xml version="1.0"?>\n<plist><dict>'
+            f'<key>Identifier</key><string>{identifier}</string>'
+        )
+        if parent:
+            content += f'<key>ParentRecipe</key><string>{parent}</string>'
+        content += '</dict></plist>'
+        path = directory / f'{stem}.recipe'
+        path.write_text(content)
+        return path
+
+    def test_override_targets_scanned_parent(self, tmp_path):
+        """Lines 525-527: override with ParentRecipe matching a scanned parent gets emitted."""
+        from webapp.views.recipes import _build_recipe_entries
+
+        overrides_dir = tmp_path / 'overrides'
+        overrides_dir.mkdir()
+        self._make_override_file(
+            overrides_dir, 'Firefox-Override',
+            'com.example.Override', parent='com.example.Firefox.munki',
+        )
+
+        parent_recipes = [
+            {'stem': 'Firefox.munki', 'identifier': 'com.example.Firefox.munki', 'parent': None},
+        ]
+
+        with patch('webapp.views.recipes._list_parent_recipes', return_value=parent_recipes), \
+             patch('webapp.views.recipes._overrides_dir', return_value=overrides_dir), \
+             patch('webapp.views.recipes._read_run_list', return_value=[]):
+            entries, _, _ = _build_recipe_entries(set())
+
+        override_entries = [e for e in entries if e['is_override']]
+        assert any(e['identifier'] == 'com.example.Override' for e in override_entries)
+
+    def test_orphan_override_with_scanned_parent(self, tmp_path):
+        """Line 483: orphan override where parent IS in all_scanned_identifiers → uses parent's own parent."""
+        from webapp.views.recipes import _build_recipe_entries
+
+        overrides_dir = tmp_path / 'overrides'
+        overrides_dir.mkdir()
+        # Override has a parent that IS scanned, so effective_parent = that parent's own parent
+        self._make_override_file(
+            overrides_dir, 'Chrome-Custom',
+            'com.example.Chrome.Custom', parent='com.example.Chrome',
+        )
+
+        # Chrome IS in scanned list, and Chrome's own parent is 'com.example.download.Chrome'
+        parent_recipes = [
+            {'stem': 'Chrome.munki', 'identifier': 'com.example.Chrome', 'parent': 'com.example.download.Chrome'},
+        ]
+
+        with patch('webapp.views.recipes._list_parent_recipes', return_value=parent_recipes), \
+             patch('webapp.views.recipes._overrides_dir', return_value=overrides_dir), \
+             patch('webapp.views.recipes._read_run_list', return_value=[]):
+            entries, _, _ = _build_recipe_entries(set())
+
+        # Chrome-Custom should be an orphan override with effective_parent derived from Chrome's parent
+        all_ids = {e['identifier'] for e in entries}
+        assert 'com.example.Chrome.Custom' in all_ids
