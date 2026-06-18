@@ -240,7 +240,7 @@
           <div class="divide-y divide-gray-100 dark:divide-[#38383a]">
             {% for row in result.data %}
             <div class="px-4 py-3 flex flex-col gap-1">
-              <span class="text-sm font-mono text-gray-800 dark:text-gray-200">{{ row.recipe_id|default:row.recipe }}</span>
+              <span class="text-sm font-mono text-gray-800 dark:text-gray-200">{% if row.recipe_id %}{{ row.recipe_id }}{% else %}{{ row.recipe }}{% endif %}</span>
               {% if row.message %}
               <span class="text-sm text-gray-500 dark:text-gray-400">{{ row.message }}</span>
               {% endif %}
