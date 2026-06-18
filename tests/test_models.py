@@ -235,3 +235,149 @@ class TestNotifier:
         assert not is_encrypted(n.config['webhook_id'])
         # webhook_token is password type - should be encrypted
         assert is_encrypted(n.config['webhook_token'])
+
+
+# ---------------------------------------------------------------------------
+# __str__ methods and misc properties
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+class TestModelStrMethods:
+    def test_setting_str(self):
+        from webapp.models import Setting
+        s = Setting.objects.create(key='test.key', value='myvalue')
+        assert 'test.key' in str(s)
+        assert 'myvalue' in str(s)
+
+    def test_notifier_str_enabled(self):
+        from webapp.models import Notifier
+        n = Notifier.objects.create(name='MyNotifier', notifier_type='pushover', enabled=True, config={})
+        assert 'MyNotifier' in str(n)
+        assert 'on' in str(n)
+
+    def test_notifier_str_disabled(self):
+        from webapp.models import Notifier
+        n = Notifier.objects.create(name='MyNotifier', notifier_type='pushover', enabled=False, config={})
+        assert 'off' in str(n)
+
+    def test_schedule_str(self):
+        from webapp.models import Schedule
+        s = Schedule.get()
+        result = str(s)
+        assert 'Schedule' in result
+
+    def test_run_str(self):
+        from webapp.models import Run
+        r = Run.objects.create(status='success', triggered_by='manual', config_snapshot={})
+        assert 'success' in str(r)
+
+    def test_stage_execution_str(self, run):
+        from webapp.models import StageExecution
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        s = StageExecution.objects.create(run=run, name='UpdateRepos', status='success', order=0,
+                                          started_at=now, completed_at=now)
+        assert 'UpdateRepos' in str(s)
+        assert 'success' in str(s)
+
+    def test_stage_execution_duration_property(self, run):
+        from webapp.models import StageExecution
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc)
+        s = StageExecution.objects.create(run=run, name='Stage', status='success', order=0,
+                                          started_at=now - timedelta(seconds=30), completed_at=now)
+        assert s.duration is not None
+        assert s.duration.total_seconds() == pytest.approx(30, abs=1)
+
+    def test_stage_execution_duration_none_when_incomplete(self, run):
+        from webapp.models import StageExecution
+        s = StageExecution.objects.create(run=run, name='Stage', status='running', order=0)
+        assert s.duration is None
+
+    def test_log_entry_str(self, run):
+        from webapp.models import LogEntry
+        from datetime import datetime, timezone
+        e = LogEntry.objects.create(run=run, level='INFO', message='hello world',
+                                    stage_name='', timestamp=datetime.now(timezone.utc))
+        assert 'INFO' in str(e)
+        assert 'hello' in str(e)
+
+    def test_recipe_result_str(self, run):
+        from webapp.models import RecipeResult
+        r = RecipeResult.objects.create(run=run, result_type='munki_import', data=[])
+        assert 'munki_import' in str(r)
+
+    def test_run_share_token_str(self, run):
+        from webapp.models import RunShareToken
+        t = RunShareToken.get_or_create_for_run(run)
+        assert 'ShareToken' in str(t)
+
+    def test_task_str(self):
+        from webapp.models import Task
+        t = Task.objects.create(task_type='pipeline', status='pending')
+        assert 'pipeline' in str(t)
+
+    def test_api_token_str(self, user):
+        from webapp.models import APIToken
+        t = APIToken.objects.create(user=user, name='MyToken')
+        assert user.username in str(t)
+        assert 'MyToken' in str(t)
+
+    def test_api_token_save_encrypts_existing_plaintext_secret(self, user):
+        from webapp.models import APIToken
+        from webapp.encryption import is_encrypted, ENCRYPTED_PREFIX
+        token = APIToken.objects.create(user=user, name='TestToken')
+        # Directly write a plaintext secret and re-save
+        APIToken.objects.filter(pk=token.pk).update(token_secret='plaintext-secret')
+        token.refresh_from_db()
+        token.save()
+        token.refresh_from_db()
+        assert is_encrypted(token.token_secret)
+
+    def test_user_permission_str(self, user):
+        from webapp.models import UserPermission
+        p, _ = UserPermission.objects.get_or_create(user=user)
+        assert user.username in str(p)
+
+    def test_web_push_subscription_str_with_device_label(self, user):
+        from webapp.models import Notifier, WebPushSubscription
+        notifier = Notifier.objects.create(name='PushNotifier', notifier_type='webpush', config={})
+        sub = WebPushSubscription.objects.create(
+            notifier=notifier,
+            endpoint='https://push.example.com/ep',
+            p256dh='KEY',
+            auth='AUTH',
+            device_label='My iPhone',
+        )
+        result = str(sub)
+        assert 'My iPhone' in result
+        assert 'PushNotifier' in result
+
+    def test_web_push_subscription_str_without_device_label(self, user):
+        from webapp.models import Notifier, WebPushSubscription
+        notifier = Notifier.objects.create(name='PushNotifier2', notifier_type='webpush', config={})
+        sub = WebPushSubscription.objects.create(
+            notifier=notifier,
+            endpoint='https://push.example.com/some-endpoint-path',
+            p256dh='KEY',
+            auth='AUTH',
+            device_label='',
+        )
+        result = str(sub)
+        assert 'push.example.com' in result
+
+
+# ---------------------------------------------------------------------------
+# notifier_types
+# ---------------------------------------------------------------------------
+
+class TestGetSchema:
+    def test_known_type_returns_schema(self):
+        from webapp.notifier_types import get_schema
+        result = get_schema('pushover')
+        assert 'label' in result
+        assert 'fields' in result
+
+    def test_unknown_type_returns_empty_dict(self):
+        from webapp.notifier_types import get_schema
+        assert get_schema('nonexistent_type') == {}

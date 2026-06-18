@@ -54,6 +54,20 @@ class TestStatusColorFilter:
         assert isinstance(result, str) and result
 
 
+class TestLevelColorFilter:
+    def _call(self, level):
+        from webapp.templatetags.webapp_extras import level_color
+        return level_color(level)
+
+    def test_known_levels_return_nonempty_string(self):
+        for lvl in ('DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL'):
+            result = self._call(lvl)
+            assert isinstance(result, str) and result
+
+    def test_unknown_level_returns_fallback(self):
+        assert self._call('VERBOSE') == 'text-gray-600'
+
+
 class TestLookupFilter:
     def _call(self, d, key):
         from webapp.templatetags.webapp_extras import lookup
@@ -120,3 +134,105 @@ class TestLucideTag:
             result = lucide('comment-icon', 'w-5 h-5')
         assert '<!--' not in result
         assert '@license' not in result
+
+
+class TestEnsureListFilter:
+    def _call(self, val):
+        from webapp.templatetags.webapp_extras import ensure_list
+        return ensure_list(val)
+
+    def test_list_returned_as_is(self):
+        assert self._call(['a', 'b']) == ['a', 'b']
+
+    def test_non_list_truthy_value_wrapped(self):
+        assert self._call('single') == ['single']
+
+    def test_falsy_value_returns_empty_list(self):
+        assert self._call('') == []
+        assert self._call(None) == []
+        assert self._call(0) == []
+
+
+class TestJsonEncodeFilter:
+    def _call(self, val):
+        from webapp.templatetags.webapp_extras import json_encode
+        return json_encode(val)
+
+    def test_dict_encoded_to_json(self):
+        result = str(self._call({'name': 'App', 'version': '1.0'}))
+        assert 'App' in result
+        assert '1.0' in result
+
+    def test_double_quotes_escaped_for_html_attribute(self):
+        result = str(self._call({'key': 'val'}))
+        assert '"' not in result
+
+    def test_non_serialisable_uses_str_fallback(self):
+        from datetime import datetime
+        result = str(self._call({'ts': datetime(2024, 1, 1)}))
+        assert '2024' in result
+
+
+class TestResultTypeLabelFilter:
+    def _t(self):
+        from webapp.translations import load
+        return load('en-US')
+
+    def test_known_result_type_returns_translation(self):
+        from webapp.templatetags.webapp_extras import result_type_label
+        result = result_type_label('failure', self._t())
+        assert result == 'Failures'
+
+    def test_munki_import_returns_translation(self):
+        from webapp.templatetags.webapp_extras import result_type_label
+        result = result_type_label('munki_import', self._t())
+        assert isinstance(result, str) and result
+
+    def test_unknown_result_type_returns_synthetic_key(self):
+        from webapp.templatetags.webapp_extras import result_type_label
+        result = result_type_label('custom_type', self._t())
+        assert 'CUSTOM_TYPE' in result
+
+    def test_none_t_returns_synthetic_key(self):
+        from webapp.templatetags.webapp_extras import result_type_label
+        result = result_type_label('failure', None)
+        assert 'FAILURE' in result
+
+    def test_plain_dict_missing_key_returns_dotted_fallback(self):
+        from webapp.templatetags.webapp_extras import result_type_label
+        # Truthy dict without RUN_DETAIL_VIEW triggers the except (KeyError) branch
+        result = result_type_label('failure', {'other': 'data'})
+        assert 'RUN_DETAIL_VIEW' in result
+
+
+class TestResultFieldLabelTag:
+    def _t(self):
+        from webapp.translations import load
+        return load('en-US')
+
+    def test_known_field_returns_translation(self):
+        from webapp.templatetags.webapp_extras import result_field_label
+        result = result_field_label('message', 'failure', self._t())
+        assert result == 'Message'
+
+    def test_result_type_qualified_lookup_wins(self):
+        from webapp.templatetags.webapp_extras import result_field_label
+        result = result_field_label('name', 'deprecation', self._t())
+        assert isinstance(result, str) and result
+
+    def test_unknown_field_returns_synthetic_key(self):
+        from webapp.templatetags.webapp_extras import result_field_label
+        result = result_field_label('exotic_field', 'failure', self._t())
+        assert 'EXOTIC_FIELD' in result
+
+    def test_plain_dict_missing_key_returns_dotted_fallback(self):
+        from webapp.templatetags.webapp_extras import result_field_label
+        # Truthy dict without RUN_DETAIL_VIEW triggers the except (KeyError) branch
+        result = result_field_label('message', 'failure', {'other': 'data'})
+        assert 'RUN_DETAIL_VIEW' in result
+
+
+class TestLookupFilterNoneValue:
+    def test_none_value_returns_empty_string(self):
+        from webapp.templatetags.webapp_extras import lookup
+        assert lookup({'key': None}, 'key') == ''

@@ -301,3 +301,20 @@ class TestExecuteRun:
             _execute_run(run.id, task.id)
 
         assert StageExecution.objects.filter(run=run, name='UpdateRepos').exists()
+
+
+@pytest.mark.django_db
+class TestExecuteRunLogbookFallback:
+    def test_logbook_import_failure_is_swallowed(self, db):
+        """Lines 129-130: if logbook.Logger import fails inside the except handler, it's swallowed."""
+        from webapp.runner import _execute_run
+        from webapp.models import Run, Task
+        run = Run.objects.create(status='pending', triggered_by='manual', config_snapshot={})
+        task = Task.objects.create(task_type='pipeline', status='running', run_id=run.id)
+
+        with patch('libs.config.config_from_settings', side_effect=RuntimeError('crash during setup')), \
+             patch('logbook.Logger', side_effect=RuntimeError('logbook broken')):
+            _execute_run(run.id, task.id)
+
+        run.refresh_from_db()
+        assert run.status == 'failed'

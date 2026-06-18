@@ -170,3 +170,69 @@ class TestSafeTriggerScheduledRun:
              patch('django.db.close_old_connections'):
             # Should not raise
             _safe_trigger_scheduled_run()
+
+
+class TestAcquireSchedulerLock:
+    def test_acquires_lock_and_returns_true(self, tmp_path, settings):
+        settings.BASE_DIR = tmp_path
+        import webapp.scheduler as sched_mod
+        original_fd = sched_mod._lock_fd
+        sched_mod._lock_fd = None
+        try:
+            result = sched_mod.acquire_scheduler_lock()
+            assert result is True
+        finally:
+            if sched_mod._lock_fd:
+                sched_mod._lock_fd.close()
+            sched_mod._lock_fd = original_fd
+
+    def test_returns_false_when_lock_unavailable(self, tmp_path, settings):
+        settings.BASE_DIR = tmp_path
+        import webapp.scheduler as sched_mod
+        import fcntl
+        # Pre-acquire the lock with an independent fd
+        lock_path = tmp_path / 'scheduler.lock'
+        fd = open(lock_path, 'w')
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        try:
+            result = sched_mod.acquire_scheduler_lock()
+            assert result is False
+        finally:
+            fd.close()
+
+
+@pytest.mark.django_db
+class TestStartSchedulerDbNotReady:
+    def test_catches_operational_error_from_reschedule(self, schedule):
+        from webapp.scheduler import start_scheduler
+        from django.db import OperationalError
+        mock_sched = MagicMock()
+        mock_sched.running = True
+        with patch('webapp.scheduler.get_scheduler', return_value=mock_sched), \
+             patch('webapp.scheduler.reschedule_job', side_effect=OperationalError('no table')):
+            start_scheduler()  # must not raise — logs debug and continues
+
+    def test_catches_programming_error_from_reschedule(self, schedule):
+        from webapp.scheduler import start_scheduler
+        from django.db import ProgrammingError
+        mock_sched = MagicMock()
+        mock_sched.running = True
+        with patch('webapp.scheduler.get_scheduler', return_value=mock_sched), \
+             patch('webapp.scheduler.reschedule_job', side_effect=ProgrammingError('relation does not exist')):
+            start_scheduler()  # must not raise
+
+
+class TestAcquireSchedulerLockFdCloseFails:
+    def test_fd_close_exception_is_swallowed(self, tmp_path, settings):
+        """When open() raises, fd is undefined, and fd.close() raises NameError,
+        which is caught by the inner except Exception: pass (lines 36-37)."""
+        import webapp.scheduler as sched_mod
+        settings.BASE_DIR = tmp_path
+        original_fd = sched_mod._lock_fd
+        sched_mod._lock_fd = None
+        try:
+            with patch('builtins.open', side_effect=IOError('permission denied')):
+                result = sched_mod.acquire_scheduler_lock()
+            assert result is False
+        finally:
+            sched_mod._lock_fd = original_fd

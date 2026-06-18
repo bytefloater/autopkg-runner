@@ -125,3 +125,33 @@ class TestAvailable:
         codes = [c for c, _ in result]
         assert 'en-US' in codes
         assert 'zz-BAD' not in codes
+
+
+class TestLoadAllRaw:
+    def test_load_all_raw_returns_dict(self):
+        from webapp.translations import load_all_raw
+        result = load_all_raw()
+        assert isinstance(result, dict)
+        assert 'en-US' in result
+
+    def test_load_all_raw_skips_bad_json(self, tmp_path, monkeypatch):
+        from webapp import translations
+        valid = tmp_path / 'en-US.json'
+        import json
+        valid.write_text(json.dumps({'NAME': 'English'}))
+        bad = tmp_path / 'zz-BAD.json'
+        bad.write_text('{{bad json}}')
+        monkeypatch.setattr(translations, 'TRANSLATIONS_DIR', tmp_path)
+        result = translations.load_all_raw()
+        assert 'en-US' in result
+        assert 'zz-BAD' not in result
+
+
+class TestResolveRefBrokenAtReference:
+    def test_broken_ref_non_dict_part_returns_as_is(self):
+        """When traversing @: path hits a non-dict node, returns the original value."""
+        from webapp.translations import _resolve_ref
+        root = {'FOO': 'string_value'}
+        # '@:FOO.BAR' → FOO is 'string_value' (not a dict), so returns '@:FOO.BAR'
+        result = _resolve_ref('@:FOO.BAR', root)
+        assert result == '@:FOO.BAR'
