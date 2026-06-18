@@ -9,6 +9,9 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 
+IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+
+
 @pytest.mark.django_db
 class TestRunListView:
     url = '/runs/'
@@ -24,6 +27,11 @@ class TestRunListView:
     def test_renders_with_runs(self, client, run):
         resp = client.get(self.url)
         assert resp.status_code == 200
+
+    def test_mobile_ua_uses_mobile_template(self, run_manager_client, run):
+        resp = run_manager_client.get(self.url, HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
 
 
 @pytest.mark.django_db
@@ -42,6 +50,67 @@ class TestRunDetailView:
     def test_invalid_uuid_returns_404(self, run_manager_client):
         resp = run_manager_client.get(self._url(uuid.uuid4()))
         assert resp.status_code == 404
+
+    def test_mobile_ua_uses_mobile_template(self, run_manager_client, run):
+        resp = run_manager_client.get(self._url(run.id), HTTP_USER_AGENT=IPHONE_UA)
+        assert resp.status_code == 200
+        assert 'mobile' in resp.template_name[0]
+
+    def test_detail_with_munki_import_result(self, run_manager_client, run):
+        from webapp.models import RecipeResult, Setting
+        Setting.set('repository.public_url', 'http://munki.local')
+        Setting.set('repository.public_url_username', '')
+        Setting.set('repository.public_url_password', '')
+        RecipeResult.objects.create(
+            run=run,
+            result_type='munki_import',
+            data=[{'name': 'Firefox', 'version': '120.0', 'catalogs': ['testing']}],
+        )
+        with patch('webapp.views.runs._get_munki_icon_map', return_value={'Firefox': 'icons/Firefox.png'}):
+            resp = run_manager_client.get(self._url(run.id))
+        assert resp.status_code == 200
+        munki_rows = resp.context['munki_import_rows']
+        assert munki_rows
+
+    def test_detail_with_log_entries(self, run_manager_client, run):
+        """Log entries are included in logs_by_stage context — covers loop body."""
+        from webapp.models import LogEntry
+        LogEntry.objects.create(
+            run=run, level='INFO', message='step done',
+            stage_name='UpdateRepos', timestamp=datetime.now(timezone.utc),
+        )
+        resp = run_manager_client.get(self._url(run.id))
+        assert resp.status_code == 200
+        assert 'UpdateRepos' in resp.context['logs_by_stage']
+
+    def test_detail_munki_exception_is_silenced(self, run_manager_client, run):
+        """Exception inside the munki icon block is swallowed; view still returns 200."""
+        from webapp.models import RecipeResult, Setting
+        Setting.set('repository.public_url', 'http://munki.local')
+        RecipeResult.objects.create(
+            run=run, result_type='munki_import',
+            data=[{'name': 'App', 'version': '1.0', 'catalogs': ['all']}],
+        )
+        with patch('webapp.views.runs._get_munki_icon_map', side_effect=RuntimeError('boom')):
+            resp = run_manager_client.get(self._url(run.id))
+        assert resp.status_code == 200
+        assert resp.context['munki_import_rows'] == {}
+
+    def test_detail_munki_catalog_from_string(self, run_manager_client, run):
+        """Catalog extracted when catalogs field is a plain string."""
+        from webapp.models import RecipeResult, Setting
+        Setting.set('repository.public_url', 'http://munki.local')
+        Setting.set('repository.public_url_username', '')
+        Setting.set('repository.public_url_password', '')
+        RecipeResult.objects.create(
+            run=run,
+            result_type='munki_import',
+            data=[{'name': 'Chrome', 'version': '1.0', 'catalogs': 'production'}],
+        )
+        with patch('webapp.views.runs._get_munki_icon_map', return_value={}) as mock_map:
+            resp = run_manager_client.get(self._url(run.id))
+        assert resp.status_code == 200
+        mock_map.assert_called_once_with('http://munki.local', 'production', '')
 
 
 @pytest.mark.django_db
@@ -78,6 +147,20 @@ class TestTriggerRunView:
             resp = run_manager_client.post(self.url, HTTP_HX_REQUEST='true')
         assert resp.status_code == 409
 
+    def test_htmx_post_success_returns_json(self, run_manager_client):
+        with patch('webapp.runner.trigger_manual_run') as mock_trigger, \
+             patch('webapp.models.Task') as mock_task_cls:
+            fake_task_id = uuid.uuid4()
+            mock_trigger.return_value = fake_task_id
+            mock_task = MagicMock()
+            mock_task.run_id = uuid.uuid4()
+            mock_task_cls.objects.get.return_value = mock_task
+            resp = run_manager_client.post(self.url, HTTP_HX_REQUEST='true')
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+        assert data['status'] == 'ok'
+        assert 'run_id' in data
+
 
 @pytest.mark.django_db
 class TestRunCancelView:
@@ -100,6 +183,10 @@ class TestRunCancelView:
         # Should not raise; run remains success
         run.refresh_from_db()
         assert run.status == 'success'
+
+    def test_htmx_cancel_returns_204(self, run_manager_client, pending_run):
+        resp = run_manager_client.post(self._url(pending_run.id), HTTP_HX_REQUEST='true')
+        assert resp.status_code == 204
 
 
 @pytest.mark.django_db
@@ -200,3 +287,41 @@ class TestRunStream:
     def test_stream_no_cache_control_header(self, run_manager_client, run):
         resp = run_manager_client.get(self._url(run.id))
         assert resp.get('Cache-Control') == 'no-cache'
+
+    def test_stream_polls_until_run_completes(self, run_manager_client, db):
+        """Stream loop sleeps once for a running run, then emits complete after status changes."""
+        from webapp.models import Run, LogEntry, StageExecution
+        now = datetime.now(timezone.utc)
+
+        # Build two fake run objects: first 'running', then 'success'
+        def make_fake_run(status):
+            r = MagicMock()
+            r.status = status
+            r.id = uuid.uuid4()
+            return r
+
+        running_run = make_fake_run('running')
+        success_run = make_fake_run('success')
+        call_count = {'n': 0}
+
+        def fake_run_filter(**kwargs):
+            qs = MagicMock()
+            call_count['n'] += 1
+            qs.first.return_value = running_run if call_count['n'] == 1 else success_run
+            return qs
+
+        empty_qs = MagicMock()
+        empty_qs.__iter__ = MagicMock(return_value=iter([]))
+        empty_qs.filter.return_value = empty_qs
+        empty_qs.order_by.return_value = iter([])
+
+        with patch('webapp.models.Run.objects') as mock_run_mgr, \
+             patch('webapp.models.LogEntry.objects') as mock_log_mgr, \
+             patch('webapp.models.StageExecution.objects') as mock_stage_mgr, \
+             patch('time.sleep'):
+            mock_run_mgr.filter.side_effect = fake_run_filter
+            mock_log_mgr.filter.return_value.order_by.return_value = iter([])
+            mock_stage_mgr.filter.return_value.__iter__ = MagicMock(return_value=iter([]))
+            resp = run_manager_client.get(self._url(running_run.id))
+            chunks = b''.join(resp.streaming_content)
+        assert b'complete' in chunks
