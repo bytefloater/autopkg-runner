@@ -5,7 +5,15 @@ from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.conf import settings as django_settings
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
+
+
+def _safe_redirect(url: str, request, fallback: str = '/') -> str:
+    """Return *url* if it is safe to redirect to, otherwise *fallback*."""
+    if url_has_allowed_host_and_scheme(url, allowed_hosts=request.get_host(), require_https=request.is_secure()):
+        return url
+    return fallback
 
 
 class MobileAwareLoginView(DjangoLoginView):
@@ -38,7 +46,10 @@ class MobileAwareLoginView(DjangoLoginView):
             )
             if user is not None:
                 auth_login(request, user, backend='webapp.auth_backends.ChallengeResponseBackend')
-                next_url = request.POST.get('next') or django_settings.LOGIN_REDIRECT_URL
+                next_url = _safe_redirect(
+                    request.POST.get('next', ''), request,
+                    fallback=django_settings.LOGIN_REDIRECT_URL,
+                )
                 return redirect(next_url)
 
             # Invalid ZK response — re-render login form with error flag.
@@ -64,7 +75,7 @@ class ChangePasswordView(LoginRequiredMixin, View):
         new_pw  = request.POST.get('new_password', '')
         confirm = request.POST.get('confirm_password', '')
         user    = request.user
-        next_url = request.META.get('HTTP_REFERER') or '/'
+        next_url = _safe_redirect(request.META.get('HTTP_REFERER', ''), request)
 
         if not user.check_password(current):
             messages.error(request, 'Current password is incorrect.')

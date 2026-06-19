@@ -205,7 +205,7 @@ class TestBuildSummary:
         stage, _ = _make_stage()
         summary = stage._build_summary(run.id)
         assert summary['share_url'] is not None
-        assert 'https://push.example.com' in summary['share_url']
+        assert summary['share_url'].startswith('https://push.example.com')
 
     def test_no_share_url_without_pwa_base(self, run):
         from webapp.models import Setting

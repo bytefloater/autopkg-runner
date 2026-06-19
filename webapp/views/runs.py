@@ -159,11 +159,12 @@ class TriggerRunView(RunManagerRequired, View):
         from webapp.runner import trigger_manual_run, RunAlreadyRunningError
         try:
             task_id = trigger_manual_run(triggered_by='manual')
-        except RunAlreadyRunningError as exc:
+        except RunAlreadyRunningError:
+            msg = 'A run is already in progress.'
             if request.headers.get('HX-Request'):
-                return JsonResponse({'status': 'error', 'message': str(exc)}, status=409)
+                return JsonResponse({'status': 'error', 'message': msg}, status=409)
             from django.contrib import messages
-            messages.error(request, str(exc))
+            messages.error(request, msg)
             return redirect('run-list')
 
         from webapp.models import Task

@@ -5,12 +5,15 @@ Used by the path-picker UI to let admins navigate directories and create
 folders without leaving the browser.  Both endpoints require authentication.
 """
 import json
+import logging
 from pathlib import Path
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from webapp.perms import ConfigEditorRequired
 from django.http import JsonResponse
 from django.views import View
+
+logger = logging.getLogger('autopkg_runner')
 
 
 def _resolve(raw: str) -> Path:
@@ -51,16 +54,18 @@ class BrowseView(ConfigEditorRequired, View):
             parent = str(p.parent) if p != p.parent else None
             return JsonResponse({'path': str(p), 'parent': parent, 'entries': entries})
         except PermissionError as exc:
+            logger.debug('File browser permission error: %s', exc)
             return JsonResponse({
-                'error':        str(exc),
+                'error':        'Permission denied.',
                 'error_code':   f'Permission Denied (errno {exc.errno})' if exc.errno else 'Permission Denied',
-                'error_detail': exc.strerror or 'You do not have permission to read this directory.',
+                'error_detail': 'You do not have permission to read this directory.',
             }, status=403)
         except OSError as exc:
+            logger.debug('File browser OS error: %s', exc)
             return JsonResponse({
-                'error':        str(exc),
+                'error':        'Could not read directory.',
                 'error_code':   f'Error {exc.errno}' if exc.errno else 'Error',
-                'error_detail': exc.strerror or str(exc),
+                'error_detail': exc.strerror or 'An unexpected error occurred.',
             }, status=400)
 
 
@@ -95,4 +100,5 @@ class MkdirView(ConfigEditorRequired, View):
         except PermissionError:
             return JsonResponse({'error': 'Permission denied.'}, status=403)
         except OSError as exc:
-            return JsonResponse({'error': str(exc)}, status=400)
+            logger.debug('File browser mkdir error: %s', exc)
+            return JsonResponse({'error': 'Could not create directory.'}, status=400)

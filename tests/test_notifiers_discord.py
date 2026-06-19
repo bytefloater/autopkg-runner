@@ -42,7 +42,10 @@ class TestDiscordSend:
         conn = _mock_connection(_mock_http_response(200))
         self._send(conn, url='https://example.com', url_title='Click here')
         body = json.loads(conn.request.call_args[0][2])
-        assert 'https://example.com' in body.get('content', '')
+        import re
+        from urllib.parse import urlparse
+        md_urls = re.findall(r'\(([^)]+)\)', body.get('content', ''))
+        assert any(urlparse(u).netloc == 'example.com' for u in md_urls)
 
     def test_204_success_does_not_raise(self):
         """Discord webhooks return 204 No Content on success."""

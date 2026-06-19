@@ -14,3 +14,4 @@ gunicorn>=23.0.0
 whitenoise>=6.0
 pip-system-certs
 certifi
+defusedxml>=0.7

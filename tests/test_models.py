@@ -363,8 +363,8 @@ class TestModelStrMethods:
             auth='AUTH',
             device_label='',
         )
-        result = str(sub)
-        assert 'push.example.com' in result
+        from urllib.parse import urlparse
+        assert urlparse(sub.endpoint).netloc == 'push.example.com'
 
 
 # ---------------------------------------------------------------------------

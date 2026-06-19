@@ -102,7 +102,10 @@ class TestEmailSend:
         smtp = self._make_smtp()
         self._send(smtp, message='Hi', url='https://example.com', url_title='Link')
         body = _decode_mime_body(smtp.sendmail.call_args[0][2])
-        assert 'https://example.com' in body and 'Link' in body
+        from urllib.parse import urlparse
+        urls_in_body = [w.strip('<>()') for w in body.split() if urlparse(w.strip('<>(),')).scheme in ('http', 'https')]
+        assert any(urlparse(u).netloc == 'example.com' for u in urls_in_body)
+        assert 'Link' in body
 
     def test_url_without_title_uses_default_label(self):
         smtp = self._make_smtp()

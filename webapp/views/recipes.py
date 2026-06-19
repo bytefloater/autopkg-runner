@@ -13,7 +13,7 @@ import subprocess
 import threading
 import time
 from typing import Optional
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 

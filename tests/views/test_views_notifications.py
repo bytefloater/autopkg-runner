@@ -198,7 +198,7 @@ class TestNotifierTestView:
         assert resp.status_code == 500
         data = json.loads(resp.content)
         assert data['success'] is False
-        assert 'bad token' in data['message']
+        assert data['message']  # generic error message returned, not the raw exception
 
     def test_returns_400_when_module_not_found(self, config_editor_client, notifier):
         with patch('importlib.import_module', side_effect=ModuleNotFoundError('no module')):

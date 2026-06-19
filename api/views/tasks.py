@@ -10,8 +10,8 @@ class TriggerRunView(APIView):
         from webapp.runner import trigger_manual_run, RunAlreadyRunningError
         try:
             task_id = trigger_manual_run(triggered_by='api')
-        except RunAlreadyRunningError as exc:
-            return Response({'error': str(exc)}, status=409)
+        except RunAlreadyRunningError:
+            return Response({'error': 'A run is already in progress.'}, status=409)
         return Response({'task_uuid': str(task_id)}, status=202)
 
 

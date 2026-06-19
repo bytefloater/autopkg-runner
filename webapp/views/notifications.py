@@ -1,5 +1,6 @@
 import importlib
 import json
+import logging
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -7,6 +8,8 @@ from webapp.perms import ConfigEditorRequired
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic import TemplateView, View
+
+logger = logging.getLogger('autopkg_runner')
 
 from webapp.notifier_types import NOTIFIER_TYPES, type_choices
 
@@ -210,8 +213,9 @@ class NotifierTestView(ConfigEditorRequired, View):
                 title="AutoPkg Runner - Test",
             )
         except Exception as exc:
+            logger.warning('Test notification failed: %s', exc)
             return JsonResponse(
-                {'success': False, 'message': str(exc) or 'An unknown error occurred.'},
+                {'success': False, 'message': 'Notification failed. Check your notifier configuration and server logs.'},
                 status=500,
             )
 

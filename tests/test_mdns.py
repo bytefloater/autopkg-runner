@@ -90,8 +90,8 @@ class TestGetSearchDomains:
         scutil_out = 'search domain[0] : corp.example.com\nsearch domain[1] : local\n'
         with patch('subprocess.check_output', return_value=scutil_out):
             domains = r.get_search_domains()
-        assert 'corp.example.com' in domains
-        assert 'local' in domains
+        assert any(d == 'corp.example.com' for d in domains)
+        assert any(d == 'local' for d in domains)
 
     def test_scutil_failure_falls_back_to_resolv_conf(self, tmp_path):
         import subprocess as sp
@@ -125,8 +125,8 @@ class TestZeroConfigResolverInit:
         from libs.mdns import ZeroConfigResolver
         with patch('subprocess.check_output', return_value='search domain[0] : corp.net\n'):
             r = ZeroConfigResolver()
-        assert 'local' in r.domains
-        assert 'corp.net' in r.domains
+        assert any(d == 'local' for d in r.domains)
+        assert any(d == 'corp.net' for d in r.domains)
 
     def test_init_always_includes_local(self):
         from libs.mdns import ZeroConfigResolver
@@ -229,7 +229,7 @@ class TestResolveService:
         with patch.object(r, 'lookup_unicast',
                           return_value={'addresses': ['1.2.3.4']}) as mock_uni:
             results = r.resolve_service('server', '_smb._tcp')
-        assert 'corp.net' in results
+        assert 'corp.net' in results.keys()
         mock_uni.assert_called_once_with('server._smb._tcp.corp.net')
 
     def test_mixed_domains(self):
