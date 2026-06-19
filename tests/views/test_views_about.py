@@ -140,7 +140,7 @@ class TestParseVersion:
 
 @pytest.mark.django_db
 class TestAboutView:
-    url = '/about/'
+    url = '/config/about/'
 
     def test_requires_login(self, anon_client):
         resp = anon_client.get(self.url)
@@ -187,7 +187,7 @@ class TestAboutViewMobileTemplate:
         with patch('webapp.views.about._autopkg_version', return_value=None), \
              patch('webapp.views.about._autopkg_latest_release', return_value=None), \
              patch('webapp.views.about._munki_version', return_value=None):
-            resp = client.get('/about/', HTTP_USER_AGENT=IPHONE_UA)
+            resp = client.get('/config/about/', HTTP_USER_AGENT=IPHONE_UA)
         assert resp.status_code == 200
         assert 'mobile' in resp.template_name[0]
 

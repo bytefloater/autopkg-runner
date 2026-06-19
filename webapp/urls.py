@@ -28,9 +28,9 @@ urlpatterns = [
          runs.RunDetailView.as_view(), name='run-detail'),
     path('runs/<uuid:run_id>/stream/',
          runs.run_stream, name='run-stream'),
-    path('schedule/',
+    path('config/schedule/',
          schedule.ScheduleView.as_view(), name='schedule'),
-    path('about/',
+    path('config/about/',
          about.AboutView.as_view(), name='about'),
 
     # -- Configuration root ----------------------------------------------------
@@ -103,7 +103,7 @@ urlpatterns = [
     path('api/browse/mkdir/', filebrowser.MkdirView.as_view(),  name='api-browse-mkdir'),
 
     # -- Other -----------------------------------------------------------------
-    path('api-tokens/', api_tokens.ApiTokensView.as_view(), name='api-tokens'),
+    path('config/tokens/', api_tokens.ApiTokensView.as_view(), name='api-tokens'),
     path('users/',      users.UsersView.as_view(),          name='users'),
     path('users/<int:pk>/', users.UserEditView.as_view(),   name='user-edit'),
     path('account/change-password/', account.ChangePasswordView.as_view(), name='change-password'),

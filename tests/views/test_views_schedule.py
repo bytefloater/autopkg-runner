@@ -142,7 +142,7 @@ class TestNextRunTime:
 
 @pytest.mark.django_db
 class TestScheduleView:
-    url = '/schedule/'
+    url = '/config/schedule/'
 
     def test_requires_login(self, anon_client):
         resp = anon_client.get(self.url)
@@ -238,7 +238,7 @@ IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/
 @pytest.mark.django_db
 class TestScheduleViewMobileTemplate:
     def test_mobile_ua_uses_mobile_template(self, config_editor_client, schedule):
-        resp = config_editor_client.get('/schedule/', HTTP_USER_AGENT=IPHONE_UA)
+        resp = config_editor_client.get('/config/schedule/', HTTP_USER_AGENT=IPHONE_UA)
         assert resp.status_code == 200
         assert 'mobile' in resp.template_name[0]
 

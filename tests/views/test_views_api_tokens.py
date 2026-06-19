@@ -6,7 +6,7 @@ import pytest
 
 @pytest.mark.django_db
 class TestApiTokensView:
-    url = '/api-tokens/'
+    url = '/config/tokens/'
 
     def test_requires_login(self, anon_client):
         resp = anon_client.get(self.url)
@@ -50,7 +50,7 @@ IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/
 
 @pytest.mark.django_db
 class TestApiTokensMobile:
-    url = '/api-tokens/'
+    url = '/config/tokens/'
 
     def test_mobile_ua_uses_mobile_template(self, config_editor_client):
         resp = config_editor_client.get(self.url, HTTP_USER_AGENT=IPHONE_UA)
