@@ -22,7 +22,7 @@ A web-based management interface for [AutoPkg](https://github.com/autopkg/autopk
 
 ### Recipes
 
-The Recipes section replaces AutoPkgr for day-to-day recipe management. It is organised into three sub-tabs:
+The Recipes section replaces AutoPkgr for day-to-day recipe management. It is organised into four sub-tabs:
 
 #### Repositories
 
@@ -41,6 +41,16 @@ The Recipes section replaces AutoPkgr for day-to-day recipe management. It is or
 - **Missing parent detection** — highlights recipes whose declared parent recipe is not installed on the system, with a warning icon on the row and a summary banner at the top of the page
 - **Orphan run-list detection** — identifies entries in the run list file that no longer match any known recipe or override, listed separately so stale entries can be cleaned up
 - Identifier-based deduplication ensures recipes from different repos with the same filename are both shown
+
+#### Find Recipes
+
+- Searches the [AutoPkg community recipe index](https://github.com/autopkg/index) — over 15,000 recipes maintained by the AutoPkg organisation
+- Index is fetched from GitHub on first load and refreshed automatically every hour; a manual refresh button is available in the search bar
+- Full-text search across recipe name, identifier, parent, and repository
+- Paginated results sorted alphabetically
+- Each row shows the recipe name, full identifier, parent identifier (where applicable), and a pill indicating whether the recipe's repository is already installed
+- Add a missing repository directly from the search results — clicking the add button opens a confirmation modal that walks the full parent chain, listing every repository required and whether each is already installed
+- View any recipe file on GitHub with the globe button on each row
 
 #### Override Editor
 
