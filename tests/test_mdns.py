@@ -229,7 +229,7 @@ class TestResolveService:
         with patch.object(r, 'lookup_unicast',
                           return_value={'addresses': ['1.2.3.4']}) as mock_uni:
             results = r.resolve_service('server', '_smb._tcp')
-        assert 'corp.net' in results.keys()
+        assert results.get('corp.net') is not None
         mock_uni.assert_called_once_with('server._smb._tcp.corp.net')
 
     def test_mixed_domains(self):

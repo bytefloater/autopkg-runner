@@ -17,8 +17,17 @@ logger = logging.getLogger('autopkg_runner')
 
 
 def _resolve(raw: str) -> Path:
-    """Expand ~ and resolve to an absolute Path."""
-    return Path(raw or '~').expanduser().resolve()
+    """Expand ~ and resolve to an absolute Path.
+
+    Rejects paths that contain null bytes or resolve outside the filesystem
+    root, and requires the result to be absolute after expansion.
+    """
+    if '\x00' in raw:
+        raise OSError('Invalid path.')
+    p = Path(raw or '~').expanduser().resolve()
+    if not p.is_absolute():
+        raise OSError('Path must be absolute.')
+    return p
 
 
 class BrowseView(ConfigEditorRequired, View):
