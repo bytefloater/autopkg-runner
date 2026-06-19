@@ -68,6 +68,9 @@ class TestIsReady:
 
 class TestIsStale:
     def test_stale_when_never_fetched(self):
+        import webapp.recipe_index as idx
+        with idx._cache_lock:
+            idx._cache['fetched_at'] = time.monotonic() - idx._CACHE_TTL - 1
         from webapp.recipe_index import is_stale
         assert is_stale() is True
 
