@@ -7,6 +7,7 @@ from webapp.views import (
     notifications, share, about, recipes, filebrowser,
 )
 from webapp.views.config import LogLevelPickerView
+from webapp.views import recipe_index as recipe_index_views
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/dashboard/'), name='home'),
@@ -97,6 +98,16 @@ urlpatterns = [
          recipes.OverrideEditView.as_view(), name='recipes-override-edit'),
     path('recipes/overrides/<path:fname>/delete/',
          recipes.OverrideDeleteView.as_view(), name='recipes-override-delete'),
+    path('recipes/find/',
+         recipe_index_views.RecipeIndexView.as_view(), name='recipes-find'),
+    path('recipes/find/search/',
+         recipe_index_views.RecipeIndexSearchView.as_view(), name='recipes-find-search'),
+    path('recipes/find/repo-requirements/',
+         recipe_index_views.RecipeIndexRepoRequirementsView.as_view(), name='recipes-find-repo-requirements'),
+    path('recipes/find/add-repo/',
+         recipe_index_views.RecipeIndexAddRepoView.as_view(), name='recipes-find-add-repo'),
+    path('recipes/find/refresh/',
+         recipe_index_views.RecipeIndexRefreshView.as_view(), name='recipes-find-refresh'),
 
     # -- File browser API (used by path pickers in config pages) ---------------
     path('api/browse/',       filebrowser.BrowseView.as_view(), name='api-browse'),

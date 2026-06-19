@@ -85,6 +85,15 @@ def get_scheduler() -> BackgroundScheduler:
     return _scheduler
 
 
+def _refresh_recipe_index():
+    """Hourly job: refresh the AutoPkg recipe index cache."""
+    import django.db
+    django.db.close_old_connections()
+    from webapp.recipe_index import ensure_fresh
+    logger.info('Scheduler refreshing recipe index')
+    ensure_fresh(force=True)
+
+
 def _safe_trigger_scheduled_run():
     """Wrapper called by APScheduler; skips the run if one is already active.
 
@@ -151,6 +160,18 @@ def reschedule_job():
         )
     else:
         logger.info('Scheduled job removed (schedule disabled)')
+
+    # Register the hourly recipe index refresh (independent of the run schedule).
+    scheduler.add_job(
+        _refresh_recipe_index,
+        trigger='cron',
+        id='recipe_index_refresh',
+        replace_existing=True,
+        timezone=tz,
+        minute=0,   # on the hour, every hour
+        misfire_grace_time=300,
+    )
+    logger.info('Recipe index refresh job registered (hourly, on the hour)')
 
 
 def start_scheduler():

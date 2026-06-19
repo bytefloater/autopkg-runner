@@ -31,6 +31,7 @@ from django.views.generic import TemplateView, View
 _SUBTABS = [
     {'name': 'repos', 't_key': 'SUBTAB_REPOS',    'url_name': 'recipes-repos'},
     {'name': 'list',  't_key': 'SUBTAB_RECIPES',  'url_name': 'recipes-list'},
+    {'name': 'find',  't_key': 'SUBTAB_FIND',     'url_name': 'recipes-find'},
 ]
 
 

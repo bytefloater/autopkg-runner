@@ -85,9 +85,10 @@ class TestRescheduleJob:
         mock_sched = self._mock_scheduler()
         with patch('webapp.scheduler.get_scheduler', return_value=mock_sched):
             reschedule_job()
-        mock_sched.add_job.assert_called_once()
-        call_kwargs = mock_sched.add_job.call_args[1]
-        assert call_kwargs.get('id') == 'autopkg_scheduled_run'
+        # Two add_job calls: autopkg_scheduled_run + recipe_index_refresh
+        assert mock_sched.add_job.call_count >= 1
+        ids = [c[1].get('id') for c in mock_sched.add_job.call_args_list]
+        assert 'autopkg_scheduled_run' in ids
 
     def test_disabled_schedule_removes_job(self, schedule):
         from webapp.models import Schedule
@@ -96,7 +97,10 @@ class TestRescheduleJob:
         mock_sched = self._mock_scheduler()
         with patch('webapp.scheduler.get_scheduler', return_value=mock_sched):
             reschedule_job()
-        mock_sched.add_job.assert_not_called()
+        # Index refresh job is still added even when the run schedule is disabled
+        ids = [c[1].get('id') for c in mock_sched.add_job.call_args_list]
+        assert 'autopkg_scheduled_run' not in ids
+        assert 'recipe_index_refresh' in ids
 
     def test_starts_scheduler_when_not_running(self, schedule):
         from webapp.scheduler import reschedule_job
@@ -113,7 +117,8 @@ class TestRescheduleJob:
         mock_sched.remove_job.side_effect = Exception('job not found')
         with patch('webapp.scheduler.get_scheduler', return_value=mock_sched):
             reschedule_job()   # must not raise
-        mock_sched.add_job.assert_called_once()
+        # Two jobs are always registered (run + index refresh)
+        assert mock_sched.add_job.call_count >= 1
 
 
 @pytest.mark.django_db

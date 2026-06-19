@@ -87,9 +87,11 @@ class WebappConfig(AppConfig):
         initialised."""
         from webapp.scheduler import start_scheduler
         from webapp.views.recipes import _start_cache_build
+        from webapp.recipe_index import ensure_fresh as index_ensure_fresh
         start_scheduler()
         self._mark_interrupted_runs()
         _start_cache_build()
+        index_ensure_fresh()
 
     def _start_services_in_worker(self):
         """Start services inside a gunicorn worker (called from post_fork hook).
@@ -100,8 +102,10 @@ class WebappConfig(AppConfig):
         """
         from webapp.scheduler import acquire_scheduler_lock, start_scheduler
         from webapp.views.recipes import _start_cache_build
+        from webapp.recipe_index import ensure_fresh as index_ensure_fresh
         self._mark_interrupted_runs()
         _start_cache_build()
+        index_ensure_fresh()
         if acquire_scheduler_lock():
             start_scheduler()
 
