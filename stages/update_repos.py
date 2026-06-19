@@ -1,6 +1,8 @@
+from __future__ import annotations
 from pathlib import Path
 import re
 import subprocess
+from typing import Optional
 
 from libs.stage import Stage
 from libs.run_command import run_cmd
@@ -14,11 +16,10 @@ class UpdateRepos(Stage):
         super().__init__(config, ctx, logger)
 
         self.autopkg_fpath: Path          = config.autopkg.bin_path
-        update_repos_settings: dict       = config.module_settings.update_repos
-        self.update_before_each_run: bool = update_repos_settings["update_before_each_run"]
+        self.update_before_each_run: bool = config.update_repos
         self.error_flag: bool             = False
 
-    def run(self) -> list:
+    def run(self) -> Optional[list]:
         if not self.update_before_each_run:
             self.logger.info("'update_before_each_run' flag set to False. Skipping...")
             return
@@ -29,7 +30,7 @@ class UpdateRepos(Stage):
         # Capture the repo-list command output
         try:
             run_cmd([
-                self.autopkg_fpath,
+                str(self.autopkg_fpath),
                 "repo-list"
             ], cmd_out)
         except subprocess.CalledProcessError:
@@ -37,7 +38,7 @@ class UpdateRepos(Stage):
 
         # Extract repo URLs
         for entry in cmd_out.entries():
-            match = re.search(r'\(([^)]*)\)', entry.get("msg"))
+            match = re.search(r'\(([^)]*)\)', entry.get("msg", ""))
             if match:
                 # Inside parenthesis
                 repo_urls.append(match.group(1))
@@ -45,16 +46,17 @@ class UpdateRepos(Stage):
         self.logger.info(f"Found {len(repo_urls)} repository URL(s)")
         self.logger.info("Updating from remote repositories...")
 
-        # Update remote repos
-        try:
-            for url in repo_urls:
+        # Update remote repos - errors are caught per-URL so a single failure
+        # does not prevent the remaining repositories from being updated.
+        for url in repo_urls:
+            try:
                 run_cmd([
-                    self.autopkg_fpath,
+                    str(self.autopkg_fpath),
                     "repo-update",
-                    url
+                    url,
                 ], self.logger)
-        except subprocess.CalledProcessError:
-            self.logger.error(f"Failed to update repository {url}")
+            except subprocess.CalledProcessError:
+                self.logger.error(f"Failed to update repository {url}")
     
     def post_check(self):
         if self.update_before_each_run:

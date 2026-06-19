@@ -1,0 +1,91 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.ABOUT_VIEW.TITLE }} - {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.ABOUT_VIEW.TITLE }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+{# -- Application ----------------------------------------------------------- #}
+<p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.ABOUT_VIEW.SECTION_APPLICATION }}</p>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+  <div class="flex items-center justify-between px-4 py-3.5">
+    <span class="text-[16px] font-medium text-gray-900 dark:text-white">{{ app_name }}</span>
+    <span class="text-[15px] font-mono text-gray-500 dark:text-gray-400">v{{ app_version }}</span>
+  </div>
+  <div class="flex items-center justify-between px-4 py-3.5">
+    <span class="text-[16px] font-medium text-gray-900 dark:text-white">{{ t.ABOUT_VIEW.LABEL_PYTHON }}</span>
+    <span class="text-[15px] font-mono text-gray-500 dark:text-gray-400">
+      {{ python_version }}{% if is_bundled %} <span class="font-sans text-[13px] text-gray-400 dark:text-gray-500">({{ t.ABOUT_VIEW.STATE_PYTHON_EMBEDDED }})</span>{% endif %}
+    </span>
+  </div>
+  <div class="flex items-center justify-between px-4 py-3.5">
+    <span class="text-[16px] font-medium text-gray-900 dark:text-white">{{ t.ABOUT_VIEW.LABEL_RUNTIME }}</span>
+    {% if is_bundled %}
+      <span class="text-[15px] text-gray-500 dark:text-gray-400">{{ t.ABOUT_VIEW.STATE_RUNTIME_BUNDLED }}</span>
+    {% else %}
+      <span class="text-[15px] text-gray-500 dark:text-gray-400">{{ t.ABOUT_VIEW.STATE_RUNTIME_STANDARD }}</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="h-5"></div>
+
+{# -- External Tools -------------------------------------------------------- #}
+<p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.ABOUT_VIEW.SECTION_EXTERNAL_TOOLS }}</p>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+  {# AutoPkg #}
+  <div class="px-4 py-3.5">
+    <div class="flex items-center justify-between">
+      <span class="text-[16px] font-medium text-gray-900 dark:text-white">AutoPkg</span>
+      {% if autopkg_version %}
+        <span class="text-[15px] font-mono text-gray-500 dark:text-gray-400">v{{ autopkg_version }}</span>
+      {% else %}
+        <span class="text-[15px] text-gray-400 dark:text-gray-500 italic">{{ t.ABOUT_VIEW.STATE_NOT_INSTALLED }}</span>
+      {% endif %}
+    </div>
+    {% if autopkg_version %}
+      {% if autopkg_update_available %}
+      <div class="mt-2.5 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+        {% lucide "triangle-alert" "w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" %}
+        <div>
+          <p class="text-[13px] font-medium text-amber-800 dark:text-amber-300">{{ t.ABOUT_VIEW.UPDATE_AVAILABLE_PREFIX }} v{{ autopkg_latest }} {{ t.ABOUT_VIEW.UPDATE_AVAILABLE_SUFFIX }}</p>
+          <a href="https://github.com/autopkg/autopkg/releases/latest" target="_blank" rel="noopener"
+             class="text-[12px] text-amber-700 dark:text-amber-400 underline">{{ t.ABOUT_VIEW.ACTION_VIEW_RELEASE_GITHUB }}</a>
+        </div>
+      </div>
+      {% elif autopkg_latest %}
+      <p class="mt-1.5 text-[13px] text-green-600 dark:text-green-400 flex items-center gap-1">
+        {% lucide "check-circle" "w-3.5 h-3.5" %}
+        {{ t.ABOUT_VIEW.UP_TO_DATE_PREFIX }} v{{ autopkg_latest }}{{ t.ABOUT_VIEW.UP_TO_DATE_SUFFIX }}
+      </p>
+      {% else %}
+      <p class="mt-1 text-[12px] text-gray-400 dark:text-gray-500">{{ t.ABOUT_VIEW.STATE_UPDATE_CHECK_FAILED }}</p>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {# MunkiTools #}
+  <div class="flex items-center justify-between px-4 py-3.5">
+    <span class="text-[16px] font-medium text-gray-900 dark:text-white">MunkiTools</span>
+    {% if munki_version %}
+      <span class="text-[15px] font-mono text-gray-500 dark:text-gray-400">v{{ munki_version }}</span>
+    {% else %}
+      <span class="text-[15px] text-gray-400 dark:text-gray-500 italic">Not installed</span>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="h-8"></div>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }} - {{ t.APP.NAME }}{% endblock %}
+
+{% block content %}
+<div x-data="{
+  showAdd:     false,
+  newName:     '',
+  newType:     '{{ type_choices.0.0 }}',
+  typeChoices: [{% for val, label in type_choices %}{ value: '{{ val }}', label: '{{ label }}' }{% if not forloop.last %}, {% endif %}{% endfor %}]
+}">
+
+  <div class="flex items-center justify-between min-h-[38px] mb-1">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</h1>
+    <button type="button" @click="showAdd = true"
+            class="flex items-center gap-2 px-4 py-2 border border-transparent bg-blue-600 hover:bg-blue-700
+                   text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+      {% lucide "plus" "w-4 h-4" %}
+      {{ t.NOTIFICATIONS_VIEW.ACTION_ADD_NOTIFIER }}
+    </button>
+  </div>
+  <nav class="flex items-center gap-1.5 text-sm mb-6">
+    <a href="{% url 'config' %}"
+       class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ t.APP.VIEWS_CONFIG }}</a>
+    {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
+    <span class="text-gray-600 dark:text-gray-400">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</span>
+  </nav>
+
+  {# -- Notifiers --------------------------------------------------------------- #}
+  <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</h3>
+
+  {% if notifiers %}
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
+              divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">
+
+    {% for n in notifiers %}
+    <div class="flex items-center gap-4 px-4 py-3.5">
+
+      {# Status dot #}
+      <span class="w-2 h-2 rounded-full flex-shrink-0
+                   {% if n.enabled %}bg-green-500{% else %}bg-gray-300 dark:bg-gray-600{% endif %}"></span>
+
+      {# Name & type - clickable #}
+      <a href="{% url 'notifier-edit' n.pk %}"
+         class="flex-1 min-w-0 group">
+        <p class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+          {{ n.name }}
+        </p>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ n.notifier_type|capfirst }}</p>
+      </a>
+
+      {# Enable/disable toggle (POST form) #}
+      <form method="post" action="{% url 'notifier-toggle' n.pk %}" class="flex-shrink-0">
+        {% csrf_token %}
+        <button type="submit"
+                class="relative inline-flex h-6 w-11 cursor-pointer rounded-full border-2 border-transparent
+                       transition-colors duration-200
+                       {% if n.enabled %}bg-blue-600{% else %}bg-gray-200 dark:bg-slate-700{% endif %}"
+                title="{% if n.enabled %}Disable{% else %}Enable{% endif %}">
+          <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow
+                       ring-0 transition duration-200
+                       {% if n.enabled %}translate-x-5{% else %}translate-x-0{% endif %}"></span>
+        </button>
+      </form>
+
+      {# Edit chevron #}
+      <a href="{% url 'notifier-edit' n.pk %}"
+         class="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200
+                hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+         title="Edit">
+        {% lucide "chevron-right" "w-4 h-4" %}
+      </a>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800">
+    <div class="flex flex-col items-center justify-center py-16 gap-3">
+      {% lucide "bell-off" "w-10 h-10 text-gray-300 dark:text-gray-700" %}
+      <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.EMPTY_NO_NOTIFIERS }}</p>
+      <button type="button" @click="showAdd = true"
+              class="mt-1 px-4 py-2 rounded-lg border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium
+                     transition-colors shadow-sm">
+        {{ t.NOTIFICATIONS_VIEW.ACTION_ADD_FIRST }}
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+  {# -- Settings link ----------------------------------------------------------- #}
+  <div class="mt-6">
+    <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_GENERAL }}</h3>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden">
+      <a href="{% url 'notification-settings' %}"
+         class="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+        <div class="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center flex-shrink-0">
+          {% lucide "settings" "w-4 h-4 text-white" %}
+        </div>
+        <span class="flex-1 text-sm font-medium text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</span>
+        {% lucide "chevron-right" "w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" %}
+      </a>
+    </div>
+  </div>
+
+  {# ══════════════ ADD NOTIFIER MODAL ══════════════ #}
+  <template x-teleport="body">
+    <div x-show="showAdd" x-cloak
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+
+      <div class="absolute inset-0 bg-black/60" @click="showAdd = false"></div>
+
+      <div class="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl
+                  border border-gray-200 dark:border-slate-700 p-6"
+           x-transition:enter="transition ease-out duration-200"
+           x-transition:enter-start="opacity-0 scale-95"
+           x-transition:enter-end="opacity-100 scale-100"
+           x-transition:leave="transition ease-in duration-150"
+           x-transition:leave-start="opacity-100 scale-100"
+           x-transition:leave-end="opacity-0 scale-95">
+
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.ACTION_ADD_NOTIFIER }}</h3>
+          <button @click="showAdd = false"
+                  class="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+                         hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+            {% lucide "x" "w-4 h-4" %}
+          </button>
+        </div>
+
+        <form method="post" @submit="showAdd = false" class="space-y-4">
+          {% csrf_token %}
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.NOTIFICATIONS_VIEW.FIELD_NAME }}</label>
+            <input type="text" name="name" x-model="newName"
+                   placeholder="e.g. My Pushover"
+                   required autofocus
+                   class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700
+                          bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-white
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.NOTIFICATIONS_VIEW.FIELD_TYPE }}</label>
+            <select name="notifier_type" x-model="newType"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700
+                           bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+              <template x-for="tc in typeChoices" :key="tc.value">
+                <option :value="tc.value" x-text="tc.label"></option>
+              </template>
+            </select>
+          </div>
+
+          <div class="flex gap-3 pt-1">
+            <button type="button" @click="showAdd = false; newName = ''"
+                    class="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-700
+                           text-sm font-semibold text-gray-700 dark:text-gray-300
+                           hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+              {{ t.APP.ACTION_CANCEL }}
+            </button>
+            <button type="submit" :disabled="!newName.trim()"
+                    class="flex-1 px-4 py-2.5 rounded-lg border border-transparent bg-blue-600 hover:bg-blue-700
+                           text-sm font-semibold text-white transition-colors disabled:opacity-40">
+              {{ t.NOTIFICATIONS_VIEW.ACTION_NEXT }}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </template>
+
+</div>
+{% endblock %}

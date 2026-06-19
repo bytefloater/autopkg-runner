@@ -1,0 +1,217 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.RECIPES_VIEW.SUBTAB_REPOS }} - {{ t.APP.NAME }}{% endblock %}
+
+{% block content %}
+<div x-data="{
+  showAdd: false, addUrl: '',
+  showDelete: false, deleteUrl: '',
+  updatingAll: false,
+  csrf: '{{ csrf_token }}',
+
+  async updateAll() {
+    if (this.updatingAll) return;
+    this.updatingAll = true;
+    try {
+      const buttons = [
+        ...document.getElementById('repos-tbody').querySelectorAll('[data-repo-update-btn]')
+      ];
+      for (const btn of buttons) {
+        // Light up this row's existing spinner
+        btn.classList.add('htmx-request');
+        const vals = JSON.parse(btn.getAttribute('hx-vals') || '{}');
+        try {
+          const resp = await fetch(btn.getAttribute('hx-post'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-CSRFToken': this.csrf,
+            },
+            body: new URLSearchParams(vals),
+          });
+          const html = await resp.text();
+          // Replace the row; btn is still attached to its original tr at this point
+          btn.closest('tr').outerHTML = html;
+        } catch (_) {
+          btn.classList.remove('htmx-request');
+        }
+      }
+    } finally {
+      this.updatingAll = false;
+    }
+  }
+}">
+
+  {# Page header #}
+  <div class="flex items-center justify-between min-h-[38px] mb-4">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.RECIPES_VIEW.TITLE }}</h1>
+    <div class="flex items-center gap-2">
+      {# Update All button #}
+      <button type="button"
+              @click="updateAll()"
+              :disabled="updatingAll"
+              class="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
+                     border border-gray-300 dark:border-slate-700
+                     text-gray-700 dark:text-gray-300
+                     hover:bg-gray-50 dark:hover:bg-slate-800
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-colors shadow-sm">
+        <span x-show="updatingAll" style="display:none"
+              class="absolute inset-0 flex items-center justify-center rounded-lg
+                     bg-white/90 dark:bg-slate-900/90">
+          {% lucide "loader-circle" "w-4 h-4 animate-spin text-gray-500 dark:text-gray-400" %}
+        </span>
+        {% lucide "refresh-cw" "w-4 h-4" %}
+        {{ t.RECIPES_VIEW.ACTION_UPDATE_ALL }}
+      </button>
+      {# Add Repository button #}
+      <button type="button" @click="showAdd = true; $nextTick(() => $refs.addInput.focus())"
+              class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
+                     border border-transparent
+                     bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm">
+        {% lucide "plus" "w-4 h-4" %}
+        {{ t.RECIPES_VIEW.ACTION_ADD_REPO }}
+      </button>
+    </div>
+  </div>
+
+  {# Sub-tab bar #}
+  {% include "webapp/recipes/_subtabs.html" %}
+
+  {# -- Repository table ----------------------------------------------------- #}
+  <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+    <table class="w-full text-left">
+      <thead>
+        <tr class="border-b border-gray-100 dark:border-slate-800">
+          <th class="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">URL</th>
+          <th class="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+          <th class="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="repos-tbody" class="divide-y divide-gray-50 dark:divide-slate-800">
+        {% for repo in repos %}
+          {% include "webapp/partials/repo_row.html" with repo=repo error_msg=None %}
+        {% empty %}
+        <tr>
+          <td colspan="3" class="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
+            {% lucide "inbox" "w-5 h-5 mx-auto mb-2 opacity-40" %}
+            {{ t.RECIPES_VIEW.REPOS_EMPTY }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# -- Hidden delete form (submitted by the confirm modal) ------------------ #}
+  <form id="delete-repo-form" method="post" action="{% url 'recipes-repo-delete' %}" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="url" :value="deleteUrl">
+  </form>
+
+  {# -- Add Repository modal -------------------------------------------------- #}
+  <div x-show="showAdd" x-cloak
+       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="absolute inset-0 bg-black/50" @click="showAdd = false; addUrl = ''"></div>
+
+    <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl
+                border border-gray-200 dark:border-slate-700 p-6"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         @click.stop>
+
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t.RECIPES_VIEW.ACTION_ADD_REPO }}</h2>
+        <button type="button" @click="showAdd = false; addUrl = ''"
+                class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                       hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+          {% lucide "x" "w-4 h-4" %}
+        </button>
+      </div>
+
+      <form method="post" action="{% url 'recipes-repo-add' %}">
+        {% csrf_token %}
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          Repository URL
+        </label>
+        <input type="url" name="url" x-model="addUrl" x-ref="addInput" required
+               placeholder="{{ t.RECIPES_VIEW.REPO_URL_PLACEHOLDER }}"
+               class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-600
+                      bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100
+                      placeholder-gray-400 dark:placeholder-gray-500
+                      focus:outline-none focus:ring-2 focus:ring-blue-500 mb-5">
+        <div class="flex justify-end gap-3">
+          <button type="button" @click="showAdd = false; addUrl = ''"
+                  class="px-4 py-2.5 text-sm font-semibold rounded-lg
+                         border border-gray-300 dark:border-slate-700
+                         text-gray-700 dark:text-gray-300
+                         hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+            {{ t.APP.ACTION_CANCEL }}
+          </button>
+          <button type="submit"
+                  class="px-4 py-2.5 text-sm font-semibold rounded-lg
+                         border border-transparent bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+            {{ t.APP.ACTION_ADD }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# -- Delete Repository modal ----------------------------------------------- #}
+  <div x-show="showDelete" x-cloak
+       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="absolute inset-0 bg-black/60" @click="showDelete = false; deleteUrl = ''"></div>
+
+    <div class="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl
+                border border-gray-200 dark:border-slate-700 p-6"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         @click.stop>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0">
+          {% lucide "trash-2" "w-4 h-4 text-red-600 dark:text-red-400" %}
+        </div>
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t.RECIPES_VIEW.DELETE_REPO_TITLE }}</h2>
+      </div>
+
+      <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">{{ t.RECIPES_VIEW.DELETE_REPO_DESC }}</p>
+      <p class="text-sm font-mono font-medium text-gray-900 dark:text-gray-100 mb-5 break-all" x-text="deleteUrl"></p>
+
+      <div class="flex gap-3">
+        <button type="button" @click="showDelete = false; deleteUrl = ''"
+                class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg
+                       border border-gray-300 dark:border-slate-700
+                       text-gray-700 dark:text-gray-300
+                       hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+          {{ t.APP.ACTION_CANCEL }}
+        </button>
+        <button type="button" @click="document.getElementById('delete-repo-form').submit()"
+                class="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg
+                       bg-red-600 hover:bg-red-700 text-white transition-colors">
+          {{ t.RECIPES_VIEW.ACTION_REMOVE }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

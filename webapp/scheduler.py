@@ -1,0 +1,191 @@
+import fcntl
+import logging
+import os
+from zoneinfo import ZoneInfo
+
+from apscheduler.jobstores.memory import MemoryJobStore
+from apscheduler.schedulers.background import BackgroundScheduler
+
+logger = logging.getLogger('autopkg_runner')
+
+_scheduler = None
+_lock_fd = None  # held open for process lifetime; OS releases flock on process death
+
+
+def acquire_scheduler_lock() -> bool:
+    """Try to acquire the exclusive scheduler lock for this worker process.
+
+    Uses a non-blocking exclusive flock on a file in BASE_DIR.  The OS releases
+    the lock automatically when the holding process exits, so the next worker
+    spawned by gunicorn will acquire it and start the scheduler.
+
+    Returns True if this worker should run APScheduler, False if another worker
+    already holds the lock.
+    """
+    global _lock_fd
+    from django.conf import settings
+    lock_path = settings.BASE_DIR / 'scheduler.lock'
+    try:
+        fd = open(lock_path, 'w')
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        _lock_fd = fd  # keep open — closing it would release the lock
+        return True
+    except (IOError, OSError):
+        try:
+            fd.close()
+        except Exception:
+            pass
+        return False
+
+
+def get_system_timezone() -> ZoneInfo:
+    """Detect the host system's IANA timezone (DST-aware). Falls back to UTC.
+
+    Deliberately skips the TZ environment variable because Django sets it to
+    settings.TIME_ZONE ('UTC') on startup, which would mask the real host
+    timezone. Filesystem sources are authoritative on macOS and Linux.
+
+    Resolution order:
+      1. /etc/localtime symlink (macOS, most Linux distros)
+      2. /etc/timezone plain-text file (Debian/Ubuntu)
+      3. UTC
+    """
+    # 1. /etc/localtime symlink → .../zoneinfo/<Region/City>
+    try:
+        real = os.path.realpath('/etc/localtime')
+        idx = real.find('/zoneinfo/')
+        if idx != -1:
+            tz_name = real[idx + len('/zoneinfo/'):]
+            if tz_name:
+                return ZoneInfo(tz_name)
+    except Exception:
+        pass
+
+    # 2. /etc/timezone plain text (Debian/Ubuntu)
+    try:
+        with open('/etc/timezone') as f:
+            tz_name = f.read().strip()
+            if tz_name:
+                return ZoneInfo(tz_name)
+    except Exception:
+        pass
+
+    return ZoneInfo('UTC')
+
+
+def get_scheduler() -> BackgroundScheduler:
+    global _scheduler
+    if _scheduler is None:
+        tz = get_system_timezone()
+        _scheduler = BackgroundScheduler(
+            jobstores={'default': MemoryJobStore()},
+            timezone=tz,
+        )
+        logger.info('Scheduler created (timezone: %s)', tz.key)
+    return _scheduler
+
+
+def _refresh_recipe_index():
+    """Hourly job: refresh the AutoPkg recipe index cache."""
+    import django.db
+    django.db.close_old_connections()
+    from webapp.recipe_index import ensure_fresh
+    logger.info('Scheduler refreshing recipe index')
+    ensure_fresh(force=True)
+
+
+def _safe_trigger_scheduled_run():
+    """Wrapper called by APScheduler; skips the run if one is already active.
+
+    APScheduler uses a thread pool, so this function may run in a thread that
+    previously executed a job.  Calling close_old_connections() ensures Django
+    doesn't try to reuse a connection that has been closed server-side between
+    firings (especially relevant for PostgreSQL; harmless for SQLite).
+    """
+    import django.db
+    django.db.close_old_connections()
+
+    from webapp.runner import trigger_manual_run, RunAlreadyRunningError
+    logger.info('Scheduler firing scheduled run')
+    try:
+        trigger_manual_run(triggered_by='scheduler')
+    except RunAlreadyRunningError:
+        logger.warning('Scheduled run skipped - a run is already in progress.')
+    except Exception:
+        logger.exception('Unhandled error in scheduled run trigger')
+
+
+def reschedule_job():
+    """Re-read the Schedule model and update the APScheduler cron job."""
+    from webapp.models import Schedule
+
+    scheduler = get_scheduler()
+
+    # Safety net: if the scheduler isn't running yet (e.g. --noreload without
+    # a prior start_scheduler call, or a startup error), start it now.
+    if not scheduler.running:
+        scheduler.start()
+        logger.info('Scheduler started (from reschedule_job)')
+
+    tz = get_system_timezone()
+
+    try:
+        scheduler.remove_job('autopkg_scheduled_run')
+    except Exception:
+        pass
+
+    schedule = Schedule.objects.get(pk=1)
+    if schedule.enabled:
+        scheduler.add_job(
+            _safe_trigger_scheduled_run,
+            trigger='cron',
+            id='autopkg_scheduled_run',
+            replace_existing=True,
+            timezone=tz,
+            minute=schedule.minute,
+            hour=schedule.hour,
+            day_of_week=schedule.day_of_week,
+            day=schedule.day_of_month,
+            month=schedule.month,
+            misfire_grace_time=300,
+        )
+        job = scheduler.get_job('autopkg_scheduled_run')
+        next_rt = getattr(job, 'next_run_time', None) if job else None
+        logger.info(
+            'Scheduled job registered: %s %s %s %s %s (%s) - next run: %s',
+            schedule.minute, schedule.hour,
+            schedule.day_of_week, schedule.day_of_month, schedule.month,
+            tz.key,
+            next_rt or '(scheduler not yet started - will fire once running)',
+        )
+    else:
+        logger.info('Scheduled job removed (schedule disabled)')
+
+    # Register the hourly recipe index refresh (independent of the run schedule).
+    scheduler.add_job(
+        _refresh_recipe_index,
+        trigger='cron',
+        id='recipe_index_refresh',
+        replace_existing=True,
+        timezone=tz,
+        minute=0,   # on the hour, every hour
+        misfire_grace_time=300,
+    )
+    logger.info('Recipe index refresh job registered (hourly, on the hour)')
+
+
+def start_scheduler():
+    from django.db import OperationalError, ProgrammingError
+
+    scheduler = get_scheduler()
+    if not scheduler.running:
+        scheduler.start()
+        logger.info('Scheduler started')
+    try:
+        reschedule_job()
+    except (OperationalError, ProgrammingError):
+        # Database tables don't exist yet (migrations haven't run).
+        # The job will be registered once the setup command completes.
+        logger.debug('Scheduler: skipping job registration — database not ready')
+    except Exception:
+        logger.exception('Failed to register scheduled job on startup')

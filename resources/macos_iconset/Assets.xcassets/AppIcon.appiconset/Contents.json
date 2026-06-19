@@ -1,0 +1,828 @@
+{
+  "images": [
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "16x16",
+      "filename": "Default-16x16@1x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "16x16",
+      "filename": "Default-16x16@2x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "32x32",
+      "filename": "Default-32x32@1x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "32x32",
+      "filename": "Default-32x32@2x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "128x128",
+      "filename": "Default-128x128@1x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "128x128",
+      "filename": "Default-128x128@2x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "256x256",
+      "filename": "Default-256x256@1x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "256x256",
+      "filename": "Default-256x256@2x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "512x512",
+      "filename": "Default-512x512@1x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "512x512",
+      "filename": "Default-512x512@2x.png"
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "16x16",
+      "filename": "Dark-16x16@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "16x16",
+      "filename": "Dark-16x16@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "32x32",
+      "filename": "Dark-32x32@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "32x32",
+      "filename": "Dark-32x32@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "128x128",
+      "filename": "Dark-128x128@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "128x128",
+      "filename": "Dark-128x128@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "256x256",
+      "filename": "Dark-256x256@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "256x256",
+      "filename": "Dark-256x256@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "512x512",
+      "filename": "Dark-512x512@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "512x512",
+      "filename": "Dark-512x512@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "16x16",
+      "filename": "TintedLight-16x16@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "16x16",
+      "filename": "TintedLight-16x16@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "32x32",
+      "filename": "TintedLight-32x32@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "32x32",
+      "filename": "TintedLight-32x32@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "128x128",
+      "filename": "TintedLight-128x128@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "128x128",
+      "filename": "TintedLight-128x128@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "256x256",
+      "filename": "TintedLight-256x256@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "256x256",
+      "filename": "TintedLight-256x256@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "512x512",
+      "filename": "TintedLight-512x512@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "512x512",
+      "filename": "TintedLight-512x512@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "16x16",
+      "filename": "TintedDark-16x16@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "16x16",
+      "filename": "TintedDark-16x16@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "32x32",
+      "filename": "TintedDark-32x32@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "32x32",
+      "filename": "TintedDark-32x32@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "128x128",
+      "filename": "TintedDark-128x128@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "128x128",
+      "filename": "TintedDark-128x128@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "256x256",
+      "filename": "TintedDark-256x256@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "256x256",
+      "filename": "TintedDark-256x256@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "512x512",
+      "filename": "TintedDark-512x512@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "512x512",
+      "filename": "TintedDark-512x512@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "tinted"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "16x16",
+      "filename": "ClearLight-16x16@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "16x16",
+      "filename": "ClearLight-16x16@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "32x32",
+      "filename": "ClearLight-32x32@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "32x32",
+      "filename": "ClearLight-32x32@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "128x128",
+      "filename": "ClearLight-128x128@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "128x128",
+      "filename": "ClearLight-128x128@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "256x256",
+      "filename": "ClearLight-256x256@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "256x256",
+      "filename": "ClearLight-256x256@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "512x512",
+      "filename": "ClearLight-512x512@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "512x512",
+      "filename": "ClearLight-512x512@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "light"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "16x16",
+      "filename": "ClearDark-16x16@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "16x16",
+      "filename": "ClearDark-16x16@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "32x32",
+      "filename": "ClearDark-32x32@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "32x32",
+      "filename": "ClearDark-32x32@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "128x128",
+      "filename": "ClearDark-128x128@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "128x128",
+      "filename": "ClearDark-128x128@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "256x256",
+      "filename": "ClearDark-256x256@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "256x256",
+      "filename": "ClearDark-256x256@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "1x",
+      "size": "512x512",
+      "filename": "ClearDark-512x512@1x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    },
+    {
+      "idiom": "mac",
+      "scale": "2x",
+      "size": "512x512",
+      "filename": "ClearDark-512x512@2x.png",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        },
+        {
+          "appearance": "vibrancy",
+          "value": "reduced"
+        }
+      ]
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

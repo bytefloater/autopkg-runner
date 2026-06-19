@@ -1,0 +1,76 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }} - {{ t.APP.NAME }}{% endblock %}
+
+{% block content %}
+<div>
+
+  <div class="flex items-center min-h-[38px] mb-1">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</h1>
+  </div>
+  <nav class="flex items-center gap-1.5 text-sm mb-6">
+    <a href="{% url 'config' %}"
+       class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ t.APP.VIEWS_CONFIG }}</a>
+    {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
+    <a href="{% url 'config-notifications' %}"
+       class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</a>
+    {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
+    <span class="text-gray-600 dark:text-gray-400">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</span>
+  </nav>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    {# -- Sharing settings ------------------------------------------------------ #}
+    <div>
+      <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">{{ t.NOTIFICATIONS_VIEW.SECTION_SHARING }}</h3>
+      <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
+                  divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">
+
+        <div class="px-4 py-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_APP_URL }}</label>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">
+            {{ t.NOTIFICATIONS_VIEW.OPT_APP_URL_DESC }}
+            <code class="font-mono text-xs">https://autopkg.example.com</code>
+          </p>
+          <input type="url" name="notify.pwa_base_url" value="{{ pwa_base_url }}"
+                 placeholder="https://autopkg.example.com"
+                 class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
+                        bg-gray-50 dark:bg-slate-800/50 text-sm font-mono
+                        text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+        </div>
+
+        <div class="px-4 py-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_SHARE_LINK_EXPIRY }}</label>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mb-2">
+            {{ t.NOTIFICATIONS_VIEW.OPT_SHARE_LINK_EXPIRY_DESC }}
+          </p>
+          <div class="flex items-center gap-2">
+            <input type="number" name="notify.share_link_expiry_days" value="{{ share_link_expiry_days }}"
+                   placeholder="Never"
+                   min="1" max="3650"
+                   class="w-32 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700
+                          bg-gray-50 dark:bg-slate-800/50 text-sm
+                          text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+            <span class="text-sm text-gray-500 dark:text-gray-400">{{ t.NOTIFICATIONS_VIEW.UNIT_DAYS }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    {# -- Save ------------------------------------------------------------------ #}
+    <div class="flex justify-end">
+      <button type="submit"
+              class="px-5 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
+                     rounded-lg transition-colors shadow-sm">
+        {{ t.NOTIFICATIONS_VIEW.ACTION_SAVE_SETTINGS }}
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

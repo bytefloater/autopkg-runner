@@ -1,0 +1,55 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.CONFIG_VIEW.TAB_WORKFLOW }} - {{ t.APP.NAME }}{% endblock %}
+
+{% block content %}
+<div>
+
+  <div class="flex items-center min-h-[38px] mb-1">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_WORKFLOW }}</h1>
+  </div>
+  <nav class="flex items-center gap-1.5 text-sm mb-6">
+    <a href="{% url 'config' %}"
+       class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ t.APP.VIEWS_CONFIG }}</a>
+    {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
+    <span class="text-gray-600 dark:text-gray-400">{{ t.CONFIG_VIEW.TAB_WORKFLOW }}</span>
+  </nav>
+
+  <form id="config-form" method="post"
+        x-data="{ updateRepos: {{ s|lookup:'workflow.update_repos'|yesno:'true,false' }} }"
+        class="space-y-6">
+    {% csrf_token %}
+
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
+                divide-y divide-gray-100 dark:divide-slate-800 overflow-hidden">
+
+      <div class="flex items-center justify-between px-4 py-4">
+        <div class="flex-1 min-w-0 pr-6">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_UPDATE_REPOS }}</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ t.CONFIG_VIEW.OPT_UPDATE_REPOS_DESC }}</p>
+        </div>
+        <input type="hidden" name="workflow.update_repos" :value="updateRepos ? 'on' : ''">
+        <button type="button" @click="updateRepos = !updateRepos"
+                :class="updateRepos ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full
+                       border-2 border-transparent transition-colors duration-200">
+          <span :class="updateRepos ? 'translate-x-5' : 'translate-x-0'"
+                class="pointer-events-none inline-block h-5 w-5 transform rounded-full
+                       bg-white shadow ring-0 transition duration-200"></span>
+        </button>
+      </div>
+
+    </div>
+
+    <div class="flex items-center justify-end mt-6">
+      <button type="submit"
+              class="px-5 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold
+                     rounded-lg transition-colors shadow-sm">
+        {{ t.CONFIG_VIEW.ACTION_SAVE_CONFIG }}
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

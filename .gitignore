@@ -31,6 +31,7 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!autopkg_runner.spec
 
 # Installer logs
 pip-log.txt
@@ -45,6 +46,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage.json
 *.cover
 *.py,cover
 .hypothesis/
@@ -58,8 +60,8 @@ cover/
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
-db.sqlite3-journal
+*.sqlite3
+*.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -180,6 +182,9 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Django collected static
+staticfiles/
 
 # Prevent accidental publishing of private settings
 script_settings.plist

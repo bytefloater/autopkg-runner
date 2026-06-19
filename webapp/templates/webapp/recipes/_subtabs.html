@@ -1,0 +1,15 @@
+{% load webapp_extras %}
+<div class="flex gap-0 border-b border-gray-200 dark:border-slate-700 mb-6 -mt-1">
+  {% for st in recipes_subtabs %}
+  <a href="{% url st.url_name %}"
+     class="px-4 py-2.5 text-sm font-medium -mb-px border-b-2 transition-colors
+            {% if recipes_subtab == st.name %}
+              border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400
+            {% else %}
+              border-transparent text-gray-500 dark:text-gray-400
+              hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600
+            {% endif %}">
+    {{ t.RECIPES_VIEW|lookup:st.t_key }}
+  </a>
+  {% endfor %}
+</div>

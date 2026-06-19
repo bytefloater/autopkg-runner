@@ -1,0 +1,622 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.RECIPES_VIEW.SUBTAB_RECIPES }} - {{ t.APP.NAME }}{% endblock %}
+
+{% block content %}
+<div x-data="recipeList()" @click.window="openDropdown = null">
+
+  <div class="flex items-center justify-between min-h-[38px] mb-4">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.RECIPES_VIEW.TITLE }}</h1>
+    <button type="submit" form="recipe-form" :disabled="loading"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
+                   border border-transparent bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
+                   text-white transition-colors shadow-sm">
+      {% lucide "save" "w-4 h-4" %}
+      {{ t.RECIPES_VIEW.ACTION_SAVE_LIST }}
+    </button>
+  </div>
+
+  {% include "webapp/recipes/_subtabs.html" %}
+
+  {# -- Recipe form ----------------------------------------------------------- #}
+  <form method="post" id="recipe-form" @submit="onSubmit($event)">
+    {% csrf_token %}
+
+    {# Toolbar - search, counts, checked-first, warning #}
+    <div class="flex flex-wrap items-center gap-3 mb-3">
+
+      {# Search #}
+      <div class="relative flex-1 min-w-48 max-w-80">
+        <span class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-gray-400">
+          {% lucide "search" "w-4 h-4" %}
+        </span>
+        <input type="text" x-model="search" placeholder="{{ t.RECIPES_VIEW.SEARCH_PLACEHOLDER }}"
+               class="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-600
+                      bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100
+                      placeholder-gray-400 dark:placeholder-gray-500
+                      focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      {# Selected count #}
+      <span class="text-sm text-gray-500 dark:text-gray-400">
+        <span x-text="selectedCount"></span> {{ t.RECIPES_VIEW.LABEL_SELECTED }}
+      </span>
+
+      {# Checked First toggle #}
+      <button type="button" @click="sortByChecked = !sortByChecked"
+              :class="sortByChecked
+                ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 dark:border-blue-600'
+                : 'bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-slate-600'"
+              class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg
+                     border transition-colors">
+        {% lucide "square-check" "w-4 h-4" %}
+        {{ t.RECIPES_VIEW.ACTION_CHECKED_FIRST }}
+      </button>
+
+      {# Warning icon — shown when there are orphaned run-list entries OR recipes with missing parents #}
+      <div class="relative group flex-shrink-0"
+           x-show="!loading && (orphanedRunList.length > 0 || missingParentList.length > 0)"
+           x-cloak style="display:none">
+        <button type="button" tabindex="-1"
+                class="flex items-center text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 transition-colors cursor-help">
+          {% lucide "triangle-alert" "w-5 h-5" %}
+        </button>
+        {# Tooltip #}
+        <div class="absolute left-0 top-full mt-2 w-96 z-50 pointer-events-none
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-150
+                    bg-white dark:bg-gray-950 rounded-xl shadow-lg
+                    border border-gray-200 dark:border-gray-800 p-3.5 space-y-3.5">
+
+          {# Section 1: orphaned run-list entries #}
+          <template x-if="orphanedRunList.length > 0">
+            <div>
+              <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">
+                {% lucide "triangle-alert" "w-3.5 h-3.5 flex-shrink-0" %}
+                <span>{{ t.RECIPES_VIEW.WARNING_ORPHANED_TITLE }}</span>
+              </p>
+              <div class="space-y-1">
+                <template x-for="id in orphanedRunList" :key="id">
+                  <p class="font-mono text-xs text-gray-600 dark:text-gray-400 break-all leading-snug" x-text="id"></p>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <template x-if="orphanedRunList.length > 0 && missingParentList.length > 0">
+            <hr class="border-gray-200 dark:border-gray-800">
+          </template>
+
+          {# Section 2: recipes with missing parent recipes #}
+          <template x-if="missingParentList.length > 0">
+            <div>
+              <p class="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">
+                {% lucide "triangle-alert" "w-3.5 h-3.5 flex-shrink-0" %}
+                <span>{{ t.RECIPES_VIEW.WARNING_MISSING_PARENT_TITLE }}</span>
+              </p>
+              <div class="space-y-1.5">
+                <template x-for="r in missingParentList" :key="r.identifier">
+                  <div>
+                    <p class="font-mono text-xs text-gray-800 dark:text-gray-200 leading-snug" x-text="r.name"></p>
+                    <p class="font-mono text-xs text-gray-400 dark:text-gray-500 break-all leading-snug pl-2" x-text="'↳ ' + r.parent_recipe"></p>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+
+        </div>
+      </div>
+
+    </div>
+
+    {# Recipe table #}
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30">
+            <th class="w-10 px-4 py-3"></th>
+            {# Recipe/Name column — hidden on small screens #}
+            <th class="hidden lg:table-cell px-4 py-3 cursor-pointer select-none" @click="sort('name')">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {{ t.RECIPES_VIEW.COL_NAME }}
+                <span class="text-gray-300 dark:text-slate-600">
+                  <template x-if="sortCol === 'name' && !sortDesc">{% lucide "chevron-down" "w-3 h-3" %}</template>
+                  <template x-if="sortCol === 'name' && sortDesc">{% lucide "chevron-down" "w-3 h-3 rotate-180" %}</template>
+                </span>
+              </div>
+            </th>
+            <th class="px-4 py-3 cursor-pointer select-none" @click="sort('identifier')">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {{ t.RECIPES_VIEW.COL_IDENTIFIER }}
+                <span class="text-gray-300 dark:text-slate-600">
+                  <template x-if="sortCol === 'identifier' && !sortDesc">{% lucide "chevron-down" "w-3 h-3" %}</template>
+                  <template x-if="sortCol === 'identifier' && sortDesc">{% lucide "chevron-down" "w-3 h-3 rotate-180" %}</template>
+                </span>
+              </div>
+            </th>
+            <th class="w-px whitespace-nowrap px-4 py-3 cursor-pointer select-none" @click="sort('is_override')">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {{ t.RECIPES_VIEW.COL_TYPE }}
+                <span class="text-gray-300 dark:text-slate-600">
+                  <template x-if="sortCol === 'is_override' && !sortDesc">{% lucide "chevron-down" "w-3 h-3" %}</template>
+                  <template x-if="sortCol === 'is_override' && sortDesc">{% lucide "chevron-down" "w-3 h-3 rotate-180" %}</template>
+                </span>
+              </div>
+            </th>
+            <th class="w-px whitespace-nowrap px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">
+              {{ t.RECIPES_VIEW.COL_ACTIONS }}
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50 dark:divide-slate-800">
+
+          {# Loading state #}
+          <template x-if="loading">
+            <tr>
+              <td colspan="5" class="px-4 py-12 text-center text-sm text-gray-400 dark:text-gray-500">
+                {% lucide "loader-circle" "w-5 h-5 mx-auto mb-2 opacity-60 animate-spin" %}
+                <span>{{ t.RECIPES_VIEW.LIST_LOADING }}</span>
+              </td>
+            </tr>
+          </template>
+
+          {# Recipe rows #}
+          <template x-if="!loading">
+            <template x-for="recipe in paginated" :key="recipe.identifier">
+              <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+
+                {# Checkbox #}
+                <td class="px-4 py-2 align-middle">
+                  <button type="button"
+                          @click="toggle(recipe.identifier)"
+                          :class="isSelected(recipe.identifier)
+                            ? 'bg-blue-600 border-blue-600 text-white dark:border-blue-600'
+                            : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-transparent hover:border-blue-400 dark:hover:border-blue-400'"
+                          class="w-[1.125rem] h-[1.125rem] rounded border-2 flex items-center justify-center flex-shrink-0
+                                 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+                                 dark:focus:ring-offset-slate-900">
+                    {% lucide "check" "w-2.5 h-2.5 stroke-[3]" %}
+                  </button>
+                </td>
+
+                {# Name — hidden on small screens #}
+                <td class="hidden lg:table-cell px-4 py-2 align-middle max-w-0">
+                  <span class="text-sm font-mono text-gray-800 dark:text-gray-200 truncate block" x-text="recipe.name"></span>
+                </td>
+
+                {# Identifier — on small screens shows the name as a hover tooltip #}
+                <td class="px-4 py-2 align-middle max-w-0">
+                  <div class="group/ident relative">
+                    <span class="text-xs font-mono text-gray-500 dark:text-gray-400 truncate block"
+                          x-text="recipe.identifier"></span>
+                    {# Tooltip: recipe name, visible on small screens only #}
+                    <div class="lg:hidden absolute left-0 bottom-full mb-2 z-50 pointer-events-none
+                                opacity-0 group-hover/ident:opacity-100 transition-opacity duration-150
+                                bg-gray-900 dark:bg-slate-700 text-white text-xs rounded-lg px-3 py-2
+                                shadow-lg whitespace-nowrap">
+                      <span class="font-mono" x-text="recipe.name"></span>
+                      <div class="absolute -bottom-1 left-4 w-2 h-2 bg-gray-900 dark:bg-slate-700 rotate-45"></div>
+                    </div>
+                  </div>
+                </td>
+
+                {# Type badge #}
+                <td class="px-4 py-2 align-middle whitespace-nowrap">
+                  <template x-if="recipe.is_override">
+                    <span class="inline-flex items-center h-7 px-2.5 rounded-lg text-xs font-medium
+                                 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+                      {{ t.RECIPES_VIEW.BADGE_OVERRIDE }}
+                    </span>
+                  </template>
+                  <template x-if="!recipe.is_override">
+                    <span class="inline-flex items-center h-7 px-2.5 rounded-lg text-xs font-medium
+                                 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400">
+                      {{ t.RECIPES_VIEW.BADGE_PARENT }}
+                    </span>
+                  </template>
+                </td>
+
+                {# Actions: warning icon + large: icon buttons | small: ⋯ dropdown #}
+                <td class="px-3 py-2 align-middle text-right whitespace-nowrap">
+                  <div class="inline-flex items-center justify-end gap-0.5">
+
+                    {# Missing-parent warning — always visible, tooltip right-aligned above icon #}
+                    <span x-show="recipe.missing_parent"
+                          class="relative group/warn inline-flex items-center
+                                 text-amber-500 dark:text-amber-400 cursor-help mr-0.5">
+                      {% lucide "triangle-alert" "w-3.5 h-3.5" %}
+                      <span class="absolute right-0 bottom-full mb-1.5 w-64 z-50 pointer-events-none
+                                   opacity-0 group-hover/warn:opacity-100 transition-opacity duration-150
+                                   bg-white dark:bg-gray-950 rounded-lg shadow-lg text-left whitespace-normal
+                                   border border-gray-200 dark:border-gray-800 p-2.5">
+                        <span class="flex items-center gap-1.5 text-xs font-semibold
+                                     text-amber-600 dark:text-amber-400 mb-1.5">
+                          {% lucide "triangle-alert" "w-3 h-3 flex-shrink-0" %}
+                          {{ t.RECIPES_VIEW.WARNING_MISSING_PARENT_ROW }}
+                        </span>
+                        <span class="block font-mono text-xs text-gray-600 dark:text-gray-400
+                                     break-all leading-snug" x-text="recipe.parent_recipe"></span>
+                      </span>
+                    </span>
+
+                    {# ——— Large screens: icon-only buttons with hover tooltips ——— #}
+                    <div class="hidden lg:inline-flex items-center gap-0.5">
+
+                      {# Edit Override (override exists) #}
+                      <template x-if="recipe.override_fname">
+                        <div class="relative group/edit">
+                          <a :href="'/recipes/overrides/' + recipe.override_fname + '/edit/'"
+                             class="inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg
+                                    text-xs font-medium bg-gray-100 dark:bg-slate-800
+                                    text-gray-600 dark:text-gray-300
+                                    hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                            {% lucide "pencil" "w-3.5 h-3.5" %}
+                          </a>
+                          <span class="absolute right-0 bottom-full mb-1.5 z-50 pointer-events-none
+                                       opacity-0 group-hover/edit:opacity-100 transition-opacity duration-150
+                                       bg-gray-900 dark:bg-slate-700 text-white text-xs rounded-lg
+                                       px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                            {{ t.RECIPES_VIEW.ACTION_EDIT_OVERRIDE }}
+                            <span class="absolute right-2.5 -bottom-1 w-2 h-2 bg-gray-900 dark:bg-slate-700 rotate-45 block"></span>
+                          </span>
+                        </div>
+                      </template>
+
+                      {# Create Override (no override yet) #}
+                      <template x-if="!recipe.override_fname">
+                        <div class="relative group/create">
+                          <button type="button" @click="createOverride(recipe.identifier)"
+                                  class="inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg
+                                         text-xs font-medium bg-gray-100 dark:bg-slate-800
+                                         text-gray-600 dark:text-gray-300
+                                         hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                            {% lucide "plus" "w-3.5 h-3.5" %}
+                          </button>
+                          <span class="absolute right-0 bottom-full mb-1.5 z-50 pointer-events-none
+                                       opacity-0 group-hover/create:opacity-100 transition-opacity duration-150
+                                       bg-gray-900 dark:bg-slate-700 text-white text-xs rounded-lg
+                                       px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                            {{ t.RECIPES_VIEW.ACTION_CREATE_OVERRIDE }}
+                            <span class="absolute right-2.5 -bottom-1 w-2 h-2 bg-gray-900 dark:bg-slate-700 rotate-45 block"></span>
+                          </span>
+                        </div>
+                      </template>
+
+                      {# Delete Override (override exists) #}
+                      <template x-if="recipe.override_fname">
+                        <div class="relative group/del">
+                          <button type="button" @click="deleteOverride(recipe.override_fname)"
+                                  class="inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg
+                                         text-xs font-medium bg-red-50 dark:bg-red-950/40
+                                         hover:bg-red-100 dark:hover:bg-red-950/70
+                                         text-red-600 dark:text-red-400
+                                         border border-red-200 dark:border-red-800 transition-colors">
+                            {% lucide "trash-2" "w-3.5 h-3.5" %}
+                          </button>
+                          <span class="absolute right-0 bottom-full mb-1.5 z-50 pointer-events-none
+                                       opacity-0 group-hover/del:opacity-100 transition-opacity duration-150
+                                       bg-gray-900 dark:bg-slate-700 text-white text-xs rounded-lg
+                                       px-2.5 py-1.5 whitespace-nowrap shadow-lg">
+                            {{ t.RECIPES_VIEW.ACTION_DELETE_OVERRIDE }}
+                            <span class="absolute right-2.5 -bottom-1 w-2 h-2 bg-gray-900 dark:bg-slate-700 rotate-45 block"></span>
+                          </span>
+                        </div>
+                      </template>
+
+                    </div>{# end large-screen buttons #}
+
+                    {# ——— Small screens: ⋯ dropdown ——— #}
+                    <div class="lg:hidden relative" @click.stop>
+                      <button type="button"
+                              @click="openDropdown = openDropdown === recipe.identifier ? null : recipe.identifier"
+                              class="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                                     text-gray-400 hover:text-gray-600 dark:hover:text-gray-200
+                                     hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+                        {% lucide "ellipsis" "w-4 h-4" %}
+                      </button>
+
+                      <div x-show="openDropdown === recipe.identifier"
+                           x-cloak
+                           class="absolute right-0 top-full mt-1 w-48 z-50
+                                  bg-white dark:bg-slate-900 rounded-xl shadow-xl
+                                  border border-gray-200 dark:border-slate-700 py-1 overflow-hidden">
+
+                        <template x-if="recipe.override_fname">
+                          <a :href="'/recipes/overrides/' + recipe.override_fname + '/edit/'"
+                             class="flex items-center gap-2.5 w-full px-3 py-2 text-sm
+                                    text-gray-700 dark:text-gray-300
+                                    hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                            {% lucide "pencil" "w-3.5 h-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500" %}
+                            {{ t.RECIPES_VIEW.ACTION_EDIT_OVERRIDE }}
+                          </a>
+                        </template>
+
+                        <template x-if="!recipe.override_fname">
+                          <button type="button"
+                                  @click="createOverride(recipe.identifier)"
+                                  class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left
+                                         text-gray-700 dark:text-gray-300
+                                         hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                            {% lucide "plus" "w-3.5 h-3.5 flex-shrink-0 text-gray-400 dark:text-gray-500" %}
+                            {{ t.RECIPES_VIEW.ACTION_CREATE_OVERRIDE }}
+                          </button>
+                        </template>
+
+                        <template x-if="recipe.override_fname">
+                          <div class="my-1 border-t border-gray-100 dark:border-slate-800"></div>
+                        </template>
+
+                        <template x-if="recipe.override_fname">
+                          <button type="button"
+                                  @click="deleteOverride(recipe.override_fname)"
+                                  class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left
+                                         text-red-600 dark:text-red-400
+                                         hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors">
+                            {% lucide "trash-2" "w-3.5 h-3.5 flex-shrink-0" %}
+                            {{ t.RECIPES_VIEW.ACTION_DELETE_OVERRIDE }}
+                          </button>
+                        </template>
+
+                      </div>
+                    </div>{# end ⋯ dropdown #}
+
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </template>
+
+          {# Empty state (data loaded but nothing matches) #}
+          <template x-if="!loading && sorted.length === 0">
+            <tr>
+              <td colspan="5" class="px-4 py-12 text-center text-sm text-gray-400 dark:text-gray-500">
+                {% lucide "inbox" "w-5 h-5 mx-auto mb-2 opacity-40" %}
+                <template x-if="search">
+                  <span>{{ t.RECIPES_VIEW.LIST_NO_RESULTS }}</span>
+                </template>
+                <template x-if="!search">
+                  <span>{{ t.RECIPES_VIEW.LIST_EMPTY }}</span>
+                </template>
+              </td>
+            </tr>
+          </template>
+
+        </tbody>
+      </table>
+    </div>
+
+    {# -- Pagination bar -------------------------------------------------------- #}
+    <template x-if="!loading && totalPages > 1">
+      <div class="flex items-center justify-between mt-3 px-1">
+
+        <span class="text-xs text-gray-500 dark:text-gray-400"
+              x-text="`Showing ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, sorted.length)} of ${sorted.length}`">
+        </span>
+
+        <div class="flex items-center gap-1">
+          <button type="button" @click="goToPage(page - 1)" :disabled="page === 1"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm
+                         text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-slate-600
+                         hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-30
+                         disabled:cursor-not-allowed transition-colors">
+            {% lucide "chevron-left" "w-4 h-4" %}
+          </button>
+
+          <template x-for="item in pageNumbers" :key="item.key">
+            <button type="button"
+                    :disabled="item.type === 'gap'"
+                    @click="item.type === 'page' && goToPage(item.n)"
+                    :class="item.type === 'gap'
+                      ? 'cursor-default border-transparent text-gray-400 dark:text-gray-500'
+                      : item.n === page
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'text-gray-700 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700'"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm font-medium
+                           border transition-colors"
+                    x-text="item.type === 'gap' ? '…' : item.n">
+            </button>
+          </template>
+
+          <button type="button" @click="goToPage(page + 1)" :disabled="page === totalPages"
+                  class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-sm
+                         text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-slate-600
+                         hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-30
+                         disabled:cursor-not-allowed transition-colors">
+            {% lucide "chevron-right" "w-4 h-4" %}
+          </button>
+        </div>
+      </div>
+    </template>
+
+    {# Hidden container populated on submit #}
+    <div id="selected-inputs" aria-hidden="true"></div>
+
+    {# Hidden form for "Create Override" #}
+    <form id="override-create-form" method="post" action="{% url 'recipes-override-create' %}" style="display:none">
+      {% csrf_token %}
+      <input type="hidden" name="identifier" id="override-create-id">
+    </form>
+
+    {# Hidden form for "Delete Override" — action set dynamically by deleteOverride() #}
+    <form id="override-delete-form" method="post" action="" style="display:none">
+      {% csrf_token %}
+    </form>
+
+  </form>
+</div>
+
+<script>
+function recipeList() {
+  return {
+    recipes: [],
+    orphanedRunList: [],
+    loading: true,
+    loadError: false,
+    selected: {},
+    sortCol: 'name',
+    sortDesc: false,
+    sortByChecked: false,
+    search: '',
+    page: 1,
+    pageSize: 100,
+    openDropdown: null,
+
+    init() {
+      this._fetchData();
+      this.$watch('search',       () => { this.page = 1; });
+      this.$watch('sortCol',      () => { this.page = 1; });
+      this.$watch('sortDesc',     () => { this.page = 1; });
+      this.$watch('sortByChecked',() => { this.page = 1; });
+    },
+
+    _fetchData() {
+      fetch('{% url "recipes-list-data" %}')
+        .then(r => {
+          if (r.status === 202) {
+            setTimeout(() => this._fetchData(), 1500);
+            return null;
+          }
+          if (!r.ok) throw new Error(r.status);
+          return r.json();
+        })
+        .then(data => {
+          if (!data) return;
+          this.recipes = data.recipes;
+          this.orphanedRunList = data.orphaned_run_list || [];
+          if (data.load_error) this.loadError = true;
+          this.recipes.forEach(r => {
+            if (r.in_run_list) this.selected[r.identifier] = true;
+          });
+          this.loading = false;
+        })
+        .catch(() => {
+          this.loading = false;
+          this.loadError = true;
+        });
+    },
+
+    get missingParentList() {
+      return this.recipes.filter(r => r.missing_parent && this.isSelected(r.identifier));
+    },
+
+    _isIdentifierQuery(q) {
+      return /^(?:com|io|org|net)\./i.test(q);
+    },
+
+    _searchableIdentifier(id) {
+      return id.replace(/^(?:com|io)\.github\.[^.]+\./i, '');
+    },
+
+    get filtered() {
+      const raw = this.search.trimStart();
+      if (!raw) return this.recipes;
+      const q = raw.toLowerCase();
+      const fullIdSearch = this._isIdentifierQuery(q);
+      return this.recipes.filter(r => {
+        if (r.name.toLowerCase().includes(q)) return true;
+        const idToSearch = fullIdSearch
+          ? r.identifier.toLowerCase()
+          : this._searchableIdentifier(r.identifier.toLowerCase());
+        return idToSearch.includes(q);
+      });
+    },
+
+    get sorted() {
+      return [...this.filtered].sort((a, b) => {
+        if (this.sortByChecked) {
+          const ac = this.isSelected(a.identifier) ? 0 : 1;
+          const bc = this.isSelected(b.identifier) ? 0 : 1;
+          if (ac !== bc) return ac - bc;
+        }
+        let va = a[this.sortCol], vb = b[this.sortCol];
+        if (typeof va === 'boolean') va = va ? 1 : 0;
+        if (typeof vb === 'boolean') vb = vb ? 1 : 0;
+        if (typeof va === 'string') va = va.toLowerCase();
+        if (typeof vb === 'string') vb = vb.toLowerCase();
+        const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+        return this.sortDesc ? -cmp : cmp;
+      });
+    },
+
+    get totalPages() {
+      return Math.max(1, Math.ceil(this.sorted.length / this.pageSize));
+    },
+
+    get paginated() {
+      const start = (this.page - 1) * this.pageSize;
+      return this.sorted.slice(start, start + this.pageSize);
+    },
+
+    get pageNumbers() {
+      const total = this.totalPages;
+      const cur   = this.page;
+      const pg    = n => ({ type: 'page', n, key: `p${n}` });
+      const gap   = k => ({ type: 'gap',  n: 0, key: `g${k}` });
+      if (total <= 7) return Array.from({ length: total }, (_, i) => pg(i + 1));
+      const show = new Set([1, total]);
+      for (let i = Math.max(2, cur - 2); i <= Math.min(total - 1, cur + 2); i++) show.add(i);
+      const asc = [...show].sort((a, b) => a - b);
+      const out = [];
+      let prev = 0, gi = 0;
+      for (const n of asc) {
+        if (n - prev > 1) out.push(gap(gi++));
+        out.push(pg(n));
+        prev = n;
+      }
+      return out;
+    },
+
+    goToPage(n) {
+      this.page = Math.max(1, Math.min(n, this.totalPages));
+      this.$nextTick(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' }));
+    },
+
+    sort(col) {
+      if (this.sortCol === col) this.sortDesc = !this.sortDesc;
+      else { this.sortCol = col; this.sortDesc = false; }
+    },
+
+    isSelected(id) { return !!this.selected[id]; },
+
+    toggle(id) {
+      if (this.selected[id]) {
+        const s = { ...this.selected };
+        delete s[id];
+        this.selected = s;
+      } else {
+        this.selected = { ...this.selected, [id]: true };
+      }
+    },
+
+    get selectedCount() { return Object.keys(this.selected).length; },
+
+    onSubmit(e) {
+      const container = document.getElementById('selected-inputs');
+      container.innerHTML = '';
+      Object.keys(this.selected).forEach(id => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'selected';
+        inp.value = id;
+        container.appendChild(inp);
+      });
+    },
+
+    createOverride(identifier) {
+      this.openDropdown = null;
+      document.getElementById('override-create-id').value = identifier;
+      document.getElementById('override-create-form').submit();
+    },
+
+    deleteOverride(fname) {
+      this.openDropdown = null;
+      if (!confirm(`Delete "${fname}"?\n\nThis cannot be undone.`)) return;
+      const form = document.getElementById('override-delete-form');
+      form.action = '/recipes/overrides/' + fname + '/delete/';
+      form.submit();
+    },
+  };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>{{bundle_id}}</string>
+
+	<!-- Run the service as this user (privileges are dropped by launchd) -->
+	<key>UserName</key>
+	<string>{{run_as_user}}</string>
+
+	<!-- Project root — used as the working directory.
+	     For .app bundle deployments this is the directory containing the .app.
+	     For raw-Python deployments this is the repo/install root. -->
+	<key>WorkingDirectory</key>
+	<string>{{working_dir}}</string>
+
+	<!-- Each argument must be a separate <string> element.
+	     .app bundle:     /path/to/AutoPkg Runner.app/Contents/MacOS/autopkg-runner serve
+	     Raw Python:      /path/to/python3 -m gunicorn autopkgrunner.wsgi:application ... -->
+	<key>ProgramArguments</key>
+	<array>
+		{{program_args}}
+	</array>
+
+	<!-- Environment variables injected by launchd into the process.
+	     For raw-Python deployments, add PYTHONPATH so the package root is importable.
+	     For .app bundle deployments this block can be omitted or left empty. -->
+	<key>EnvironmentVariables</key>
+	<dict>
+		{{environment_vars}}
+	</dict>
+
+	<!-- Start the service when the plist is loaded (boot / launchctl load) -->
+	<key>RunAtLoad</key>
+	<true/>
+
+	<!-- Restart on crash (non-zero exit) only. A clean exit (0) means setup has
+	     not been completed — restarting in that case would loop indefinitely. -->
+	<key>KeepAlive</key>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/>
+	</dict>
+
+	<!-- Redirect stdout and stderr to a shared log file -->
+	<key>StandardOutPath</key>
+	<string>/var/log/{{bundle_id}}/server.log</string>
+
+	<key>StandardErrorPath</key>
+	<string>/var/log/{{bundle_id}}/server.log</string>
+</dict>
+</plist>

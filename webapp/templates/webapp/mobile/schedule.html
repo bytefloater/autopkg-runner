@@ -1,0 +1,153 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}Schedule - AutoPkg Runner{% endblock %}
+{% block nav_title %}{{ t.APP.VIEWS_SCHEDULES }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="schedule-form"
+        :disabled="!canSubmit"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1
+               disabled:opacity-30 disabled:pointer-events-none">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div x-data="{
+       enabled: {{ schedule.enabled|yesno:'true,false' }},
+       fields: {
+         minute:       '{{ schedule.minute|escapejs }}',
+         hour:         '{{ schedule.hour|escapejs }}',
+         day_of_week:  '{{ schedule.day_of_week|escapejs }}',
+         day_of_month: '{{ schedule.day_of_month|escapejs }}',
+         month:        '{{ schedule.month|escapejs }}'
+       },
+       ranges: {
+         minute:       [0, 59],
+         hour:         [0, 23],
+         day_of_week:  [0, 6],
+         day_of_month: [1, 31],
+         month:        [1, 12]
+       },
+       errors: {},
+       validateField(name) {
+         const val = this.fields[name].trim();
+         const [min, max] = this.ranges[name];
+         if (val === '*') { delete this.errors[name]; return; }
+         const parts = val.split(',');
+         for (const part of parts) {
+           const p = part.trim();
+           if (/^\*$/.test(p)) continue;
+           if (/^\*\/\d+$/.test(p)) {
+             const step = parseInt(p.split('/')[1]);
+             if (step < 1) { this.errors[name] = 'Step must be ≥ 1'; return; }
+             continue;
+           }
+           const rangeMatch = p.match(/^(\d+)-(\d+)$/);
+           if (rangeMatch) {
+             const a = parseInt(rangeMatch[1]), b = parseInt(rangeMatch[2]);
+             if (a < min || b > max || a > b) { this.errors[name] = `Range must be ${min}–${max}`; return; }
+             continue;
+           }
+           const stepRangeMatch = p.match(/^(\d+)-(\d+)\/(\d+)$/);
+           if (stepRangeMatch) {
+             const a = parseInt(stepRangeMatch[1]), b = parseInt(stepRangeMatch[2]);
+             if (a < min || b > max || a > b) { this.errors[name] = `Range must be ${min}–${max}`; return; }
+             continue;
+           }
+           if (/^\d+$/.test(p)) {
+             const n = parseInt(p);
+             if (n < min || n > max) { this.errors[name] = `Must be ${min}–${max} or *`; return; }
+             continue;
+           }
+           this.errors[name] = 'Invalid cron value'; return;
+         }
+         delete this.errors[name];
+       },
+       get hasErrors() { return Object.keys(this.errors).length > 0; },
+       get canSubmit() { return !this.enabled || !this.hasErrors; }
+     }">
+
+<div class="h-4"></div>
+
+<form method="post" id="schedule-form">
+  {% csrf_token %}
+
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.APP.VIEWS_SCHEDULES }}</p>
+
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    {# Description row #}
+    <div class="px-4 py-3">
+      <p class="text-[13px] text-gray-500 dark:text-gray-400">{{ t.SCHEDULE_VIEW.DESC_SCHEDULER }}</p>
+    </div>
+
+    {# Enable / disable toggle #}
+    <div class="flex items-center justify-between px-4 py-[13px]">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.SCHEDULE_VIEW.ENABLE_SCHEDULER_TOGGLE_HEADER }}</span>
+      <input type="hidden" name="enabled" :value="enabled ? 'on' : ''">
+      <button type="button" @click="enabled = !enabled"
+              :class="enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="enabled ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+  </div>
+
+  {# Cron expression fields - visible only when enabled #}
+  <div x-show="enabled" x-transition>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.SCHEDULE_VIEW.SECTION_CRON_EXPRESSION }}</p>
+    <p class="px-4 pb-2 text-[12px] text-gray-400 dark:text-gray-500">{{ t.SCHEDULE_VIEW.CRON_TZ_PREFIX }} {{ system_tz_name }} ({{ system_tz_abbr }})</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      {% for label, name, value, hint in cron_fields %}
+      <div class="px-4 py-3" x-data>
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <span class="text-[16px] text-gray-900 dark:text-white">{{ label }}</span>
+            <p x-show="errors['{{ name }}']" x-text="errors['{{ name }}']"
+               class="text-[12px] text-red-500 mt-0.5"></p>
+            <p x-show="!errors['{{ name }}']" class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ hint }}</p>
+          </div>
+          <input type="text" name="{{ name }}"
+                 x-model="fields.{{ name }}"
+                 @input="validateField('{{ name }}')"
+                 @blur="validateField('{{ name }}')"
+                 :class="errors['{{ name }}'] ? 'border-red-400 dark:border-red-600 ring-1 ring-red-400' : 'border-gray-300 dark:border-[#38383a]'"
+                 class="text-center w-20 text-[15px] font-mono rounded-lg border bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</form>
+
+{% if cron_description %}
+<div class="h-4"></div>
+<div class="mx-4 flex items-start gap-2.5 px-4 py-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800">
+  {% lucide "calendar-check" "w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" %}
+  <div>
+    <p class="text-[14px] text-green-700 dark:text-green-300">{{ cron_description }}</p>
+    {% if next_run_formatted %}
+    <p class="text-[12px] text-green-600 dark:text-green-400 mt-0.5">
+      {{ t.SCHEDULE_VIEW.LABEL_NEXT_RUN }} {{ next_run_formatted }}
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="h-8"></div>
+</div>{# /x-data #}
+{% endblock %}

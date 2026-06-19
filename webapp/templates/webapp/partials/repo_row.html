@@ -1,0 +1,82 @@
+{% load webapp_extras %}
+<tr class="group hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+
+  {# URL - hover reveals local path as a tooltip #}
+  <td class="px-4 py-2 max-w-0 w-full align-middle">
+    <div class="relative group/path">
+      <span class="text-sm font-mono text-gray-800 dark:text-gray-200 truncate block">{{ repo.url }}</span>
+      {% if repo.path %}
+      <div class="absolute left-0 top-full mt-1.5 z-20 pointer-events-none
+                  opacity-0 group-hover/path:opacity-100 transition-opacity duration-150
+                  bg-gray-900 dark:bg-slate-700 text-white text-xs rounded-lg px-3 py-2
+                  whitespace-nowrap shadow-lg">
+        <span class="font-mono">{{ repo.path }}</span>
+        <div class="absolute -top-1 left-4 w-2 h-2 bg-gray-900 dark:bg-slate-700 rotate-45"></div>
+      </div>
+      {% endif %}
+    </div>
+  </td>
+
+  {# Status #}
+  <td class="px-4 py-2 whitespace-nowrap align-middle">
+    {% if error_msg %}
+      <span class="inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-xs font-medium
+                   bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+        {% lucide "circle-alert" "w-3.5 h-3.5 flex-shrink-0" %}
+        {{ error_msg }}
+      </span>
+    {% elif repo.behind == 0 %}
+      <span class="inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-xs font-medium
+                   bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+        {% lucide "check" "w-3.5 h-3.5 flex-shrink-0" %}
+        {{ t.RECIPES_VIEW.REPO_STATUS_UPTODATE }}
+      </span>
+    {% elif repo.behind > 0 %}
+      <span class="inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-xs font-medium
+                   bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+        {% lucide "circle-arrow-down" "w-3.5 h-3.5 flex-shrink-0" %}
+        {{ repo.behind }} {{ t.RECIPES_VIEW.REPO_STATUS_BEHIND }}
+      </span>
+    {% else %}
+      <span class="inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-xs font-medium
+                   bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400">
+        {% lucide "minus" "w-3.5 h-3.5 flex-shrink-0" %}
+        {{ t.RECIPES_VIEW.REPO_STATUS_UNKNOWN }}
+      </span>
+    {% endif %}
+  </td>
+
+  {# Actions #}
+  <td class="px-4 py-2 text-right whitespace-nowrap align-middle">
+    <div class="inline-flex items-center gap-1.5">
+
+      {# Update - spinner lives inside the button; covered by htmx-indicator overlay when loading #}
+      <button type="button"
+              data-repo-update-btn
+              hx-post="{% url 'recipes-repo-update' %}"
+              hx-vals='{"repo_path": "{{ repo.path|escapejs }}", "repo_url": "{{ repo.url|escapejs }}"}'
+              hx-target="closest tr"
+              hx-swap="outerHTML"
+              class="relative inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
+                     bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300
+                     hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+        <span class="htmx-indicator absolute inset-0 flex items-center justify-center rounded-lg
+                     bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-gray-500">
+          {% lucide "loader-circle" "w-3.5 h-3.5 animate-spin" %}
+        </span>
+        {% lucide "refresh-cw" "w-3.5 h-3.5 flex-shrink-0" %}
+        {{ t.RECIPES_VIEW.ACTION_UPDATE }}
+      </button>
+
+      {# Delete — opens confirm modal in the parent Alpine component #}
+      <button type="button"
+              @click="deleteUrl = '{{ repo.url|escapejs }}'; showDelete = true"
+              class="inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium
+                     bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/70
+                     text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800
+                     transition-colors">
+        {% lucide "trash-2" "w-3.5 h-3.5" %}
+      </button>
+    </div>
+  </td>
+</tr>

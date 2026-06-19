@@ -2,49 +2,66 @@
 A helper module for sending notifications to Discord
 """
 import http.client
-import urllib
+import json
+from typing import Optional
+
+from notifiers._ssl import ssl_context
 
 
-def send(configuration: dict, message: str, title: str=None):
-    """Send a pushover notification
+def send(
+    configuration: dict,
+    message: str,
+    title: Optional[str] = None,
+    url: Optional[str] = None,
+    url_title: Optional[str] = None,
+):
+    """Send a Discord webhook notification.
 
     Parameters:
-        configuration (dict): {
-            webhook_id (str): Webhook ID
-            webhook_token (str): Webhook Token
-        }
-        message (str): Body content of notification
-        title (str): Override the message username [OPTIONAL]"""
-    conn = http.client.HTTPSConnection("discord.com", 443)
-    parameters = {
-        "username": title,
-        "content": message,
+        configuration: {'webhook_id': str, 'webhook_token': str}
+        message:   Body content of notification.
+        title:     Override the webhook bot username (optional).
+        url:       Share link URL appended to the message (optional).
+                   Discord auto-embeds the URL as a preview card.
+        url_title: Ignored for Discord (URL is included inline).
+    """
+    content = message
+    if url:
+        label = url_title or "View report"
+        content = f"{message}\n**[{label}]({url})**" if message else url
+
+    payload = {
+        "username": title or "AutoPkg Runner",
+        "content":  content,
     }
 
-    # Remove the None values from the sent parameters
-    for key, value in dict(parameters).items():
-        if value is None:
-            del parameters[key]
-
+    body = json.dumps(payload).encode()
+    conn = http.client.HTTPSConnection("discord.com", 443, context=ssl_context())
     conn.request(
-        "POST", f"/api/webhooks/{configuration['webhook_id']}/{configuration['webhook_token']}",
-        urllib.parse.urlencode(dict(parameters)),
-        {"Content-type": "application/x-www-form-urlencoded"}
+        "POST",
+        f"/api/webhooks/{configuration['webhook_id']}/{configuration['webhook_token']}",
+        body,
+        {"Content-type": "application/json"},
     )
-    conn.getresponse()
+    resp = conn.getresponse()
+    if not (200 <= resp.status < 300):
+        body_text = resp.read().decode(errors='replace')
+        raise RuntimeError(f"Discord webhook returned HTTP {resp.status}: {body_text}")
 
 if __name__ == "__main__":
-    import json
-    from __info__ import CONFIG_FILE
+    import argparse
 
-    with open(CONFIG_FILE, mode="r", encoding="utf-8") as config_file:
-        raw = json.load(config_file)
-
-    settings: dict = raw["module_settings"]["core.notify"]["notifiers.discord"]
+    parser = argparse.ArgumentParser(
+        prog="Discord Notifier (Test Entry Point)",
+        description="Send a test Discord notification using the tokens provided in the console"
+    )
+    parser.add_argument("-i", "--webhook-id", required=True)
+    parser.add_argument("-t", "--webhook-token", required=True)
+    args = parser.parse_args()
 
     config = {
-        "webhook_id": settings.get("webhook_id"),
-        "webhook_token": settings.get("webhook_token")
+        "webhook_id": args.webhook_id,
+        "webhook_token": args.webhook_token
     }
 
     send(

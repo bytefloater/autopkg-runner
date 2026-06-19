@@ -1,137 +1,150 @@
-import ipaddress
-import os
 from pathlib import Path
-import socket
-import subprocess
-import urllib.parse
+from typing import Optional
 
 from libs.stage import Stage
-from libs.run_command import run_cmd
-from libs.mdns import ZeroConfigResolver, is_ipv4
+from libs.hosts import BaseHost, SmbHost, SftpHost, RemoteRepositoryMounter
+
+
+def _build_host(repo) -> BaseHost:
+    """Factory: return the correct BaseHost for the configured connection type."""
+    ct = repo.connection_type
+    if ct == 'smb':
+        return SmbHost(
+            host=repo.host,
+            share=repo.server_share,
+            username=repo.username,
+            password=repo.password,
+        )
+    elif ct == 'sftp':
+        return SftpHost(
+            host=repo.host,
+            share=repo.server_share,
+            username=repo.username,
+            password=repo.password,
+        )
+    else:
+        raise ValueError(
+            f"Unsupported connection_type: {repo.connection_type!r}. "
+            f"Expected 'smb' or 'sftp'."
+        )
 
 
 class MountRepository(Stage):
-    name = "Mount Remote Repository"
+    name = "Mount Repository"
 
     def __init__(self, config, ctx, logger):
         super().__init__(config, ctx, logger)
 
-        self.local_mnt: Path        = config.repository.mount_path
-        self.host: str              = config.repository.host
-        self.server_share: str      = config.repository.server_share
-        self.username: str          = config.repository.username
-        self.password: str          = config.repository.password
-        self.check_dirs: list[str]  = config.repository.check_dirs
+        repo = config.repository
+        self.repo_type  = repo.repo_type      # 'local' | 'remote'
+        self.local_path = repo.local_path     # used when repo_type == 'local'
+        self.mounter: Optional[RemoteRepositoryMounter] = None
+
+        if not self._is_local():
+            self.mounter = RemoteRepositoryMounter(
+                mount_point=repo.mount_path,
+                host=_build_host(repo),
+                logger=logger,
+            )
+
+    # -- Helpers --------------------------------------------------------------
+
+    def _is_local(self) -> bool:
+        return self.repo_type == "local"
+
+    def _check_local_path(self) -> bool:
+        self.logger.info(f"Checking local repository path: {self.local_path}")
+        if not self.local_path.is_dir():
+            self.logger.error(
+                f"Local repository path does not exist or is not a directory: {self.local_path}"
+            )
+            return False
+        self.logger.info("Local repository path is accessible.")
+        return True
+
+    # -- Stage interface -------------------------------------------------------
 
     def pre_check(self) -> bool:
-        if self._can_resolve_host():
-            if all([
-                self._is_server_available(self._resolve_host()),
-                self._is_mount_point_available(self.local_mnt)
-            ]):
-                return True
-        return False
-
-    def _can_resolve_host(self) -> bool:
-        if is_ipv4(self.host):
-            self.logger.info("Detected IPv4 address, skipping zero-config resolution...")
-            return True
-
-        self.logger.info(f"Checking if the server host can be resolved... ({self.host})")
-        
-        address = self._resolve_host()
-        if is_ipv4(address):
-            self.logger.info(f"Resolution succeeded, will use '{address}' to connect...")
-            return True
-
-        self.logger.error("Resolution failed")
-        return False
-    
-    def _resolve_host(self):
-        if is_ipv4(self.host):
-            return self.host
-
-        resolver = ZeroConfigResolver()
-        all_results = resolver.resolve_service(
-            name=self.host,
-            service_type="_smb._tcp"
+        if self._is_local():
+            return self._check_local_path()
+        assert self.mounter is not None  # set in __init__ when not local
+        return (
+            self.mounter.is_reachable()
+            and self.mounter.is_mount_point_available()
         )
-        result = resolver.pick_best_result(all_results)
-        address = next(iter(result.get("addresses", [])), '')
-        return address
 
     def run(self):
-        os.mkdir(self.local_mnt)
-        try:
-            run_cmd([
-                "mount_smbfs",
-                self._construct_url(
-                    srv_user=self.username,
-                    srv_pass=self.password,
-                    addr_str=self._resolve_host(),
-                    srv_share=self.server_share
-                ),
-                self.local_mnt
-            ], self.logger)
-        except subprocess.CalledProcessError as err:
-            raise RuntimeError from err
+        if self._is_local():
+            self.logger.info(
+                f"Using local repository at {self.local_path} - no mounting required."
+            )
+            return
+        assert self.mounter is not None  # set in __init__ when not local
+        self.mounter.mount()
 
-    def post_check(self):
-        """Check for the presence of the directories that the remote repository should have"""
+    def post_check(self) -> bool:
+        """Verify the mounted/local repository is accessible and readable.
+
+        Checks more than just directory existence: after mounting, the mount-point
+        directory is always stat-able (it was created by os.mkdir before the mount),
+        so is_dir() alone gives a false positive when the SMB session cannot actually
+        deliver file content.  We therefore also verify that the directory can be
+        listed and that at least one file inside it is openable.
+        """
+        if self._is_local():
+            base: Path = self.local_path
+        else:
+            assert self.mounter is not None  # set in __init__ when not local
+            base = self.mounter.mount_point
+
         self.logger.info("Starting repository structure check...")
+        if not base.is_dir():
+            self.logger.error(f"Repository base path is not accessible: {base}")
+            return False
 
-        for _dir in self.check_dirs:
-            self.logger.debug(f"Checking for: /{_dir}")
+        # Resolve symlinks before any VFS operation.  /tmp is a symlink to
+        # /private/tmp on macOS; resolving ensures consistent path handling.
+        resolved = base.resolve()
 
-            test_path = f"{self.local_mnt}/{_dir}"
-            if not os.path.isdir(test_path):
-                self.logger.error(f"Unable to find: {_dir}")
+        # Verify we can list the directory contents (not just stat the root).
+        try:
+            entries = list(resolved.iterdir())
+        except OSError as exc:
+            self.logger.error(f"Repository is mounted but its contents cannot be listed: {exc}")
+            return False
+
+        # Verify we can open and read at least one file from within the share.
+        # This catches permission issues that only materialise on actual I/O,
+        # not on directory stat calls.
+        #
+        # Munki repos have no files at the root (only catalogs/, pkgs/, etc.),
+        # so fall back to a one-level-deep search when the root itself is file-free.
+        first_file = next((e for e in entries if e.is_file()), None)
+        if first_file is None:
+            for subdir in (e for e in entries if e.is_dir()):
+                try:
+                    first_file = next(
+                        (e for e in subdir.iterdir() if e.is_file()),
+                        None,
+                    )
+                except OSError:
+                    continue
+                if first_file is not None:
+                    break
+
+        if first_file is not None:
+            try:
+                with first_file.open('rb') as fh:
+                    fh.read(1)
+            except OSError as exc:
+                self.logger.error(f"Repository is mounted but files cannot be read: {exc}")
                 return False
 
-        self.logger.info("Repository structure check succeeded")
+        self.logger.info("Repository structure check succeeded.")
         return True
 
     def cleanup(self):
-        try:
-            self.logger.info("Unmounting remote server...")
-            run_cmd([
-                "umount",
-                self.local_mnt
-            ], self.logger)
-        except subprocess.CalledProcessError as err:
-            self.logger.warning(str(err))
-
-        try:
-            self.logger.info("Removing temporary mount point...")
-            os.rmdir(self.local_mnt)
-        except FileNotFoundError:
-            self.logger.warning("Mount point was not found!")
-        except OSError:
-            self.logger.error("The mount point specified is not an empty directory, please delete it manually.")
-
-    def _is_server_available(self, addr_str: str, port=445) -> bool:
-        addr = ipaddress.ip_address(addr_str)
-        if not isinstance(addr, ipaddress.IPv4Address):
-            raise TypeError("Connection address must be of type ipaddress.IPv4Address")
-
-        self.logger.info(f"Checking server availability... ({addr_str})")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex((addr_str, port))
-
-        if result == 0:
-            self.logger.info(f"Server '{addr_str}' is available")
-            return True
-        return False
-
-    def _is_mount_point_available(self, mount_point) -> bool:
-        self.logger.info("Checking if mount point exists...")
-        if os.path.exists(mount_point):
-            self.logger.error("Mount point already exists")
-            return False
-
-        self.logger.info("Mount point not in use")
-        return True
-    
-    def _construct_url(self, srv_user, srv_pass, addr_str, srv_share):
-        repo_url = f"//{srv_user}:{srv_pass}@{addr_str}/{srv_share}"
-        return urllib.parse.quote(repo_url, safe="/:@")
+        if self._is_local():
+            return
+        assert self.mounter is not None  # set in __init__ when not local
+        self.mounter.unmount()

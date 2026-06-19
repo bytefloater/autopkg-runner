@@ -1,0 +1,197 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ fname }} - {{ t.RECIPES_VIEW.EDITOR_TITLE }} - {{ t.APP.NAME }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<style>
+  .CodeMirror {
+    height: 100%;
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+    font-size: 0.83rem;
+    line-height: 1.6;
+    border-radius: 0 0 0.75rem 0.75rem;
+  }
+  .CodeMirror-scroll {
+    height: 100%;
+  }
+  #editor-wrap {
+    /* height set by JS; CodeMirror fills it */
+    overflow: hidden;
+    border-radius: 0 0 0.75rem 0.75rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+
+  {# Breadcrumb #}
+  <nav class="flex items-center gap-1.5 text-sm mb-2">
+    <a href="{% url 'recipes-list' %}"
+       class="text-blue-600 dark:text-blue-400 hover:underline font-medium">{{ t.RECIPES_VIEW.SUBTAB_RECIPES }}</a>
+    {% lucide "chevron-right" "w-3.5 h-3.5 text-gray-400 dark:text-gray-600" %}
+    <span class="text-gray-600 dark:text-gray-400 font-mono">{{ fname }}</span>
+  </nav>
+
+  <div class="flex items-center justify-between min-h-9 mb-4">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.RECIPES_VIEW.EDITOR_TITLE }}</h1>
+  </div>
+
+  {% include "webapp/recipes/_subtabs.html" %}
+
+  {% if error %}
+  <div class="mb-4 flex items-start gap-3 px-4 py-3 rounded-lg
+              bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-sm
+              text-red-700 dark:text-red-300">
+    {% lucide "circle-alert" "w-4 h-4 flex-shrink-0 mt-0.5" %}
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  <form method="post" id="edit-form">
+    {% csrf_token %}
+
+    {# -- Sticky toolbar ----------------------------------------------------- #}
+    <div id="editor-toolbar"
+         class="sticky top-0 z-30 flex items-center justify-between px-4 py-2.5
+                bg-gray-50 dark:bg-slate-800
+                border border-gray-200 dark:border-slate-700
+                rounded-t-xl shadow-sm">
+      <span class="text-sm font-mono text-gray-600 dark:text-gray-400 truncate">{{ fname }}</span>
+      <div class="flex items-center gap-2 flex-shrink-0 ml-4">
+        <a href="{% url 'recipes-list' %}"
+           class="px-3 py-1.5 text-sm font-semibold rounded-lg
+                  text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+          {{ t.APP.ACTION_CANCEL }}
+        </a>
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg
+                       border border-transparent bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+          {% lucide "save" "w-3.5 h-3.5" %}
+          {{ t.RECIPES_VIEW.EDITOR_SAVE }}
+        </button>
+      </div>
+    </div>
+
+    {# -- Editor (fills remaining viewport height) --------------------------- #}
+    <div id="editor-wrap"
+         class="border-x border-b border-gray-200 dark:border-slate-700
+                bg-white dark:bg-slate-900 rounded-b-xl overflow-hidden">
+      <textarea id="editor" name="content" class="hidden">{{ content }}</textarea>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script>
+  (function () {
+    const isDark = document.documentElement.classList.contains('dark');
+    const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+      mode: 'xml',
+      lineNumbers: true,
+      lineWrapping: false,
+      theme: isDark ? 'material-darker' : 'default',
+      indentUnit: 4,
+      tabSize: 4,
+      autofocus: true,
+    });
+
+    // Size the editor to fill from the bottom of the toolbar to the viewport bottom
+    const toolbar = document.getElementById('editor-toolbar');
+    const wrap    = document.getElementById('editor-wrap');
+
+    function resize() {
+      const tbRect = toolbar.getBoundingClientRect();
+      const available = Math.max(320, window.innerHeight - tbRect.bottom - 24);
+      wrap.style.height = available + 'px';
+      editor.setSize('100%', available + 'px');
+      editor.refresh();
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Re-size after scroll (toolbar sticks, changes tbRect.bottom)
+    window.addEventListener('scroll', resize, { passive: true });
+
+    // Sync textarea for form submission
+    document.getElementById('edit-form').addEventListener('submit', () => editor.save());
+
+    // Follow dark-mode toggle
+    new MutationObserver(() => {
+      editor.setOption('theme',
+        document.documentElement.classList.contains('dark') ? 'material-darker' : 'default');
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    // -- Scroll drift filter -------------------------------------------------
+    // Suppresses clearly-incidental cross-axis motion (trackpad noise during a
+    // vertical or horizontal scroll) without locking the direction.  If both
+    // axes carry significant energy the gesture is treated as intentionally
+    // diagonal and passes through unmodified.
+    //
+    // DRIFT_THRESHOLD: the cross-axis delta must be below this fraction of the
+    // primary-axis delta to be considered noise and filtered out.  0.15 means
+    // "horizontal drift < 15 % of vertical motion → probably not intentional".
+    const scrollEl = document.querySelector('.CodeMirror-scroll');
+    if (scrollEl) {
+      const DRIFT_THRESHOLD = 0.15;
+
+      // Capture phase fires BEFORE CodeMirror so we can drop noisy events
+      // before CodeMirror acts on them.
+      scrollEl.addEventListener('wheel', function (e) {
+        const absX = Math.abs(e.deltaX);
+        const absY = Math.abs(e.deltaY);
+
+        const driftX = absY > 0 && absX < absY * DRIFT_THRESHOLD; // tiny H during V scroll
+        const driftY = absX > 0 && absY < absX * DRIFT_THRESHOLD; // tiny V during H scroll
+
+        // Both axes significant → intentional diagonal, pass through unchanged.
+        if (!driftX && !driftY) return;
+
+        e.stopPropagation();
+        e.preventDefault();
+        // Apply only the dominant axis.
+        if (driftX) {
+          scrollEl.scrollTop  += e.deltaY;
+        } else {
+          scrollEl.scrollLeft += e.deltaX;
+        }
+      }, { passive: false, capture: true });
+
+      // Touch: use cumulative displacement from gesture origin so the direction
+      // estimate stabilises before we decide whether to filter.
+      let touchOrigin = null;
+
+      scrollEl.addEventListener('touchstart', function (e) {
+        touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }, { passive: true });
+
+      scrollEl.addEventListener('touchmove', function (e) {
+        if (!touchOrigin) return;
+        const absX = Math.abs(e.touches[0].clientX - touchOrigin.x);
+        const absY = Math.abs(e.touches[0].clientY - touchOrigin.y);
+
+        const driftX = absY > 0 && absX < absY * DRIFT_THRESHOLD;
+        const driftY = absX > 0 && absY < absX * DRIFT_THRESHOLD;
+
+        // Suppress only clear single-axis drift; allow diagonal gestures.
+        if (driftX && absX > 0) e.preventDefault();
+        if (driftY && absY > 0) e.preventDefault();
+      }, { passive: false });
+
+      scrollEl.addEventListener('touchend', function () {
+        touchOrigin = null;
+      }, { passive: true });
+    }
+  })();
+</script>
+{% endblock %}

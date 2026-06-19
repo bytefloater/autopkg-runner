@@ -1,0 +1,264 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ edit_user.username }} - {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ edit_user.username }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'users' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="user-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="user-form"
+      x-data="{
+        isActive:    {% if edit_user.is_active %}true{% else %}false{% endif %},
+        isAdmin:     {% if edit_user.is_superuser %}true{% else %}false{% endif %},
+        permManage:  {% if perms_ext.can_manage_users %}true{% else %}false{% endif %},
+        permTrigger: {% if perms_ext.can_trigger_runs %}true{% else %}false{% endif %},
+        permConfig:  {% if perms_ext.can_edit_config %}true{% else %}false{% endif %},
+        permView:    {% if perms_ext.can_view_runs %}true{% else %}false{% endif %}
+      }">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="update">
+
+  {# -- Password reset banner ------------------------------------------------ #}
+  {% if reset_creds %}
+  <div class="mx-4 mb-4 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-xl p-4">
+    <p class="text-[13px] font-semibold text-green-800 dark:text-green-300 mb-2">{{ t.USER_VIEW.CREDS_BANNER_RESET }}</p>
+    <div class="space-y-1 mb-3">
+      <div class="flex items-baseline gap-2">
+        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">{{ t.APP.FIELDNAME_USERNAME }}</span>
+        <span class="text-[13px] font-mono text-gray-900 dark:text-white select-all break-all">{{ reset_creds.username }}</span>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-[12px] font-medium text-green-700 dark:text-green-400 w-20 flex-shrink-0">{{ t.APP.FIELDNANE_PASSWORD }}</span>
+        <span class="text-[13px] font-mono text-gray-900 dark:text-white select-all break-all">{{ reset_creds.password }}</span>
+      </div>
+    </div>
+    <p class="text-[11px] text-green-700 dark:text-green-400">{{ t.USER_VIEW.CREDS_BANNER_DISCLAIMER_SHORT }}</p>
+  </div>
+  {% endif %}
+
+  {# -- Identity ------------------------------------------------------------- #}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_ACCOUNT }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+
+    <div class="flex items-center gap-3 px-4 py-3">
+      <span class="w-9 h-9 rounded-full bg-blue-600/15 border border-blue-500/20 flex items-center justify-center text-[14px] font-bold text-blue-600 dark:text-blue-400 uppercase select-none flex-shrink-0">
+        {{ edit_user.username|first }}
+      </span>
+      <div>
+        <p class="text-[16px] font-medium text-gray-900 dark:text-white">
+          {{ edit_user.username }}{% if is_self %}&thinsp;<span class="text-[13px] text-gray-400 font-normal">(you)</span>{% endif %}
+        </p>
+        <p class="text-[13px] text-gray-400 dark:text-gray-500">
+          {% if edit_user.is_superuser %}{{ t.APP.ROLE_SUPERUSER }}{% else %}{{ t.USER_VIEW.ROLE_USER }}{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.USER_VIEW.LABEL_EMAIL_OPTIONAL }}</label>
+      <input type="email" name="email" value="{{ edit_user.email }}"
+             class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600"
+             placeholder="user@example.com">
+    </div>
+
+  </div>
+
+  {# -- Role & status (hidden for self-edit) -------------------------------- #}
+  {% if not is_self %}
+  <input type="hidden" name="is_active" :value="isActive ? 'on' : ''">
+  <input type="hidden" name="is_superuser" :value="isAdmin ? 'on' : ''">
+
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_ROLE_STATUS }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.TABLE_CAT_ACTIVE }}</span>
+      <button type="button" @click="isActive = !isActive"
+              :class="isActive ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="isActive ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-3">
+      <div>
+        <p class="text-[16px] text-gray-900 dark:text-white">{{ t.APP.ROLE_SUPERUSER }}</p>
+        <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.ROLE_ADMIN_DESC_SHORT }}</p>
+      </div>
+      <button type="button" @click="isAdmin = !isAdmin"
+              :class="isAdmin ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="isAdmin ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+  </div>
+
+  {# Permission checkboxes — hidden when superuser is on #}
+  <div x-show="!isAdmin" x-transition>
+    <p class="px-4 pb-1 pt-2 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_PERMISSIONS }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6">
+
+      <div class="flex items-center justify-between px-4 py-3">
+        <input type="hidden" name="can_manage_users" :value="permManage ? 'on' : ''">
+        <div>
+          <p class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.PERM_MANAGE_USERS }}</p>
+          <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.PERM_MANAGE_USERS_DESC }}</p>
+        </div>
+        <button type="button" @click="permManage = !permManage"
+                :class="permManage ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'"
+                class="w-[22px] h-[22px] flex-shrink-0 rounded border flex items-center justify-center transition-colors">
+          <span x-show="permManage">{% lucide "check" "w-3.5 h-3.5" %}</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between px-4 py-3">
+        <input type="hidden" name="can_trigger_runs" :value="permTrigger ? 'on' : ''">
+        <div>
+          <p class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.PERM_TRIGGER_RUNS }}</p>
+          <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.PERM_TRIGGER_RUNS_DESC }}</p>
+        </div>
+        <button type="button" @click="permTrigger = !permTrigger"
+                :class="permTrigger ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'"
+                class="w-[22px] h-[22px] flex-shrink-0 rounded border flex items-center justify-center transition-colors">
+          <span x-show="permTrigger">{% lucide "check" "w-3.5 h-3.5" %}</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between px-4 py-3">
+        <input type="hidden" name="can_edit_config" :value="permConfig ? 'on' : ''">
+        <div>
+          <p class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.PERM_EDIT_CONFIG }}</p>
+          <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.PERM_EDIT_CONFIG_DESC }}</p>
+        </div>
+        <button type="button" @click="permConfig = !permConfig"
+                :class="permConfig ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'"
+                class="w-[22px] h-[22px] flex-shrink-0 rounded border flex items-center justify-center transition-colors">
+          <span x-show="permConfig">{% lucide "check" "w-3.5 h-3.5" %}</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between px-4 py-3">
+        <input type="hidden" name="can_view_runs" :value="permView ? 'on' : ''">
+        <div>
+          <p class="text-[16px] text-gray-900 dark:text-white">{{ t.USER_VIEW.PERM_VIEW_RUNS }}</p>
+          <p class="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{{ t.USER_VIEW.PERM_VIEW_RUNS_DESC }}</p>
+        </div>
+        <button type="button" @click="permView = !permView"
+                :class="permView ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white dark:bg-[#2c2c2e] border-gray-300 dark:border-gray-600'"
+                class="w-[22px] h-[22px] flex-shrink-0 rounded border flex items-center justify-center transition-colors">
+          <span x-show="permView">{% lucide "check" "w-3.5 h-3.5" %}</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  {% else %}
+  <p class="mx-4 mb-6 text-[13px] text-gray-400 dark:text-gray-500">
+    {{ t.USER_VIEW.SELF_EDIT_NOTICE_LONG }}
+  </p>
+  {% endif %}
+
+</form>
+
+{# -- Danger zone (non-self only) -------------------------------------------- #}
+{% if not is_self %}
+<p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.USER_VIEW.SECTION_ACTIONS }}</p>
+<div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-6"
+     x-data="{ showDelete: false }">
+
+  {# Reset password - direct submit, no confirmation needed (result shown on next page) #}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="reset_password">
+    <button type="submit"
+            class="w-full px-4 py-[13px] text-left active:bg-gray-50 dark:active:bg-[#2c2c2e] transition-colors duration-75">
+      <span class="text-[16px] text-amber-600 dark:text-amber-400">{{ t.APP.ACTION_RESET_PWD }}</span>
+    </button>
+  </form>
+
+  {# Delete - opens confirmation sheet #}
+  <form method="post" x-ref="deleteForm">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <button type="button" @click="showDelete = true"
+            class="w-full px-4 py-[13px] text-left active:bg-gray-50 dark:active:bg-[#2c2c2e] transition-colors duration-75">
+      <span class="text-[16px] text-red-500 dark:text-red-400">{{ t.USER_VIEW.ACTION_DELETE_USER }}</span>
+    </button>
+  </form>
+
+  {# -- Delete confirmation bottom sheet ---------------------------------- #}
+  <template x-teleport="body">
+    <div x-show="showDelete" x-cloak class="fixed inset-0 z-[100]"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+      <div class="absolute inset-0 bg-black/50" @click="showDelete = false"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[#f2f2f7] dark:bg-[#1c1c1e] rounded-t-3xl shadow-2xl"
+           style="padding-bottom: calc(env(safe-area-inset-bottom,0px) + 8px);"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="translate-y-full"
+           x-transition:enter-end="translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="translate-y-0"
+           x-transition:leave-end="translate-y-full">
+        <div class="flex justify-center pt-3 pb-2">
+          <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
+        </div>
+        <div class="px-4 pt-2 pb-4">
+          <div class="flex justify-center mb-4">
+            <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-950/50 flex items-center justify-center">
+              {% lucide "trash-2" "w-6 h-6 text-red-600 dark:text-red-400" %}
+            </div>
+          </div>
+          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-1">
+            {{ t.APP.ACTION_DELETE }} "{{ edit_user.username }}"?
+          </h3>
+          <p class="text-[14px] text-gray-500 dark:text-gray-400 text-center mt-2 mb-6">
+            {{ t.USER_VIEW.CONFIRM_DELETE_DESC }}
+          </p>
+          <div class="flex gap-3">
+            <button type="button" @click="showDelete = false"
+                    class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                           bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400
+                           active:opacity-70 transition-opacity duration-75">
+              {{ t.APP.ACTION_CANCEL }}
+            </button>
+            <button type="button" @click="$refs.deleteForm.submit()"
+                    class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                           bg-red-600 active:bg-red-700 text-white transition-colors duration-75">
+              {{ t.APP.ACTION_DELETE }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+</div>
+{% endif %}
+
+<div class="h-8"></div>
+{% endblock %}

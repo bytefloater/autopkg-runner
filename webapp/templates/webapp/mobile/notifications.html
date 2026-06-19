@@ -1,0 +1,194 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }} - {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button @click="$dispatch('open-add-notifier')"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.NOTIFICATIONS_VIEW.ACTION_ADD }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div x-data="{
+  showAdd:  false,
+  newName:  '',
+  newType:  '{{ type_choices.0.0 }}',
+  typeSchemas:  {{ type_schemas }},
+  typeChoices:  [{% for val, label in type_choices %}{ value: '{{ val }}', label: '{{ label }}' }{% if not forloop.last %}, {% endif %}{% endfor %}]
+}" @open-add-notifier.window="showAdd = true">
+
+  <div class="h-4"></div>
+
+  {# -- Notifier list ------------------------------------------------------ #}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</p>
+
+  {% if notifiers %}
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    {% for n in notifiers %}
+
+    {# Each row is a swipe-to-delete container #}
+    <div class="relative overflow-hidden"
+         x-data="{
+           sx: 0, sy: 0, dx: 0, rawDx: 0, tracking: false,
+           ts(e){ this.sx=e.touches[0].clientX; this.sy=e.touches[0].clientY; this.tracking=false; this.rawDx=0; },
+           tm(e){
+             let ddx=e.touches[0].clientX-this.sx, ddy=e.touches[0].clientY-this.sy;
+             if(!this.tracking && Math.abs(ddy)>Math.abs(ddx)) return;
+             this.tracking=true; e.preventDefault();
+             this.rawDx=ddx; this.dx=Math.max(-80,Math.min(0,ddx));
+           },
+           te(){
+             if(this.rawDx < -200){ this.$refs.delForm.submit(); return; }
+             this.dx = this.dx < -40 ? -80 : 0;
+             this.tracking=false;
+           }
+         }"
+         @touchstart="ts($event)"
+         @touchmove="tm($event)"
+         @touchend="te()">
+
+      {# Hidden delete form #}
+      <form x-ref="delForm" method="post" action="{% url 'notifier-delete' n.pk %}" class="hidden">
+        {% csrf_token %}
+      </form>
+
+      {# Delete action revealed on the right as row slides left #}
+      <div class="absolute inset-y-0 right-0 w-20 bg-red-500 flex items-center justify-center"
+           :style="{ opacity: Math.min(1, Math.abs(dx)/40) }">
+        <button @click="$refs.delForm.submit()"
+                class="w-full h-full text-white text-[14px] font-semibold">
+          {{ t.APP.ACTION_DELETE }}
+        </button>
+      </div>
+
+      {# Row content - slides left on swipe #}
+      <div class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1c1c1e] relative"
+           :style="{ transform: 'translateX(' + dx + 'px)', transition: tracking ? 'none' : 'transform 0.2s ease' }">
+
+        {# Status dot #}
+        <span class="w-2 h-2 rounded-full flex-shrink-0 {% if n.enabled %}bg-green-500{% else %}bg-gray-300 dark:bg-gray-600{% endif %}"></span>
+
+        <a href="{% url 'notifier-edit' n.pk %}"
+           class="flex-1 min-w-0">
+          <p class="text-[16px] font-medium text-gray-900 dark:text-white truncate">{{ n.name }}</p>
+          <p class="text-[13px] text-gray-400 dark:text-gray-500">{{ n.notifier_type|capfirst }}</p>
+        </a>
+
+        {# Enable/disable toggle #}
+        <form method="post" action="{% url 'notifier-toggle' n.pk %}" class="flex-shrink-0">
+          {% csrf_token %}
+          <button type="submit"
+                  class="relative inline-flex h-[31px] w-[51px] cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200
+                         {% if n.enabled %}bg-blue-600{% else %}bg-gray-200 dark:bg-[#38383a]{% endif %}">
+            <span class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200
+                         {% if n.enabled %}translate-x-5{% else %}translate-x-0{% endif %}"></span>
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden">
+    <div class="flex flex-col items-center justify-center py-12">
+      {% lucide "bell-off" "w-10 h-10 text-gray-300 dark:text-gray-700 mb-3" %}
+      <p class="text-[15px] text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.EMPTY_NO_NOTIFIERS }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="h-6"></div>
+
+  {# -- Settings ----------------------------------------------------------- #}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_GENERAL }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden">
+    <a href="{% url 'notification-settings' %}"
+       class="flex items-center gap-3 px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75">
+      <span class="w-[29px] h-[29px] rounded-[7px] bg-pink-500 flex items-center justify-center flex-shrink-0">
+        {% lucide "settings" "w-4 h-4 text-white" %}
+      </span>
+      <span class="flex-1 text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.TAB_NOTIFICATIONS }}</span>
+      {% lucide "chevron-right" "w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" %}
+    </a>
+  </div>
+
+  <div class="h-8"></div>
+
+  {# ══════════════ ADD NOTIFIER BOTTOM SHEET ══════════════ #}
+  <template x-teleport="body">
+    <div x-show="showAdd" x-cloak class="fixed inset-0 z-[100]"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+      <div class="absolute inset-0 bg-black/50" @click="showAdd = false"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[#f2f2f7] dark:bg-[#1c1c1e] rounded-t-3xl shadow-2xl"
+           style="padding-bottom: calc(env(safe-area-inset-bottom,0px) + 8px);"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="translate-y-full"
+           x-transition:enter-end="translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="translate-y-0"
+           x-transition:leave-end="translate-y-full">
+        <div class="flex justify-center pt-3 pb-2">
+          <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
+        </div>
+        <div class="px-4 pt-2 pb-4">
+          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-5">{{ t.NOTIFICATIONS_VIEW.ACTION_ADD_NOTIFIER }}</h3>
+          <form method="post" @submit="showAdd = false">
+            {% csrf_token %}
+            <div class="bg-white dark:bg-[#2c2c2e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a] mb-4">
+              <div class="px-4 py-3">
+                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.FIELD_NAME }}</label>
+                <input type="text" name="name" x-model="newName"
+                       placeholder="e.g. My Pushover"
+                       required autofocus
+                       class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+              </div>
+              <div class="px-4 py-3">
+                <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.FIELD_TYPE }}</label>
+                <select name="notifier_type" x-model="newType"
+                        class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none">
+                  <template x-for="tc in typeChoices" :key="tc.value">
+                    <option :value="tc.value" x-text="tc.label"></option>
+                  </template>
+                </select>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button type="button" @click="showAdd = false; newName = ''"
+                      class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                             bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400
+                             active:opacity-70 transition-opacity duration-75">
+                {{ t.APP.ACTION_CANCEL }}
+              </button>
+              <button type="submit" :disabled="!newName.trim()"
+                      class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                             bg-blue-600 active:bg-blue-700 text-white
+                             transition-colors duration-75 disabled:opacity-40">
+                {{ t.NOTIFICATIONS_VIEW.ACTION_NEXT }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </template>
+
+</div>
+{% endblock %}

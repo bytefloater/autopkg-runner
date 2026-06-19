@@ -1,0 +1,200 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ t.CONFIG_VIEW.TAB_REPO }} - {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ t.CONFIG_VIEW.TAB_REPO }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="config-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="config-form"
+      x-data="{
+        repoType: '{{ s|lookup:'repository.type'|default:'remote' }}',
+        connType: '{{ s|lookup:'repository.connection_type'|default:'smb' }}',
+        pubUrlAuth: {{ s|lookup:'repository.public_url_username'|yesno:'true,false' }},
+        showPubUrlPw: false,
+        sftpAvailable: {{ sftp_available|yesno:'true,false' }}
+      }">
+  {% csrf_token %}
+
+  {# -- Type selector -------------------------------------------------------- #}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_REPO_TYPE }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.REPOTYPE_LOCAL }}</span>
+      <input type="radio" name="repository.type" value="local" x-model="repoType" class="w-5 h-5 accent-blue-600">
+    </label>
+
+    <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.REPOTYPE_REMOTE }}</span>
+      <input type="radio" name="repository.type" value="remote" x-model="repoType" class="w-5 h-5 accent-blue-600">
+    </label>
+
+  </div>
+
+  {# -- Local path ----------------------------------------------------------- #}
+  <div x-show="repoType === 'local'" x-transition>
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_LOCAL_REPO }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_LOCAL_REPO_PATH }}</label>
+        <input type="text" name="repository.local_path" value="{{ s|lookup:'repository.local_path' }}"
+               placeholder="/Volumes/Munki"
+               class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+      </div>
+    </div>
+  </div>
+
+  {# -- Remote settings ------------------------------------------------------ #}
+  <div x-show="repoType === 'remote'" x-transition>
+
+    {# Connection type #}
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_CONNECTION_TYPE }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.CONNECTION_TYPE_SMB }}</span>
+        <input type="radio" name="repository.connection_type" value="smb" x-model="connType" class="w-5 h-5 accent-blue-600">
+      </label>
+      <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.CONNECTION_TYPE_SSH }}</span>
+        <input type="radio" name="repository.connection_type" value="sftp" x-model="connType" class="w-5 h-5 accent-blue-600">
+      </label>
+    </div>
+
+    {# -- SFTP dependency warning ---------------------------------------------- #}
+    <div x-show="connType === 'sftp' && !sftpAvailable" x-transition x-cloak>
+      <div class="mx-4 mt-3 flex items-start gap-3 px-4 py-3.5 rounded-xl
+                  bg-amber-50 dark:bg-amber-950/40
+                  border border-amber-200 dark:border-amber-800">
+        {% lucide "triangle-alert" "w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" %}
+        <div>
+          <p class="text-[14px] font-medium text-amber-800 dark:text-amber-300">{{ t.CONFIG_VIEW.WARN_SFTP_DEPS_MISSING }}</p>
+          <p class="text-[12px] text-amber-700 dark:text-amber-400 mt-0.5">
+            {{ t.CONFIG_VIEW.WARN_SFTP_DEPS_INSTRUCTION }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {# Credentials - shown for all remote types #}
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_CREDENTIALS }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
+         x-data="{ showPw: false }">
+
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNAME_USERNAME }}</label>
+        <input type="text" name="repository.username" value="{{ s|lookup:'repository.username' }}"
+               autocomplete="username"
+               class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+      </div>
+
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNANE_PASSWORD }}</label>
+        <div class="flex gap-2">
+          <input :type="showPw ? 'text' : 'password'" name="repository.password"
+                 value="{{ s|lookup:'repository.password' }}"
+                 autocomplete="current-password"
+                 class="flex-1 text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+          <button type="button" @click="showPw = !showPw"
+                  class="flex-shrink-0 text-[13px] font-medium text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75"
+                  x-text="showPw ? '{{ t.APP.ACTION_HIDE|escapejs }}' : '{{ t.APP.ACTION_SHOW|escapejs }}'"></button>
+        </div>
+      </div>
+
+    </div>
+
+    {# SMB-specific settings #}
+    <div x-show="connType === 'smb'" x-transition>
+      <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.SECTION_SMB_SERVER }}</p>
+      <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+        <div class="px-4 py-3">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_HOST }}</label>
+          <input type="text" name="repository.host" value="{{ s|lookup:'repository.host' }}"
+                 placeholder="munki.example.com"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+
+        <div class="px-4 py-3">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SMB_SERVER_SHARE }}</label>
+          <input type="text" name="repository.share" value="{{ s|lookup:'repository.share' }}"
+                 placeholder="Munki"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+
+        <div class="px-4 py-3">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_LOCAL_MNT_PATH }}</label>
+          <input type="text" name="repository.mount_path" value="{{ s|lookup:'repository.mount_path' }}"
+                 placeholder="/tmp/Munki"
+                 class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+        </div>
+
+      </div>
+    </div>
+
+    {# -- Public URL ----------------------------------------------------------- #}
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.CONFIG_VIEW.OPT_SERVER_PUBLIC_URL }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.CONFIG_VIEW.OPT_SERVER_PUBLIC_URL }}</label>
+        <input type="url" name="repository.public_url" value="{{ s|lookup:'repository.public_url' }}"
+               placeholder="https://munki.example.com"
+               class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+      </div>
+
+      <label class="flex items-center justify-between px-4 py-3 cursor-pointer">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.CONFIG_VIEW.OPT_SERVER_PUBLIC_URL_AUTH }}</span>
+        <button type="button" @click="pubUrlAuth = !pubUrlAuth"
+                class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="pubUrlAuth ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#48484a]'">
+          <span class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                :class="pubUrlAuth ? 'translate-x-[20px]' : 'translate-x-0'"></span>
+        </button>
+      </label>
+
+      <div x-show="pubUrlAuth" x-transition class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNAME_USERNAME }}</label>
+        <input type="text" name="repository.public_url_username"
+               value="{{ s|lookup:'repository.public_url_username' }}"
+               autocomplete="off"
+               class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none">
+      </div>
+
+      <div x-show="pubUrlAuth" x-transition class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.APP.FIELDNANE_PASSWORD }}</label>
+        <div class="flex gap-2">
+          <input :type="showPubUrlPw ? 'text' : 'password'" name="repository.public_url_password"
+                 value="{{ s|lookup:'repository.public_url_password' }}"
+                 autocomplete="new-password"
+                 class="flex-1 text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none">
+          <button type="button" @click="showPubUrlPw = !showPubUrlPw"
+                  class="flex-shrink-0 text-[13px] font-medium text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75"
+                  x-text="showPubUrlPw ? '{{ t.APP.ACTION_HIDE|escapejs }}' : '{{ t.APP.ACTION_SHOW|escapejs }}'"></button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>{# end remote #}
+
+  <div class="h-8"></div>
+
+</form>
+{% endblock %}

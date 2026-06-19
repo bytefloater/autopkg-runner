@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import urllib
+import urllib.parse
 
 import psutil
 from libs.stage import Stage

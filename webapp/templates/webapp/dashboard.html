@@ -1,0 +1,84 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras tz %}
+
+{% block title %}Dashboard - AutoPkg Runner{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+  <!-- Page header -->
+  <div class="flex items-center justify-between min-h-[38px]">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_DASHBOARD }}</h1>
+    {% if user_perms.can_trigger_runs %}
+    <form method="post" action="{% url 'trigger-run' %}" id="trigger-form">
+      {% csrf_token %}
+      <button type="submit"
+              hx-post="{% url 'trigger-run' %}"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+              hx-swap="none"
+              hx-on::after-request="if(event.detail.successful){ window.location = '/runs/' + JSON.parse(event.detail.xhr.responseText).run_id + '/' }"
+              class="flex items-center gap-2 px-4 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+        {% lucide "play" "w-4 h-4" %}
+        {{ t.APP.ACTION_TRIGGER_RUN }}
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- Stats row -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_RUN_COUNT_30D }}</p>
+      <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ total_runs_30d }}</p>
+    </div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_SUCCESS_RATE_30D }}</p>
+      <p class="mt-1 text-2xl font-bold {% if success_rate_30d >= 90 %}text-green-600 dark:text-green-400{% elif success_rate_30d >= 70 %}text-yellow-600 dark:text-yellow-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+        {{ success_rate_30d }}%
+      </p>
+    </div>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
+      <p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.DASHBOARD_VIEW.HEADER_NEXT_RUN }}</p>
+      <p class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+        {% if next_run_formatted %}{{ next_run_formatted }}{% else %}<span class="text-gray-400">{{ t.DASHBOARD_VIEW.STATE_NO_RUN_SCHEDULED }}</span>{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <!-- Last run -->
+  {% if last_run %}
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+    <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t.DASHBOARD_VIEW.SECTION_LAST_RUN }}</h2>
+      <a href="{% url 'run-list' %}" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">{{ t.DASHBOARD_VIEW.ACTION_VIEW_ALL }}</a>
+    </div>
+    <div class="px-5 py-4 flex items-center gap-4">
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ last_run.status|status_color }}">
+        <span class="w-1.5 h-1.5 rounded-full {{ last_run.status|status_dot }}"></span>
+        {% if last_run.status == 'success' %}{{ t.APP.STATE_SUCCESS }}{% elif last_run.status == 'running' %}{{ t.APP.STATE_RUNNING }}{% elif last_run.status == 'failed' %}{{ t.APP.STATE_FAILED }}{% elif last_run.status == 'cancelled' %}{{ t.APP.STATE_CANCELLED }}{% elif last_run.status == 'pending' %}{{ t.APP.STATE_PENDING }}{% else %}{{ last_run.get_status_display }}{% endif %}
+      </span>
+      <div class="text-sm text-gray-600 dark:text-gray-300">
+        {{ t.DASHBOARD_VIEW.META_TRIGGERED_BY }} <strong>{{ last_run.triggered_by }}</strong>
+        &nbsp;·&nbsp; {{ last_run.started_at|timezone:local_tz|date:"d M Y, H:i" }}
+        {% if last_run.duration %}
+          &nbsp;·&nbsp; {{ last_run.started_at|duration:last_run.completed_at }}
+        {% endif %}
+      </div>
+      {% if user_perms.can_trigger_runs or user_perms.can_view_runs %}
+      <div class="ml-auto">
+        <a href="{% url 'run-detail' last_run.id %}"
+           class="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
+          {{ t.APP.ACTION_VIEW_LOGS }}
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center shadow-sm">
+    <p class="text-gray-400 dark:text-gray-500 text-sm">{{ t.DASHBOARD_VIEW.EMPTY_NO_RUNS }}</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

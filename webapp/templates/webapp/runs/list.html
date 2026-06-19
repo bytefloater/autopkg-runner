@@ -1,0 +1,187 @@
+{% extends "webapp/base_desktop.html" %}
+{% load webapp_extras tz %}
+
+{% block title %}Runs - AutoPkg Runner{% endblock %}
+
+{% block content %}
+<div class="space-y-4"
+     x-data="{
+       managing: false,
+       selected: [],
+       allIds: [{% for run in page_obj %}'{{ run.id }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+       deletableIds: [{% for run in page_obj %}{% if run.status != 'pending' and run.status != 'running' %}'{{ run.id }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}],
+       get allSelected() { return this.deletableIds.length > 0 && this.deletableIds.every(id => this.selected.includes(id)); },
+       toggleAll() {
+         if (this.allSelected) { this.selected = []; } else { this.selected = [...this.deletableIds]; }
+       }
+     }">
+
+  <div class="flex items-center justify-between min-h-[38px]">
+    <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t.APP.VIEWS_RUNS }}</h1>
+    <div class="flex items-center gap-2">
+
+      {% if user_perms.can_trigger_runs %}
+      {# Manage / Done toggle #}
+      <button type="button" @click="managing = !managing; selected = []"
+              :class="managing
+                ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-gray-700'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'"
+              class="flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-transparent rounded-lg transition-colors">
+        {% lucide "list-checks" "w-4 h-4" %}
+        <span x-text="managing ? '{{ t.RUNS_VIEW.ACTION_DONE|escapejs }}' : '{{ t.RUNS_VIEW.ACTION_MANAGE|escapejs }}'">{{ t.RUNS_VIEW.ACTION_MANAGE }}</span>
+      </button>
+
+      {# Delete selected (manage mode only) #}
+      <form method="post" action="{% url 'run-delete' %}"
+            x-show="managing" x-cloak
+            x-transition:enter="transition ease-out duration-100"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100">
+        {% csrf_token %}
+        <template x-for="id in selected" :key="id">
+          <input type="hidden" name="run_ids" :value="id">
+        </template>
+        <button type="submit"
+                :disabled="selected.length === 0"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-transparent transition-colors shadow-sm
+                       bg-red-600 hover:bg-red-700 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+          {% lucide "trash-2" "w-4 h-4" %}
+          <span>{{ t.RUNS_VIEW.ACTION_DELETE }} (<span x-text="selected.length">0</span>)</span>
+        </button>
+      </form>
+
+      {# Trigger Run (normal mode only) #}
+      <form method="post" action="{% url 'trigger-run' %}" x-show="!managing">
+        {% csrf_token %}
+        <button type="submit"
+                hx-post="{% url 'trigger-run' %}"
+                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful){ const d=JSON.parse(event.detail.xhr.responseText); if(d.run_id){ window.location='/runs/'+d.run_id+'/' } }"
+                class="flex items-center gap-2 px-4 py-2 border border-transparent bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+          {% lucide "play" "w-4 h-4" %}
+          {{ t.APP.ACTION_TRIGGER_RUN }}
+        </button>
+      </form>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <div id="run-list-section"
+       hx-get="{% url 'run-list' %}{% if request.GET.page %}?page={{ request.GET.page }}{% endif %}"
+       hx-trigger="every 10s"
+       hx-select="#run-list-section"
+       hx-target="#run-list-section"
+       hx-swap="outerHTML"
+       class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+    {% if page_obj %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          {# Checkbox header - always in DOM, width collapses when not managing #}
+          <th :class="managing ? 'w-12 px-4' : 'w-0 px-0 overflow-hidden'" class="w-0 px-0 overflow-hidden py-3 transition-all duration-150">
+            <div class="flex items-center justify-center" style="width:18px;height:18px;margin:0 auto">
+              <button x-show="managing" x-cloak
+                      type="button" @click="toggleAll()"
+                      class="w-[18px] h-[18px] rounded flex items-center justify-center flex-shrink-0 border transition-colors cursor-pointer"
+                      :class="allSelected
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'">
+                <span x-show="allSelected">{% lucide "check" "w-3 h-3" %}</span>
+              </button>
+            </div>
+          </th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_STATUS }}</th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_STARTED }}</th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_DURATION }}</th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_TRIGGERED_BY }}</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
+        {% for run in page_obj %}
+        <tr class="transition-colors"
+            :class="[
+              selected.includes('{{ run.id }}') ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
+              managing && '{{ run.status }}' !== 'pending' && '{{ run.status }}' !== 'running' ? 'cursor-pointer' : ''
+            ]"
+            @click="if (managing && '{{ run.status }}' !== 'pending' && '{{ run.status }}' !== 'running') {
+              const idx = selected.indexOf('{{ run.id }}');
+              if (idx === -1) selected.push('{{ run.id }}'); else selected.splice(idx, 1);
+            }">
+
+          {# Checkbox cell - collapses when not managing #}
+          <td :class="managing ? 'w-12 px-4' : 'w-0 px-0 overflow-hidden'" class="w-0 px-0 overflow-hidden py-3 transition-all duration-150">
+            <div x-show="managing" x-cloak class="flex items-center justify-center">
+              {% if run.status != 'pending' and run.status != 'running' %}
+              <button type="button"
+                      @click.stop="const idx = selected.indexOf('{{ run.id }}'); if (idx === -1) selected.push('{{ run.id }}'); else selected.splice(idx, 1);"
+                      class="w-[18px] h-[18px] rounded flex items-center justify-center flex-shrink-0 border transition-colors cursor-pointer"
+                      :class="selected.includes('{{ run.id }}')
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'">
+                <span x-show="selected.includes('{{ run.id }}')">{% lucide "check" "w-3 h-3" %}</span>
+              </button>
+              {% else %}
+              <span class="w-[18px] h-[18px] block"></span>
+              {% endif %}
+            </div>
+          </td>
+
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ run.status|status_color }}">
+              <span class="w-1.5 h-1.5 rounded-full {{ run.status|status_dot }}"></span>
+              {% if run.status == 'success' %}{{ t.APP.STATE_SUCCESS }}{% elif run.status == 'running' %}{{ t.APP.STATE_RUNNING }}{% elif run.status == 'failed' %}{{ t.APP.STATE_FAILED }}{% elif run.status == 'cancelled' %}{{ t.APP.STATE_CANCELLED }}{% elif run.status == 'pending' %}{{ t.APP.STATE_PENDING }}{% else %}{{ run.get_status_display }}{% endif %}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ run.started_at|timezone:local_tz|date:"d M Y, H:i:s" }}</td>
+          <td class="px-4 py-3 text-gray-500 dark:text-gray-400 tabular-nums">
+            {{ run.started_at|duration:run.completed_at }}
+          </td>
+          <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ run.triggered_by }}</td>
+          <td class="px-4 py-3 text-right">
+            <div class="flex items-center justify-end gap-3" @click.stop>
+              {% if run.status == 'running' or run.status == 'pending' %}
+              <form method="post" action="{% url 'run-cancel' run.id %}"
+                    hx-post="{% url 'run-cancel' run.id %}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-swap="none"
+                    hx-on::after-request="if(event.detail.successful){ htmx.trigger('#run-list-section','htmx:refresh') }">
+                {% csrf_token %}
+                <button type="submit"
+                        class="text-xs text-red-500 dark:text-red-400 hover:underline">{{ t.APP.ACTION_CANCEL }}</button>
+              </form>
+              {% endif %}
+              <a href="{% url 'run-detail' run.id %}"
+                 class="text-xs text-blue-600 dark:text-blue-400 hover:underline">{{ t.RUNS_VIEW.ACTION_VIEW }}</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+      <span>{{ t.RUNS_VIEW.PAGINATION_PAGE }} {{ page_obj.number }} {{ t.RUNS_VIEW.PAGINATION_OF }} {{ page_obj.paginator.num_pages }}</span>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">{{ t.RUNS_VIEW.PAGINATION_PREV }}</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">{{ t.RUNS_VIEW.PAGINATION_NEXT }}</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="py-16 text-center text-sm text-gray-400 dark:text-gray-500">
+      {{ t.RUNS_VIEW.EMPTY_NO_RUNS }}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

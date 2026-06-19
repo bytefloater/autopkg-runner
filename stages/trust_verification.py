@@ -27,7 +27,7 @@ class TrustVerification(Stage):
         for recipe in recipes:
             try:
                 run_cmd([
-                    self.autopkg_fpath,
+                    str(self.autopkg_fpath),
                     "verify-trust-info",
                     recipe
                 ], self.logger)
@@ -39,7 +39,7 @@ class TrustVerification(Stage):
             for recipe in needs_update:
                 try:
                     run_cmd([
-                        self.autopkg_fpath,
+                        str(self.autopkg_fpath),
                         "update-trust-info",
                         recipe
                     ], self.logger)

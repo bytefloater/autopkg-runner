@@ -1,0 +1,568 @@
+{% extends "webapp/base_mobile.html" %}
+{% load webapp_extras %}
+
+{% block title %}{{ notifier.name }} - {{ t.APP.NAME }}{% endblock %}
+{% block nav_title %}{{ notifier.name }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'config-notifications' %}"
+   class="flex items-center gap-0.5 -ml-1 text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+  {% lucide "chevron-left" "w-6 h-6" %}
+  <span class="text-[17px] font-normal">{{ t.APP.ACTION_BACK }}</span>
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<button type="submit" form="notifier-form"
+        class="text-[17px] font-semibold text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75 pr-1">
+  {{ t.APP.ACTION_SAVE }}
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="h-4"></div>
+
+<form method="post" id="notifier-form"
+      x-data="{
+        enabled: {% if notifier.enabled %}true{% else %}false{% endif %},
+        testing: false,
+        async sendTest() {
+          this.testing = true;
+          try {
+            const r = await fetch('{% url 'notifier-test' notifier.pk %}', {
+              method:  'POST',
+              headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            });
+            const result = await r.json();
+            this.$dispatch('toast', {
+              type:    result.success ? 'success' : 'error',
+              message: result.success
+                ? '{{ t.NOTIFICATIONS_VIEW.TEST_SUCCESS|escapejs }}'
+                : (result.message || '{{ t.NOTIFICATIONS_VIEW.TEST_FAILED|escapejs }}'),
+            });
+          } catch(e) {
+            this.$dispatch('toast', { type: 'error', message: 'Network error — check the console.' });
+          }
+          this.testing = false;
+        }
+      }">
+  {% csrf_token %}
+
+  {# -- Name & status ------------------------------------------------------ #}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_NOTIFIER }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.FIELD_NAME }}</label>
+      <input type="text" name="name" value="{{ notifier.name }}" required
+             class="w-full text-[16px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.FIELD_ENABLED }}</span>
+      <input type="hidden" name="enabled" :value="enabled ? 'on' : ''">
+      <button type="button" @click="enabled = !enabled"
+              :class="enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="enabled ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-[16px] text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.FIELD_TYPE }}</span>
+      <span class="text-[16px] text-gray-500 dark:text-gray-400">{{ notifier.notifier_type|capfirst }}</span>
+    </div>
+
+  </div>
+
+  {# -- Type-specific fields ----------------------------------------------- #}
+  {% if notifier.notifier_type == 'email' %}
+  {# ---- Custom SMTP editor (mobile) --------------------------------------- #}
+  <div x-data="smtpForm()">
+
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+      {# From address #}
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_FROM_ADDRESS }}</label>
+        <input type="text" name="from_address" x-model="fromAddress"
+               inputmode="email" autocapitalize="none" autocorrect="off"
+               placeholder="noreply@example.com"
+               class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600"
+               :class="fromAddress && !fromValid ? 'text-red-500 dark:text-red-400' : ''">
+        <p x-show="fromAddress && !fromValid" x-cloak class="mt-1 text-[12px] text-red-500 dark:text-red-400">Invalid email address</p>
+      </div>
+
+      {# Recipients — tag-style input #}
+      <div class="px-4 py-3">
+        <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-2">{{ t.NOTIFICATIONS_VIEW.OPT_RECIPIENTS }}</label>
+        <div @click="$refs.tagInput.focus()"
+             class="flex flex-wrap gap-1.5 min-h-[2rem] cursor-text">
+          <template x-for="(tag, i) in tags" :key="i">
+            <span class="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md text-[12px] font-medium"
+                  :class="isValidEmail(tag)
+                           ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                           : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300'">
+              <span x-text="tag"></span>
+              <button type="button" @click.stop="removeTag(i)"
+                      class="w-4 h-4 flex items-center justify-center rounded leading-none">&times;</button>
+            </span>
+          </template>
+          <input x-ref="tagInput" type="text" x-model="tagInput"
+                 inputmode="email" autocapitalize="none" autocorrect="off"
+                 @keydown="onTagKey($event)"
+                 @blur="tagInput.trim() && addTag()"
+                 placeholder="add email, press Enter"
+                 class="flex-1 min-w-[120px] bg-transparent text-[15px] text-gray-900 dark:text-white
+                        placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none">
+          <input type="hidden" name="recipients" :value="recipientsValue">
+        </div>
+        <p x-show="invalidTags.length > 0" x-cloak class="mt-1 text-[12px] text-red-500 dark:text-red-400">
+          One or more addresses are not valid email addresses.
+        </p>
+      </div>
+
+      {# SMTP Server + Port inline #}
+      <div class="px-4 py-3">
+        <div class="flex gap-3 items-end">
+          <div class="flex-1">
+            <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_SMTP_SERVER }}</label>
+            <input type="text" name="smtp_server"
+                   value="{{ decrypted_config|lookup:'smtp_server' }}"
+                   inputmode="url" autocapitalize="none" autocorrect="off"
+                   placeholder="mail.example.com"
+                   class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+          </div>
+          <div class="w-20 flex-shrink-0">
+            <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">Port</label>
+            <input type="number" name="smtp_port" min="1" max="65535"
+                   value="{{ decrypted_config|lookup:'smtp_port'|default:'587' }}"
+                   class="w-full text-[15px] text-center text-gray-900 dark:text-white bg-transparent focus:outline-none">
+          </div>
+        </div>
+      </div>
+
+      {# Encryption #}
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.OPT_SMTP_ENCRYPTION }}</span>
+        <select name="use_ssl"
+                class="text-[15px] text-gray-500 dark:text-gray-400 bg-transparent focus:outline-none text-right">
+          <option value=""{% if not decrypted_config.use_ssl %} selected{% endif %}>None / STARTTLS</option>
+          <option value="on"{% if decrypted_config.use_ssl %} selected{% endif %}>SSL</option>
+        </select>
+      </div>
+
+      {# Auth required toggle #}
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.OPT_USE_AUTH }}</span>
+        <input type="hidden" name="use_auth" :value="useAuth ? 'on' : ''">
+        <button type="button" @click="useAuth = !useAuth"
+                :class="useAuth ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+                class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+          <span :class="useAuth ? 'translate-x-5' : 'translate-x-0'"
+                class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+        </button>
+      </div>
+
+      {# Email template selector #}
+      <div class="flex items-center justify-between px-4 py-3">
+        <span class="text-[16px] text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW.OPT_EMAIL_TEMPLATE }}</span>
+        <select name="email_template"
+                class="text-[15px] text-gray-500 dark:text-gray-400 bg-transparent focus:outline-none text-right">
+          <option value="">{{ t.NOTIFICATIONS_VIEW.OPT_EMAIL_TEMPLATE_NONE }}</option>
+          {% for tmpl in email_templates %}
+          <option value="{{ tmpl }}"{% if decrypted_config|lookup:'email_template' == tmpl %} selected{% endif %}>{{ tmpl|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+    </div>
+
+    {# Credentials section (shown only when auth is required) #}
+    <div x-show="useAuth" x-transition>
+      <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SMTP_CREDENTIALS }}</p>
+      <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+        {# Username #}
+        <div class="px-4 py-3">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_USERNAME }}</label>
+          <input type="text" name="username" autocomplete="off" autocapitalize="none" autocorrect="off"
+                 value="{{ decrypted_config|lookup:'username' }}"
+                 class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none">
+        </div>
+
+        {# Password #}
+        <div class="px-4 py-3" x-data="{ show: false }">
+          <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.OPT_SMTP_PASSWORD }}</label>
+          <div class="flex gap-2 items-center">
+            <input :type="show ? 'text' : 'password'" name="password"
+                   value="{{ decrypted_config|lookup:'password' }}"
+                   placeholder="••••••••"
+                   class="flex-1 text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-400">
+            <button type="button" @click="show = !show"
+                    class="flex-shrink-0 text-[13px] font-medium text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75"
+                    x-text="show ? '{{ t.APP.ACTION_HIDE|escapejs }}' : '{{ t.APP.ACTION_SHOW|escapejs }}'"></button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  {% elif fields %}
+  {# ---- Generic field renderer for all other notifier types -------------- #}
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SETTINGS }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+    {% for field in fields %}
+
+    {% if field.type == 'bool' %}
+    {# Bool field #}
+    {% with current=decrypted_config|lookup:field.key %}
+    <div class="flex items-center justify-between px-4 py-3"
+         x-data="{ val: {{ current|yesno:'true,false' }} }">
+      <span class="text-[16px] text-gray-900 dark:text-white">{{ t.NOTIFICATIONS_VIEW|lookup:field.t_key }}</span>
+      <input type="hidden" name="{{ field.key }}" :value="val ? 'on' : ''">
+      <button type="button" @click="val = !val"
+              :class="val ? 'bg-blue-600' : 'bg-gray-200 dark:bg-[#38383a]'"
+              class="relative inline-flex h-[31px] w-[51px] flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200">
+        <span :class="val ? 'translate-x-5' : 'translate-x-0'"
+              class="pointer-events-none inline-block h-[27px] w-[27px] transform rounded-full bg-white shadow ring-0 transition duration-200"></span>
+      </button>
+    </div>
+    {% endwith %}
+
+    {% elif field.type == 'password' %}
+    {# Password field #}
+    <div class="px-4 py-3" x-data="{ show: false }">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW|lookup:field.t_key }}</label>
+      <div class="flex gap-2 items-center">
+        <input :type="show ? 'text' : 'password'" name="{{ field.key }}"
+               value="{{ decrypted_config|lookup:field.key }}"
+               placeholder="••••••••"
+               class="flex-1 text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-400">
+        <button type="button" @click="show = !show"
+                class="flex-shrink-0 text-[13px] font-medium text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75"
+                x-text="show ? '{{ t.APP.ACTION_HIDE|escapejs }}' : '{{ t.APP.ACTION_SHOW|escapejs }}'"></button>
+      </div>
+    </div>
+
+    {% else %}
+    {# Text field (default) #}
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW|lookup:field.t_key }}</label>
+      <input type="text" name="{{ field.key }}"
+             value="{{ decrypted_config|lookup:field.key }}"
+             class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+    </div>
+    {% endif %}
+
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# -- WebPush subscriptions (webpush type only) ---------------------------- #}
+  {% if notifier.notifier_type == 'webpush' %}
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_SUBSCRIBED_DEVICES }}</p>
+  <div class="mx-4" x-data="webPushManager('{{ notifier.pk }}', '{{ vapid_public_key }}')">
+
+    {% if not vapid_configured %}
+    <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3.5">
+      <p class="text-[13px] font-medium text-amber-800 dark:text-amber-300">{{ t.NOTIFICATIONS_VIEW.WARN_VAPID_NOT_CONFIGURED }}</p>
+      <p class="text-[12px] text-amber-700 dark:text-amber-400 mt-0.5">
+        Run <code class="font-mono bg-amber-100 dark:bg-amber-900/50 px-1 rounded">python manage.py generate_vapid_keys</code> to set up WebPush.
+      </p>
+    </div>
+
+    {% else %}
+
+    <div class="bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+
+      {% if webpush_subscriptions %}
+        {% for sub in webpush_subscriptions %}
+        <div class="flex items-center gap-3 px-4 py-3">
+          {% lucide "smartphone" "w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" %}
+          <div class="flex-1 min-w-0">
+            <p class="text-[15px] text-gray-900 dark:text-white truncate">
+              {{ sub.device_label|default:t.NOTIFICATIONS_VIEW.DEFAULT_DEVICE_LABEL }}
+            </p>
+            <p class="text-[12px] text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.DEVICE_ADDED_PREFIX }} {{ sub.created_at|date:"N j, Y" }}</p>
+          </div>
+          <button type="button"
+                  @click="unsubscribe({{ sub.pk }})"
+                  class="flex-shrink-0 text-[13px] text-red-500 dark:text-red-400 active:opacity-60 transition-opacity duration-75">
+            {{ t.NOTIFICATIONS_VIEW.ACTION_REMOVE }}
+          </button>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="flex flex-col items-center justify-center py-8">
+          {% lucide "bell-off" "w-8 h-8 text-gray-300 dark:text-gray-700 mb-2" %}
+          <p class="text-[14px] text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.EMPTY_NO_DEVICES_MOBILE }}</p>
+        </div>
+      {% endif %}
+
+    </div>
+
+    {# Subscribe this device button #}
+    <div class="mt-3">
+      <button type="button" @click="subscribe()"
+              :disabled="subscribing || subscribed"
+              class="w-full flex items-center justify-center gap-2 py-[14px]
+                     bg-white dark:bg-[#1c1c1e] rounded-xl
+                     text-[16px] font-semibold text-blue-600 dark:text-blue-400
+                     active:opacity-70 disabled:opacity-40 transition-opacity duration-75">
+        <template x-if="!subscribing && !subscribed">
+          {% lucide "bell-plus" "w-5 h-5" %}
+        </template>
+        <template x-if="subscribing">
+          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+        </template>
+        <template x-if="subscribed">
+          {% lucide "check-circle" "w-5 h-5" %}
+        </template>
+        <span x-text="subscribed ? '{{ t.NOTIFICATIONS_VIEW.STATE_SUBSCRIBED_DEVICE|escapejs }}' : subscribing ? '{{ t.NOTIFICATIONS_VIEW.STATE_SUBSCRIBING|escapejs }}' : '{{ t.NOTIFICATIONS_VIEW.ACTION_SUBSCRIBE_DEVICE|escapejs }}'"></span>
+      </button>
+    </div>
+
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# -- Message template ---------------------------------------------------- #}
+  <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.NOTIFICATIONS_VIEW.SECTION_MESSAGE_TEMPLATE }}</p>
+  <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]"
+       x-data="{ showVars: false }">
+
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.FIELD_TITLE }}</label>
+      <input type="text" name="title_template" value="{{ notifier.title_template }}"
+             placeholder="AutoPkg Runner"
+             class="w-full text-[15px] text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600">
+    </div>
+
+    <div class="px-4 py-3">
+      <label class="block text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t.NOTIFICATIONS_VIEW.FIELD_MESSAGE }}</label>
+      <textarea name="message_template" rows="4"
+                placeholder="Leave blank for auto-generated message."
+                class="w-full text-[15px] font-mono text-gray-900 dark:text-white bg-transparent focus:outline-none placeholder-gray-300 dark:placeholder-gray-600 resize-none">{{ notifier.message_template }}</textarea>
+    </div>
+
+    <div class="px-4 py-3">
+      <button type="button" @click="showVars = !showVars"
+              class="flex items-center gap-1.5 text-[13px] text-blue-600 dark:text-blue-400 active:opacity-60 transition-opacity duration-75">
+        <span class="transition-transform duration-150" :class="showVars ? 'rotate-90' : ''">{% lucide "chevron-right" "w-4 h-4" %}</span>
+        {{ t.NOTIFICATIONS_VIEW.LABEL_AVAILABLE_VARS }}
+      </button>
+      <div x-show="showVars" x-transition x-cloak class="mt-3 space-y-2">
+        {% for var, desc in variables %}
+        <div class="flex items-baseline gap-2">
+          <code class="font-mono text-[12px] text-blue-600 dark:text-blue-400 flex-shrink-0">{{ '{' }}{{ var }}{{ '}' }}</code>
+          <span class="text-[12px] text-gray-500 dark:text-gray-400">{{ desc }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  {# -- Send Test button ------------------------------------------------------ #}
+  <div class="mx-4 mt-5">
+    <button type="button" @click="sendTest()"
+            :disabled="testing"
+            class="w-full flex items-center justify-center gap-2 py-[14px]
+                   bg-white dark:bg-[#1c1c1e] rounded-xl
+                   text-[16px] font-semibold text-blue-600 dark:text-blue-400
+                   active:opacity-70 disabled:opacity-40 transition-opacity duration-75">
+      <template x-if="!testing">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+      </template>
+      <template x-if="testing">
+        <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+      </template>
+      <span x-text="testing ? '{{ t.NOTIFICATIONS_VIEW.STATE_SENDING|escapejs }}' : '{{ t.NOTIFICATIONS_VIEW.ACTION_SEND_TEST_NOTIFICATION|escapejs }}'"></span>
+    </button>
+  </div>
+
+</form>
+
+{# -- Danger zone ------------------------------------------------------------ #}
+<div class="mt-6 mb-8" x-data="{ showDelete: false }">
+  <button type="button" @click="showDelete = true"
+          class="mx-4 w-[calc(100%-2rem)] py-[14px] bg-white dark:bg-[#1c1c1e] text-red-500 dark:text-red-400 text-[16px] font-semibold rounded-xl active:opacity-70 transition-opacity duration-75">
+    {{ t.NOTIFICATIONS_VIEW.ACTION_DELETE_NOTIFIER }}
+  </button>
+
+  <template x-teleport="body">
+    <div x-show="showDelete" x-cloak class="fixed inset-0 z-[100]"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+      <div class="absolute inset-0 bg-black/50" @click="showDelete = false"></div>
+      <div class="absolute bottom-0 left-0 right-0 bg-[#f2f2f7] dark:bg-[#1c1c1e] rounded-t-3xl shadow-2xl"
+           style="padding-bottom: calc(env(safe-area-inset-bottom,0px) + 8px);"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="translate-y-full"
+           x-transition:enter-end="translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="translate-y-0"
+           x-transition:leave-end="translate-y-full">
+        <div class="flex justify-center pt-3 pb-2">
+          <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
+        </div>
+        <div class="px-4 pt-2 pb-4">
+          <div class="flex justify-center mb-4">
+            <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-950/50 flex items-center justify-center">
+              {% lucide "trash-2" "w-6 h-6 text-red-600 dark:text-red-400" %}
+            </div>
+          </div>
+          <h3 class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-1">
+            {{ t.NOTIFICATIONS_VIEW.ACTION_DELETE_NOTIFIER }} "{{ notifier.name }}"?
+          </h3>
+          <p class="text-[14px] text-gray-500 dark:text-gray-400 text-center mt-2 mb-6">
+            {{ t.NOTIFICATIONS_VIEW.CONFIRM_DELETE_DESC }}
+          </p>
+          <form method="post" action="{% url 'notifier-delete' notifier.pk %}">
+            {% csrf_token %}
+            <div class="flex gap-3">
+              <button type="button" @click="showDelete = false"
+                      class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                             bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400
+                             active:opacity-70 transition-opacity duration-75">
+                {{ t.APP.ACTION_CANCEL }}
+              </button>
+              <button type="submit"
+                      class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                             bg-red-600 active:bg-red-700 text-white transition-colors duration-75">
+                {{ t.APP.ACTION_DELETE }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% if notifier.notifier_type == 'email' %}
+<script>
+function smtpForm() {
+  return {
+    useAuth: {{ decrypted_config.use_auth|yesno:'true,false' }},
+    fromAddress: '{{ decrypted_config|lookup:"from_address"|escapejs }}',
+    tags: [],
+    tagInput: '',
+    init() {
+      const raw = '{{ decrypted_config|lookup:"recipients"|escapejs }}';
+      this.tags = raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+    },
+    addTag() {
+      const val = this.tagInput.trim().replace(/,+$/, '');
+      if (val && !this.tags.includes(val)) this.tags.push(val);
+      this.tagInput = '';
+    },
+    removeTag(i) { this.tags.splice(i, 1); },
+    onTagKey(e) {
+      if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); this.addTag(); }
+      else if (e.key === 'Backspace' && !this.tagInput && this.tags.length) { this.tags.pop(); }
+    },
+    get recipientsValue() { return this.tags.join(', '); },
+    isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); },
+    get fromValid() { return !this.fromAddress || this.isValidEmail(this.fromAddress); },
+    get invalidTags() { return this.tags.filter(t => !this.isValidEmail(t)); },
+  };
+}
+</script>
+{% endif %}
+<script>
+function webPushManager(notifierPk, vapidPublicKey) {
+  return {
+    subscribing: false,
+    subscribed: false,
+
+    urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(base64);
+      return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+    },
+
+    async subscribe() {
+      this.subscribing = true;
+      try {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          let msg;
+          if (isIOS && !window.navigator.standalone) {
+            msg = 'Open this app from your Home Screen icon — push notifications are only available when running as an installed PWA, not in Safari.';
+          } else if (isIOS) {
+            msg = 'Push notifications require a secure HTTPS connection and iOS 16.4 or later.';
+          } else {
+            msg = 'Push notifications are not supported in this browser.';
+          }
+          this.$dispatch('toast', { type: 'error', message: msg });
+          this.subscribing = false;
+          return;
+        }
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          this.$dispatch('toast', { type: 'error', message: 'Notification permission denied.' });
+          this.subscribing = false;
+          return;
+        }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey),
+        });
+        const json = sub.toJSON();
+        const uaMatch = navigator.userAgent.match(/\(([^)]+)\)/);
+        const label = uaMatch ? uaMatch[1].split(';')[0].trim() : 'Unknown device';
+        const resp = await fetch(`/config/notifications/${notifierPk}/subscribe/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': this.getCsrf() },
+          body: JSON.stringify({
+            endpoint: json.endpoint,
+            p256dh: json.keys.p256dh,
+            auth: json.keys.auth,
+            label: label,
+          }),
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          this.subscribed = true;
+          this.$dispatch('toast', { type: 'success', message: 'This device is now subscribed. Reload to see it in the list.' });
+        } else {
+          this.$dispatch('toast', { type: 'error', message: data.error || 'Subscription failed.' });
+        }
+      } catch (e) {
+        this.$dispatch('toast', { type: 'error', message: e.message || 'Subscription failed.' });
+      }
+      this.subscribing = false;
+    },
+
+    async unsubscribe(subId) {
+      if (!confirm('Remove this device?')) return;
+      const resp = await fetch(`/config/notifications/${notifierPk}/unsubscribe/${subId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': this.getCsrf() },
+      });
+      if (resp.ok) { window.location.reload(); }
+    },
+
+    getCsrf() {
+      return document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+    },
+  };
+}
+</script>
+{% endblock %}
