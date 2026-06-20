@@ -76,7 +76,7 @@ def level_color(level):
     """Map a log level to a Tailwind text colour class."""
     mapping = {
         'DEBUG':    'text-gray-400 dark:text-gray-500',
-        'INFO':     'text-gray-700 dark:text-gray-300',
+        'INFO':     'text-gray-500',
         'NOTICE':   'text-blue-600 dark:text-blue-400',
         'WARNING':  'text-yellow-600 dark:text-yellow-400',
         'ERROR':    'text-red-600 dark:text-red-400',

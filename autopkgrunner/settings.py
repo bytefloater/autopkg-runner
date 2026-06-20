@@ -81,6 +81,7 @@ TEMPLATES = [{
             'django.contrib.messages.context_processors.messages',
             'webapp.context_processors.nav_tabs',
             'webapp.context_processors.translation',
+            'webapp.context_processors.vendor',
         ],
     },
 },]

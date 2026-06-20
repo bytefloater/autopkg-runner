@@ -113,24 +113,9 @@
     })();
   </script>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = {
-    darkMode: 'class',
-    theme: { extend: {} },
-    // Log-level colour classes are only referenced inside JS objects (levelClass()),
-    // so the Play CDN scanner may miss them. Safelisting guarantees the rules
-    // are always generated regardless of how/when they're applied to the DOM.
-    safelist: [
-      'text-gray-400', 'dark:text-gray-500',
-      'text-gray-700', 'dark:text-gray-300',
-      'text-blue-600', 'dark:text-blue-400',
-      'text-yellow-600', 'dark:text-yellow-400',
-      'text-red-600', 'dark:text-red-400',
-      'text-red-700', 'dark:text-red-300',
-    ],
-  }</script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+  <script defer src="{% static vendor.alpine %}"></script>
+  <script src="{% static vendor.htmx %}"></script>
 
   <style>
     [x-cloak] { display: none !important; }

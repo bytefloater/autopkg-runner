@@ -1,13 +1,11 @@
 {% extends "webapp/base_desktop.html" %}
-{% load webapp_extras %}
+{% load webapp_extras static %}
 
 {% block title %}{{ fname }} - {{ t.RECIPES_VIEW.EDITOR_TITLE }} - {{ t.APP.NAME }}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<link rel="stylesheet" href="{% static vendor.codemirror_css %}">
+<link rel="stylesheet" href="{% static vendor.codemirror_theme %}">
 <style>
   .CodeMirror {
     height: 100%;
@@ -90,13 +88,16 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="{% static vendor.codemirror_js %}"></script>
+<script src="{% static vendor.codemirror_xml %}"></script>
+<script src="{% static vendor.codemirror_yaml %}"></script>
 <script>
   (function () {
     const isDark = document.documentElement.classList.contains('dark');
+    const fname = {{ fname|tojson }};
+    const mode = fname.endsWith('.yaml') || fname.endsWith('.yml') ? 'yaml' : 'xml';
     const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
-      mode: 'xml',
+      mode: mode,
       lineNumbers: true,
       lineWrapping: false,
       theme: isDark ? 'material-darker' : 'default',
