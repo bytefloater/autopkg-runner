@@ -47,12 +47,12 @@ def duration(start, end):
 def status_color(status):
     """Map a run/stage status to a Tailwind colour class set."""
     mapping = {
-        'pending':   'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-        'running':   'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-        'success':   'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-        'failed':    'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
-        'cancelled': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
-        'skipped':   'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
+        'pending':   'bg-gray-100 text-gray-600 dark:bg-gray-900 dark:text-gray-200',
+        'running':   'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200',
+        'success':   'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200',
+        'failed':    'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200',
+        'cancelled': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200',
+        'skipped':   'bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-300',
     }
     return mapping.get(status, 'bg-gray-100 text-gray-600')
 
@@ -76,7 +76,7 @@ def level_color(level):
     """Map a log level to a Tailwind text colour class."""
     mapping = {
         'DEBUG':    'text-gray-400 dark:text-gray-500',
-        'INFO':     'text-gray-700 dark:text-gray-300',
+        'INFO':     'text-gray-500',
         'NOTICE':   'text-blue-600 dark:text-blue-400',
         'WARNING':  'text-yellow-600 dark:text-yellow-400',
         'ERROR':    'text-red-600 dark:text-red-400',

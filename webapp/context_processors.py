@@ -1,6 +1,39 @@
 from webapp import translations as _trans
 from webapp.perms import get_user_perms, PERM_EDIT_CONFIG, PERM_MANAGE_USERS
 
+# -- Vendored front-end dependencies ------------------------------------------
+# Single source of truth for vendored JS/CSS versions.  To bump a dependency:
+#   1. Update the version constant below.
+#   2. Download the new file(s) to webapp/static/ using the versioned filename
+#      pattern (e.g. alpine-X.Y.Z.min.js) and delete the old file(s).
+#   3. Run collectstatic.  All template references update automatically.
+#
+# Sources:
+#   Alpine.js   https://cdn.jsdelivr.net/npm/alpinejs@{ver}/dist/cdn.min.js
+#   htmx        https://unpkg.com/htmx.org@{ver}/dist/htmx.min.js
+#   CodeMirror  https://cdnjs.cloudflare.com/ajax/libs/codemirror/{ver}/<path>
+#
+# Tailwind CSS is built — see tailwind.config.js / webapp/static/css/tailwind.input.css.
+# Rebuild: tailwindcss -c tailwind.config.js -i webapp/static/css/tailwind.input.css
+#                      -o webapp/static/css/tailwind.css --minify
+_ALPINE_VERSION     = '3.14.9'
+_HTMX_VERSION       = '2.0.4'
+_CODEMIRROR_VERSION = '5.65.16'
+
+_VENDOR = {
+    'alpine':           f'js/alpine-{_ALPINE_VERSION}.min.js',
+    'htmx':             f'js/htmx-{_HTMX_VERSION}.min.js',
+    'codemirror_css':   f'codemirror/codemirror-{_CODEMIRROR_VERSION}.min.css',
+    'codemirror_js':    f'codemirror/codemirror-{_CODEMIRROR_VERSION}.min.js',
+    'codemirror_theme': f'codemirror/theme/material-darker-{_CODEMIRROR_VERSION}.min.css',
+    'codemirror_xml':   f'codemirror/mode/xml/xml-{_CODEMIRROR_VERSION}.min.js',
+    'codemirror_yaml':  f'codemirror/mode/yaml/yaml-{_CODEMIRROR_VERSION}.min.js',
+}
+
+
+def vendor(request):
+    return {'vendor': _VENDOR}
+
 # Cached server timezone key — determined once at first request then reused.
 _local_tz_key = None
 

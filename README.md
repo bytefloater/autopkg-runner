@@ -1,7 +1,7 @@
 # AutoPkg Runner
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge)](LICENSE)<br>
-![Version 3.0.0](https://img.shields.io/badge/version-3.0.0-green?style=for-the-badge)
+![Version 3.0.1](https://img.shields.io/badge/version-3.0.1-green?style=for-the-badge)
 
 A web-based management interface for [AutoPkg](https://github.com/autopkg/autopkg) - the macOS software packaging automation tool. AutoPkg Runner wraps your AutoPkg workflows in a Django web application with real-time run monitoring, a REST API, a mobile PWA, and scheduled execution.
 

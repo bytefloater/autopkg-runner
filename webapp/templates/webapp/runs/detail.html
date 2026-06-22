@@ -576,13 +576,13 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
 
     stageBadgeClass(status) {
       return {
-        running:   'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-        success:   'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-        failed:    'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-        pending:   'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400',
-        cancelled: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-        skipped:   'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-500',
-      }[status] || 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400';
+        running:   'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200',
+        success:   'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200',
+        failed:    'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200',
+        pending:   'bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-200',
+        cancelled: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200',
+        skipped:   'bg-gray-100 text-gray-400 dark:bg-gray-900 dark:text-gray-300',
+      }[status] || 'bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-200';
     },
 
     statusBadgeClass(status) { return this.stageBadgeClass(status); },
@@ -601,7 +601,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
     levelClass(level) {
       return {
         DEBUG:    'text-gray-400 dark:text-gray-500',
-        INFO:     'text-gray-700 dark:text-gray-300',
+        INFO:     'text-gray-500',
         NOTICE:   'text-blue-600 dark:text-blue-400',
         WARNING:  'text-yellow-600 dark:text-yellow-400',
         ERROR:    'text-red-600 dark:text-red-400',

@@ -151,13 +151,9 @@
     }
   </style>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = {
-    darkMode: 'class',
-    theme: { extend: { fontFamily: { sans: ['-apple-system','BlinkMacSystemFont','Segoe UI','Roboto','sans-serif'] } } }
-  }</script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+  <script defer src="{% static vendor.alpine %}"></script>
+  <script src="{% static vendor.htmx %}"></script>
 
   <style>
     [x-cloak] { display: none !important; }
