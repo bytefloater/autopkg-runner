@@ -228,6 +228,9 @@ class RunCancelView(RunManagerRequired, View):
             run.status = 'cancelled'
             run.completed_at = now
             run.save(update_fields=['status', 'completed_at'])
+            # Signal the pipeline thread to stop and kill any running subprocess.
+            from webapp.runner import cancel_run
+            cancel_run(run_id)
 
         if request.headers.get('HX-Request'):
             from django.http import HttpResponse

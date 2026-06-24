@@ -150,7 +150,8 @@
                     hx-on::after-request="if(event.detail.successful){ htmx.trigger('#run-list-section','htmx:refresh') }">
                 {% csrf_token %}
                 <button type="submit"
-                        class="text-xs text-red-500 dark:text-red-400 hover:underline">{{ t.APP.ACTION_CANCEL }}</button>
+                        class="text-xs text-red-500 dark:text-red-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                        hx-on::before-request="this.disabled=true; this.textContent='{{ t.APP.STATE_CANCELLING|escapejs }}'">{{ t.APP.ACTION_CANCEL }}</button>
               </form>
               {% endif %}
               <a href="{% url 'run-detail' run.id %}"

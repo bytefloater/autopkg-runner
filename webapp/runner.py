@@ -1,4 +1,5 @@
 """Background pipeline execution. Implemented fully in Phase 4."""
+import subprocess as _subprocess
 import threading
 import uuid as _uuid
 from datetime import datetime, timezone
@@ -6,6 +7,53 @@ from datetime import datetime, timezone
 
 class RunAlreadyRunningError(Exception):
     """Raised when a run is already in progress and a new trigger is attempted."""
+
+
+# ---------------------------------------------------------------------------
+# Cancellation registry
+# ---------------------------------------------------------------------------
+# Maps run_id (str) → (cancel_event, active_subprocess | None).
+# Used by cancel_run() to signal the pipeline thread to abort cleanly and
+# to SIGTERM any running child process (e.g. autopkg) immediately.
+
+_cancel_lock = threading.Lock()
+_cancel_events: dict[str, threading.Event] = {}
+_active_procs: dict[str, _subprocess.Popen] = {}
+
+
+def _register_run(run_id: str, event: threading.Event) -> None:
+    with _cancel_lock:
+        _cancel_events[str(run_id)] = event
+
+
+def _unregister_run(run_id: str) -> None:
+    with _cancel_lock:
+        _cancel_events.pop(str(run_id), None)
+        _active_procs.pop(str(run_id), None)
+
+
+def register_active_proc(run_id: str, proc: _subprocess.Popen) -> None:
+    """Called by RunAutoPkg when a child process starts."""
+    with _cancel_lock:
+        _active_procs[str(run_id)] = proc
+
+
+def unregister_active_proc(run_id: str) -> None:
+    """Called by RunAutoPkg when a child process finishes."""
+    with _cancel_lock:
+        _active_procs.pop(str(run_id), None)
+
+
+def cancel_run(run_id: str) -> None:
+    """Signal the pipeline thread for *run_id* to abort and kill any running subprocess."""
+    run_id = str(run_id)
+    with _cancel_lock:
+        event = _cancel_events.get(run_id)
+        proc = _active_procs.get(run_id)
+    if event:
+        event.set()
+    if proc and proc.poll() is None:
+        proc.terminate()
 
 
 def trigger_manual_run(triggered_by: str = 'manual') -> _uuid.UUID:
@@ -65,6 +113,9 @@ def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
     # it stuck in 'pending' forever.
     from webapp.models import Run, Task, StageExecution
 
+    cancel_event = threading.Event()
+    _register_run(str(run_id), cancel_event)
+
     final_status = 'failed'
     db_handler = None
 
@@ -118,7 +169,7 @@ def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
         )
         orchestrator.ctx = ctx
         orchestrator.configure_stages(override_stage_name=None)
-        success = orchestrator.execute()
+        success = orchestrator.execute(cancel_flag=cancel_event)
         final_status = 'success' if success else 'failed'
     except Exception:
         # Log if we got far enough to have a logger/handler; otherwise the
@@ -130,6 +181,7 @@ def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
             pass
         final_status = 'failed'
     finally:
+        _unregister_run(str(run_id))
         completed_at = datetime.now(timezone.utc)
         # Only update if the run hasn't been cancelled from outside
         # (e.g. the user hit "Cancel" in the UI while the pipeline was running).

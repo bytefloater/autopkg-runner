@@ -11,7 +11,12 @@ class _SupportsLogging(Protocol):
     def error(self, msg: str, /) -> None: ...
 
 
-def run_cmd(command: list[str], logger: _SupportsLogging):
+def run_cmd(command: list[str], logger: _SupportsLogging, on_proc=None):
+    """Run *command*, streaming stdout/stderr to *logger*.
+
+    on_proc: optional callback invoked with the Popen object immediately after
+    the process starts — used to register the process for external cancellation.
+    """
     # For Python children, ensure unbuffered output; harmless for others.
     env = os.environ.copy()
     env.setdefault("PYTHONUNBUFFERED", "1")
@@ -24,6 +29,8 @@ def run_cmd(command: list[str], logger: _SupportsLogging):
         bufsize=1,   # line-buffered
         env=env,
     )
+    if on_proc is not None:
+        on_proc(proc)
 
     # Read both pipes in the *calling* thread rather than spawning reader
     # threads.  This is essential so that Logbook's thread-local handler

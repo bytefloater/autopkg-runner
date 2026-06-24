@@ -9,6 +9,7 @@
     "STATE_LIVE": "Live",
     "STATE_PENDING": "Pending",
     "STATE_CANCELLED": "Cancelled",
+    "STATE_CANCELLING": "Cancelling…",
     "STATE_IN_PROGRESS": "In Progress",
     "STATE_SKIPPED": "Skipped",
     "STATE_DONE": "Done",

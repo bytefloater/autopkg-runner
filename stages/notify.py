@@ -13,8 +13,8 @@ plain-text or HTML message matching the notifier's ``supports_html`` flag.
 
 Available template variables
 -----------------------------
-  {status}       "succeeded" | "failed"
-  {status_emoji} "✅" | "❌"
+  {status}       "succeeded" | "failed" | "cancelled"
+  {status_emoji} "✅" | "❌" | "🚫"
   {imports}      count of Munki imports
   {failures}     count of recipe failures
   {downloads}    count of URL downloads + pkg copies
@@ -198,9 +198,9 @@ class NotifyOnCompletion(Stage):
 
     def _build_template_context(self, summary: dict, run_id) -> dict:
         """Build the ``{variable}`` substitution dict for message templates."""
-        # Infer pipeline success from stage executions - at this point in the
-        # pipeline all preceding stages have completed and their status is in DB.
-        succeeded = True
+        # Infer pipeline outcome from run status and stage executions.
+        # Default to "succeeded" when no run_id is available (no failures known).
+        run_status = "succeeded"
         duration_str = ""
         triggered_by = ""
         date_str = ""
@@ -218,16 +218,19 @@ class NotifyOnCompletion(Stage):
                     mins, secs = divmod(total, 60)
                     duration_str = f"{mins}m {secs}s" if mins else f"{secs}s"
 
-                # If any stage failed, the overall run is a failure.
-                succeeded = not StageExecution.objects.filter(
-                    run_id=run_id, status="failed"
-                ).exists()
+                if run.status == "cancelled":
+                    run_status = "cancelled"
+                elif StageExecution.objects.filter(run_id=run_id, status="failed").exists():
+                    run_status = "failed"
+                else:
+                    run_status = "succeeded"
             except Exception:
                 pass
 
+        _emoji = {"succeeded": "✅", "failed": "❌", "cancelled": "🚫"}
         return {
-            "status":       "succeeded" if succeeded else "failed",
-            "status_emoji": "✅" if succeeded else "❌",
+            "status":       run_status,
+            "status_emoji": _emoji.get(run_status, "❓"),
             "imports":      summary["imports"],
             "failures":     summary["failures"],
             "downloads":    summary["downloads"],
