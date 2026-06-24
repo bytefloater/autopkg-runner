@@ -303,8 +303,12 @@ def munki_icon_proxy(request):
     ctx = ssl.create_default_context(cafile=certifi.where())
     headers = {'Authorization': auth_header} if auth_header else {}
     req = urllib.request.Request(f'{public_url}/{path}', headers=headers)
+    from urllib.parse import quote
+    encoded_path = quote(path, safe='/')
+    req = urllib.request.Request(f'{public_url}/{encoded_path}', headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=10, context=ctx) as r:
+        with urllib.request.urlopen(req, timeout=4, context=ctx) as r:
             content_type = r.headers.get('Content-Type', 'image/png')
             data = r.read()
         response = HttpResponse(data, content_type=content_type)
