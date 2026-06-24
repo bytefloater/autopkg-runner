@@ -288,6 +288,11 @@ async def run_stream(request, run_id):
     if not has_perm:
         return HttpResponse(status=403)
 
+    from webapp.models import Run
+    run_exists = await sync_to_async(Run.objects.filter(id=run_id).exists)()
+    if not run_exists:
+        return HttpResponse(status=404)
+
     broadcaster = broadcaster_manager.get(run_id)
 
     # The Last-Event-ID header is sent automatically by EventSource on reconnect.

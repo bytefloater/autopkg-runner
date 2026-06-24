@@ -324,6 +324,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
     runComplete:   ['success', 'failed', 'cancelled'].includes(initialStatus),
     liveEntries:   [],
     eventSource:   null,
+    _sseComplete:  false,
 
     init() {
       if (!this.runComplete) {
@@ -337,7 +338,8 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
     },
 
     startSSE(runId) {
-      this.eventSource = new EventSource(`/runs/${runId}/stream/?from=${lastLogId}`);
+      this._sseComplete = false;
+      this.eventSource = new EventSource(`/runs/${runId}/stream/`);
 
       this.eventSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
@@ -356,6 +358,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
           this.handleStageUpdate(data);
 
         } else if (data.type === 'complete') {
+          this._sseComplete = true;
           this.currentStatus = data.status;
           this.runComplete   = true;
           this.updateStatusBadge(data.status);
@@ -366,8 +369,15 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
         }
       };
 
-      this.eventSource.addEventListener('done', () => { this._closeSSE(); });
-      this.eventSource.onerror = () => { this._closeSSE(); };
+      this.eventSource.addEventListener('done', () => {
+        this._sseComplete = true;
+        this._closeSSE();
+      });
+      this.eventSource.onerror = () => {
+        if (this._sseComplete) return;
+        this._closeSSE();
+        this._fetchRunStatus(runId);
+      };
     },
 
     // Null out all handlers then close - prevents the browser auto-reconnect
@@ -379,6 +389,23 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
         this.eventSource.close();
         this.eventSource = null;
       }
+    },
+
+    _fetchRunStatus(runId) {
+      fetch(`/runs/${runId}/status/`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) return;
+          const terminal = ['success', 'failed', 'cancelled'];
+          if (terminal.includes(data.status)) {
+            this.currentStatus = data.status;
+            this.runComplete   = true;
+            this.updateStatusBadge(data.status);
+          } else {
+            this.startSSE(runId);
+          }
+        })
+        .catch(() => {});
     },
 
     // Handle a stage SSE event - creates the row if it doesn't exist yet,
