@@ -27,6 +27,8 @@ urlpatterns = [
          runs.RunCancelView.as_view(), name='run-cancel'),
     path('runs/<uuid:run_id>/',
          runs.RunDetailView.as_view(), name='run-detail'),
+    path('runs/<uuid:run_id>/status/',
+         runs.run_status, name='run-status'),
     path('runs/<uuid:run_id>/stream/',
          runs.run_stream, name='run-stream'),
     path('config/schedule/',

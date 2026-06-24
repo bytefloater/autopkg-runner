@@ -443,6 +443,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
     serverStageNames: new Set(),  // names of stages already server-rendered
     liveStatus:       '',
     eventSource:      null,
+    _sseComplete:     false,
 
     init() {
       // Collect server-rendered stage names so SSE stage events don't create
@@ -466,7 +467,8 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
 
     startSSE(runId) {
       this.liveStatus = '● {{ t.APP.STATE_LIVE|escapejs }}';
-      this.eventSource = new EventSource(`/runs/${runId}/stream/?from=${lastLogId}`);
+      this._sseComplete = false;
+      this.eventSource = new EventSource(`/runs/${runId}/stream/`);
 
       this.eventSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
@@ -510,6 +512,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
           }
 
         } else if (data.type === 'complete') {
+          this._sseComplete = true;
           this.currentStatus = data.status;
           this.liveStatus = '';
           this._closeSSE();
@@ -520,14 +523,49 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
       };
 
       this.eventSource.addEventListener('done', () => {
+        this._sseComplete = true;
         this.liveStatus = '';
         this._closeSSE();
       });
 
       this.eventSource.onerror = () => {
-        this.liveStatus = '{{ t.APP.STATE_DISCONNECTED|escapejs }}';
+        // If the complete event was already received, this onerror is just the
+        // normal connection-close notification after _closeSSE() — ignore it.
+        if (this._sseComplete) return;
+        // SSE closed without a complete event.  Fetch run status via HTTP so
+        // the page reflects final state regardless of SSE timing races.
         this._closeSSE();
+        this._fetchRunStatus(runId);
       };
+    },
+
+    _fetchRunStatus(runId) {
+      fetch(`/runs/${runId}/status/`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) {
+            this.liveStatus = '{{ t.APP.STATE_DISCONNECTED|escapejs }}';
+            return;
+          }
+          const terminal = ['success', 'failed', 'cancelled'];
+          if (terminal.includes(data.status)) {
+            this.currentStatus = data.status;
+            this.liveStatus = '';
+            // Apply stage statuses returned by the server.
+            if (data.stages) {
+              this.stageStatuses = { ...this.stageStatuses, ...data.stages };
+            }
+            if (data.status === 'success') {
+              this._fetchResults();
+            }
+          } else {
+            // Run still in progress — reconnect SSE.
+            this.startSSE(runId);
+          }
+        })
+        .catch(() => {
+          this.liveStatus = '{{ t.APP.STATE_DISCONNECTED|escapejs }}';
+        });
     },
 
     _fetchResults() {
