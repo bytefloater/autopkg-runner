@@ -477,6 +477,8 @@
     "FIND_LOADING": "Fetching recipe index…",
     "FIND_EMPTY": "No recipes match your search.",
     "FIND_EMPTY_QUERY": "Enter a search term above to find recipes.",
+    "FIND_INDEX_BUILDING": "Building recipe index…",
+    "FIND_INDEX_BUILDING_SUB": "This only happens once after the server starts.",
     "FIND_ERROR": "Could not fetch the recipe index.",
     "FIND_REFRESH_SUCCESS": "Recipe index refreshed successfully.",
     "FIND_TOTAL": "results",

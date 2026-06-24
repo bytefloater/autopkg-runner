@@ -1,6 +1,7 @@
 import os
 import plistlib
 import ssl
+import threading
 import time
 import urllib.request
 
@@ -9,12 +10,27 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db import close_old_connections
-from django.http import StreamingHttpResponse, JsonResponse
+from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
+
+
+class _AsyncStreamingHttpResponse(StreamingHttpResponse):
+    """Work around a Django 4.2 bug where StreamingHttpResponse.streaming_content
+    synchronously consumes async generators via async_to_sync even when is_async=True,
+    causing a spurious warning and defeating the async streaming.  Overriding
+    __aiter__ to iterate _iterator directly bypasses the broken getter."""
+
+    async def __aiter__(self):
+        async for chunk in self._iterator:
+            yield self.make_bytes(chunk)
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.views.generic import TemplateView
 
 _MUNKI_CATALOG_CACHE: dict = {'data': None, 'url': '', 'auth': '', 'catalog': '', 'ts': 0.0}
+
+# Limit concurrent icon proxy requests to prevent exhausting the sync thread pool
+# that Django uses for non-async views under ASGI.
+_ICON_PROXY_SEMAPHORE = threading.Semaphore(3)
 
 
 def _make_auth_header(username: str, password: str) -> str:
@@ -220,62 +236,78 @@ class RunCancelView(RunManagerRequired, View):
 
 
 @login_required
-@perm_required(PERM_VIEW_RUNS, PERM_TRIGGER_RUNS)
-def run_stream(request, run_id):
-    """SSE endpoint: streams LogEntry rows for a running pipeline."""
-    from webapp.models import LogEntry, Run, StageExecution
-    import json
+def run_status(request, run_id):
+    """Lightweight JSON endpoint — returns run status and latest stage statuses.
 
-    def event_stream():
-        last_log_id = int(request.GET.get('from', 0))
-        last_stage_data = {}
+    Used as an SSE fallback: when the SSE stream closes before the ``complete``
+    event is received, the JS polls this once to sync final state.
+    """
+    from webapp.models import Run, StageExecution
+    from webapp.perms import user_has_perm, PERM_VIEW_RUNS, PERM_TRIGGER_RUNS
+    if not (user_has_perm(request.user, PERM_VIEW_RUNS) or
+            user_has_perm(request.user, PERM_TRIGGER_RUNS)):
+        return JsonResponse({}, status=403)
+    run = Run.objects.filter(id=run_id).first()
+    if not run:
+        return JsonResponse({}, status=404)
+    stages = {
+        s.name: s.status
+        for s in StageExecution.objects.filter(run_id=run_id)
+    }
+    return JsonResponse({'status': run.status, 'stages': stages})
 
+
+async def run_stream(request, run_id):
+    """SSE endpoint — async, fan-out via RunBroadcaster.
+
+    Uses an async generator so each viewer is a cheap coroutine rather than
+    a blocked thread.  All DB work is done by the broadcaster's single daemon
+    thread, so the database is polled once per second per run regardless of
+    how many clients are connected.
+    """
+    import asyncio
+    from asgiref.sync import sync_to_async
+    from webapp.run_broadcaster import broadcaster_manager
+    from webapp.perms import user_has_perm, PERM_VIEW_RUNS, PERM_TRIGGER_RUNS
+
+    # Inline auth — sync decorators don't compose cleanly with async views.
+    # auser() is only available on ASGIRequest; fall back under WSGI dev server.
+    # request.user is a SimpleLazyObject that hits the DB — must be evaluated
+    # in a thread via sync_to_async to satisfy Django's async safety guard.
+    if hasattr(request, 'auser'):
+        user = await request.auser()
+    else:
+        from django.contrib.auth import get_user as _get_user
+        user = await sync_to_async(_get_user)(request)
+    if not user.is_authenticated:
+        from django.contrib.auth.views import redirect_to_login
+        return redirect_to_login(request.get_full_path())
+    has_perm = await sync_to_async(
+        lambda: user_has_perm(user, PERM_VIEW_RUNS) or user_has_perm(user, PERM_TRIGGER_RUNS)
+    )()
+    if not has_perm:
+        return HttpResponse(status=403)
+
+    broadcaster = broadcaster_manager.get(run_id)
+
+    # The Last-Event-ID header is sent automatically by EventSource on reconnect.
+    try:
+        cursor = int(request.META.get('HTTP_LAST_EVENT_ID', -1))
+    except (ValueError, TypeError):
+        cursor = -1
+
+    async def event_stream():
+        nonlocal cursor
         while True:
-            close_old_connections()
-
-            run = Run.objects.filter(id=run_id).first()
-            if not run:
-                yield b'event: error\ndata: {"error": "run not found"}\n\n'
+            frames, done = broadcaster.events_since(cursor)
+            for frame in frames:
+                yield frame
+                cursor += 1
+            if done and not frames:
                 break
+            await asyncio.sleep(0.5)
 
-            entries = LogEntry.objects.filter(
-                run_id=run_id, id__gt=last_log_id
-            ).order_by('id')
-            for entry in entries:
-                payload = json.dumps({
-                    'type': 'log',
-                    'level': entry.level,
-                    'stage': entry.stage_name,
-                    'message': entry.message,
-                    'timestamp': entry.timestamp.isoformat(),
-                })
-                yield f'data: {payload}\n\n'.encode()
-                last_log_id = entry.id
-
-            for stage in StageExecution.objects.filter(run_id=run_id):
-                key = f'{stage.name}:{stage.status}'
-                if last_stage_data.get(stage.name) != key:
-                    last_stage_data[stage.name] = key
-                    payload = json.dumps({
-                        'type': 'stage',
-                        'name': stage.name,
-                        'status': stage.status,
-                        'order': stage.order,
-                        'started_at': stage.started_at.isoformat() if stage.started_at else None,
-                        'completed_at': stage.completed_at.isoformat() if stage.completed_at else None,
-                    })
-                    yield f'data: {payload}\n\n'.encode()
-
-            if run.status in ('success', 'failed', 'cancelled'):
-                yield b'retry: 86400000\n\n'
-                payload = json.dumps({'type': 'complete', 'status': run.status})
-                yield f'data: {payload}\n\n'.encode()
-                yield b'event: done\ndata: {}\n\n'
-                break
-
-            time.sleep(1)
-
-    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response = _AsyncStreamingHttpResponse(event_stream(), content_type='text/event-stream')
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
     return response
@@ -300,14 +332,15 @@ def munki_icon_proxy(request):
         Setting.get('repository.public_url_username', ''),
         Setting.get('repository.public_url_password', ''),
     )
+    if not _ICON_PROXY_SEMAPHORE.acquire(blocking=False):
+        return HttpResponse(status=503)
+
     ctx = ssl.create_default_context(cafile=certifi.where())
     headers = {'Authorization': auth_header} if auth_header else {}
-    req = urllib.request.Request(f'{public_url}/{path}', headers=headers)
     from urllib.parse import quote
     encoded_path = quote(path, safe='/')
     req = urllib.request.Request(f'{public_url}/{encoded_path}', headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=10, context=ctx) as r:
         with urllib.request.urlopen(req, timeout=4, context=ctx) as r:
             content_type = r.headers.get('Content-Type', 'image/png')
             data = r.read()
@@ -316,3 +349,5 @@ def munki_icon_proxy(request):
         return response
     except Exception:
         return HttpResponse(status=404)
+    finally:
+        _ICON_PROXY_SEMAPHORE.release()
