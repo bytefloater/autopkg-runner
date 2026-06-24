@@ -23,11 +23,10 @@ from pathlib import Path
 _COL = 30  # left column width for alignment
 
 _HELP_COMMANDS = [
-    ('serve', 'Start the server (gunicorn)', [
+    ('serve', 'Start the server (gunicorn + uvicorn)', [
         ('--bind ADDRESS', 'Bind address (default: 0.0.0.0)'),
         ('--port PORT', 'Port (default: 8000)'),
         ('--workers N', 'Worker processes (default: 2)'),
-        ('--threads N', 'Threads per worker (default: 4)'),
     ]),
     ('setup', 'First-time initialisation', [
         ('--username USER', 'Admin username (default: admin)'),
@@ -44,7 +43,6 @@ _HELP_COMMANDS = [
         ('--port PORT', 'Port (default: 8000)'),
         ('--bind ADDRESS', 'Bind address (default: 127.0.0.1)'),
         ('--workers N', 'Gunicorn worker processes (default: 1)'),
-        ('--threads N', 'Threads per worker (default: 8)'),
     ]),
     ('purge', 'Remove all app artefacts (plist, DB, logs)', [
         ('--keep-data', 'Preserve the database and Application Support directories'),
@@ -201,7 +199,6 @@ def main() -> None:
         p.add_argument('--bind', default='0.0.0.0', metavar='ADDRESS')
         p.add_argument('--port', default='8000', metavar='PORT')
         p.add_argument('--workers', default='2', metavar='N')
-        p.add_argument('--threads', default='4', metavar='N')
         opts = p.parse_args(sys.argv[2:])
 
         class _NoWinch(logging.Filter):
@@ -212,20 +209,20 @@ def main() -> None:
         # runs. setup() replaces handlers but leaves logger-level filters intact,
         # so this survives into the master process and all forked workers.
         logging.getLogger('gunicorn.error').addFilter(_NoWinch())
-        # Defence-in-depth for subprocess.run() calls from gthread worker threads:
+        # Defence-in-depth for subprocess.run() calls from worker threads:
         # if a worker thread has initialised ObjC and another thread calls
         # subprocess.run() (which does fork+exec), the subprocess child would
         # crash without this flag.  The master→worker fork is safe without it
         # (the post_fork hook keeps the master thread-free), but subprocess calls
-        # from workers are not, so we keep it here.
+        # from within workers are not, so we keep it here.
         os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
         from gunicorn.app.wsgiapp import run as gunicorn_run
         sys.argv = [
-            sys.argv[0], 'autopkgrunner.wsgi:application',
+            sys.argv[0], 'autopkgrunner.asgi:application',
             '--config', 'python:autopkgrunner.gunicorn_conf',
+            '--worker-class', 'uvicorn.workers.UvicornWorker',
             '--bind', f'{opts.bind}:{opts.port}',
             '--workers', opts.workers,
-            '--threads', opts.threads,
         ]
         gunicorn_run()
     else:

@@ -100,12 +100,34 @@ class WebappConfig(AppConfig):
         the scheduler lock starts APScheduler, preventing duplicate scheduled
         runs when workers > 1.
         """
+        import fcntl
+        import time as _time
+        import tempfile
+        import os as _os
         from webapp.scheduler import acquire_scheduler_lock, start_scheduler
         from webapp.views.recipes import _start_cache_build
-        from webapp.recipe_index import ensure_fresh as index_ensure_fresh
+        from webapp.recipe_index import _fetch as _index_fetch
         self._mark_interrupted_runs()
         _start_cache_build()
-        index_ensure_fresh()
+        # Only the first worker to boot fetches the recipe index on startup.
+        # ensure_fresh() returns immediately (fires a daemon thread), so we call
+        # _fetch() directly while holding the lock so the sentinel is only written
+        # after the fetch actually completes.
+        _lock_path = _os.path.join(tempfile.gettempdir(), 'autopkg-runner-index-warm.lock')
+        _sentinel_path = _os.path.join(tempfile.gettempdir(), 'autopkg-runner-index-warm.done')
+        with open(_lock_path, 'w') as _lf:
+            fcntl.flock(_lf.fileno(), fcntl.LOCK_EX)
+            try:
+                try:
+                    age = _time.time() - _os.path.getmtime(_sentinel_path)
+                except OSError:
+                    age = float('inf')
+                if age > 300:
+                    _index_fetch()
+                    with open(_sentinel_path, 'w') as _sf:
+                        pass
+            finally:
+                fcntl.flock(_lf.fileno(), fcntl.LOCK_UN)
         if acquire_scheduler_lock():
             start_scheduler()
 
