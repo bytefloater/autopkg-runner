@@ -315,6 +315,9 @@ async def run_stream(request, run_id):
     response = _AsyncStreamingHttpResponse(event_stream(), content_type='text/event-stream')
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
+    # Prevent GZipMiddleware from buffering the stream before compressing it —
+    # SSE requires each event to be flushed immediately.
+    response['Content-Encoding'] = 'identity'
     return response
 
 
