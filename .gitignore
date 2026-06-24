@@ -189,3 +189,6 @@ staticfiles/
 # Prevent accidental publishing of private settings
 script_settings.plist
 config.json
+
+# Lock files
+*.lock
