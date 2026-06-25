@@ -35,6 +35,21 @@ ALLOWED_HOSTS = os.environ.get(
     'localhost 127.0.0.1'
 ).split()
 
+# Derive CSRF_TRUSTED_ORIGINS from ALLOWED_HOSTS automatically.
+# Skips bare IPs and localhost; uses https:// when DJANGO_HTTPS_REDIRECT=true.
+# Override by setting DJANGO_CSRF_TRUSTED_ORIGINS explicitly (space-separated).
+_csrf_override = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split()
+if _csrf_override:
+    CSRF_TRUSTED_ORIGINS = _csrf_override
+else:
+    _https_redirect = os.environ.get('DJANGO_HTTPS_REDIRECT', 'false').lower() == 'true'
+    _scheme = 'https' if _https_redirect else 'http'
+    _local = {'localhost', '127.0.0.1', '::1'}
+    CSRF_TRUSTED_ORIGINS = [
+        f'{_scheme}://{h}' for h in ALLOWED_HOSTS
+        if h not in _local and not h.startswith('.')
+    ]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
