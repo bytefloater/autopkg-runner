@@ -71,10 +71,9 @@
         {# Stage name #}
         <span class="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ stage.name }}</span>
 
-        {# Duration #}
-        {% if stage.started_at and stage.completed_at %}
-        <span class="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ stage.started_at|duration:stage.completed_at }}</span>
-        {% endif %}
+        {# Duration — SSE-updated when stage completes while page is live #}
+        <span class="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500 tabular-nums"
+              x-text="stageDuration('{{ stage.name }}') || '{{ stage.started_at|duration:stage.completed_at }}'"></span>
 
         {# Status badge #}
         <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
@@ -438,6 +437,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
     currentStatus:    initialStatus,
     openStage:        null,
     stageStatuses:    {},
+    stageTimes:       {},   // { stageName: {started_at, completed_at} } — updated via SSE
     stageLogs:        {},   // { stageName: [{time, level, message}] }
     dynamicStages:    [],   // stages that arrive via SSE after page load
     serverStageNames: new Set(),  // names of stages already server-rendered
@@ -475,6 +475,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
 
         if (data.type === 'log') {
           if (this.currentStatus !== 'running' && this.currentStatus !== 'pending') return;
+          if (data.id && data.id <= lastLogId) return;
           const d = new Date(data.timestamp);
           const time = d.toLocaleTimeString('en-GB', { timeZone: '{{ local_tz }}', hour12: false });
           const key = data.stage || '__general__';
@@ -490,6 +491,9 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
           // Replace the whole stageStatuses object - Alpine 3 won't react to
           // in-place property assignment on a nested object.
           this.stageStatuses = { ...this.stageStatuses, [data.name]: data.status };
+          if (data.started_at && data.completed_at) {
+            this.stageTimes = { ...this.stageTimes, [data.name]: { started_at: data.started_at, completed_at: data.completed_at } };
+          }
           // Maintain dynamicStages for stages not already server-rendered.
           // Server-rendered stages are updated via stageStatuses above.
           if (!this.serverStageNames.has(data.name)) {
@@ -509,6 +513,9 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
           // stage was previously expanded in the single-open accordion).
           if (data.status === 'running') {
             this.openStage = data.name;
+            if (this.currentStatus === 'pending') {
+              this.currentStatus = 'running';
+            }
           }
 
         } else if (data.type === 'complete') {
@@ -605,6 +612,14 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
       if (force || nearBottom) {
         el.scrollTop = el.scrollHeight;
       }
+    },
+
+    stageDuration(stageName) {
+      const t = this.stageTimes[stageName];
+      if (!t) return null;
+      const secs = Math.round((new Date(t.completed_at) - new Date(t.started_at)) / 1000);
+      const m = Math.floor(secs / 60), s = secs % 60;
+      return m > 0 ? `${m}m ${s}s` : `${s}s`;
     },
 
     statusLabel(status) {

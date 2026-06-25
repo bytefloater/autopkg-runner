@@ -347,6 +347,7 @@ function runDetail(runId, initialStatus, lastLogId = 0) {
         if (data.type === 'log') {
           // Guard: ignore entries delivered by a reconnect after completion
           if (this.runComplete) return;
+          if (data.id && data.id <= lastLogId) return;
           const t = new Date(data.timestamp).toLocaleTimeString('en-GB', { timeZone: '{{ local_tz }}', hour12: false });
           this.liveEntries.push({ time: t, level: data.level, stage: data.stage, message: data.message });
           this.$nextTick(() => {

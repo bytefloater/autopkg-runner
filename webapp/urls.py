@@ -31,6 +31,8 @@ urlpatterns = [
          runs.run_status, name='run-status'),
     path('runs/<uuid:run_id>/stream/',
          runs.run_stream, name='run-stream'),
+    path('runs/stream/',
+         runs.run_list_stream, name='run-list-stream'),
     path('config/schedule/',
          schedule.ScheduleView.as_view(), name='schedule'),
     path('config/about/',

@@ -102,6 +102,7 @@ class RunBroadcaster:
             for entry in entries:
                 payload = json.dumps({
                     'type': 'log',
+                    'id': entry.id,
                     'level': entry.level,
                     'stage': entry.stage_name,
                     'message': entry.message,
@@ -169,6 +170,7 @@ class RunBroadcaster:
                 with self._lock:
                     self._events.extend(new_frames)
                     self._events.extend(terminal_frames)
+                run_list_broadcaster.notify()
                 break
 
             time.sleep(1)
@@ -200,3 +202,42 @@ class _BroadcasterManager:
 
 
 broadcaster_manager = _BroadcasterManager()
+
+
+# ---------------------------------------------------------------------------
+# Global run-list broadcaster
+# ---------------------------------------------------------------------------
+# Signals the list page whenever any run reaches a terminal state.
+# Subscribers long-poll via run_list_stream; on receiving an event they
+# trigger an HTMX refresh of the run list.
+
+class RunListBroadcaster:
+    """Simple monotonic-counter broadcaster for run-list change notifications."""
+
+    def __init__(self):
+        self._seq = 0
+        self._lock = threading.Lock()
+        self._event = threading.Event()
+
+    def notify(self) -> None:
+        """Called when any run changes to a terminal state."""
+        with self._lock:
+            self._seq += 1
+        self._event.set()
+
+    def wait_for_change(self, last_seq: int, timeout: float = 30.0) -> int:
+        """Block until seq > last_seq (or timeout). Returns current seq."""
+        deadline = time.monotonic() + timeout
+        while True:
+            with self._lock:
+                if self._seq > last_seq:
+                    return self._seq
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                with self._lock:
+                    return self._seq
+            self._event.wait(timeout=min(remaining, 1.0))
+            self._event.clear()
+
+
+run_list_broadcaster = RunListBroadcaster()

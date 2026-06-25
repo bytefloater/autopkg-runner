@@ -234,7 +234,9 @@ class RunCancelView(RunManagerRequired, View):
 
         if request.headers.get('HX-Request'):
             from django.http import HttpResponse
-            return HttpResponse(status=204)
+            resp = HttpResponse(status=204)
+            resp['HX-Trigger'] = 'runListRefresh'
+            return resp
         return redirect('run-list')
 
 
@@ -320,6 +322,50 @@ async def run_stream(request, run_id):
     response['X-Accel-Buffering'] = 'no'
     # Prevent GZipMiddleware from buffering the stream before compressing it —
     # SSE requires each event to be flushed immediately.
+    response['Content-Encoding'] = 'identity'
+    return response
+
+
+async def run_list_stream(request):
+    """SSE endpoint that fires a single event whenever any run reaches a terminal state.
+
+    The list page subscribes to this and uses the event to trigger an immediate
+    HTMX refresh of the run table, without waiting for the 10-second poll.
+    """
+    import asyncio
+    from asgiref.sync import sync_to_async
+    from webapp.run_broadcaster import run_list_broadcaster
+    from webapp.perms import user_has_perm, PERM_VIEW_RUNS, PERM_TRIGGER_RUNS
+
+    if hasattr(request, 'auser'):
+        user = await request.auser()
+    else:
+        from django.contrib.auth import get_user as _get_user
+        user = await sync_to_async(_get_user)(request)
+    if not user.is_authenticated:
+        from django.contrib.auth.views import redirect_to_login
+        return redirect_to_login(request.get_full_path())
+    has_perm = await sync_to_async(
+        lambda: user_has_perm(user, PERM_VIEW_RUNS) or user_has_perm(user, PERM_TRIGGER_RUNS)
+    )()
+    if not has_perm:
+        return HttpResponse(status=403)
+
+    async def event_stream():
+        last_seq = run_list_broadcaster._seq
+        while True:
+            new_seq = await asyncio.get_event_loop().run_in_executor(
+                None, run_list_broadcaster.wait_for_change, last_seq, 30.0
+            )
+            if new_seq > last_seq:
+                last_seq = new_seq
+                yield b'data: {}\n\n'
+            else:
+                yield b': keepalive\n\n'
+
+    response = _AsyncStreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
     response['Content-Encoding'] = 'identity'
     return response
 
