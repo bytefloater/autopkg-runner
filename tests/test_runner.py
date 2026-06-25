@@ -230,7 +230,7 @@ class TestExecuteRun:
         run = Run.objects.create(status='pending', config_snapshot={})
         task = Task.objects.create(task_type='pipeline_run', status='pending', run=run)
 
-        def cancel_run_during_execution():
+        def cancel_run_during_execution(cancel_flag=None):
             # Simulate user clicking Cancel while pipeline is running
             Run.objects.filter(id=run.id).update(status='cancelled')
             Task.objects.filter(id=task.id).update(status='cancelled')
@@ -284,7 +284,7 @@ class TestExecuteRun:
             # Capture the stage_callback so we can call it in execute()
             cb = kwargs.get('stage_callback')
 
-            def execute_with_callback():
+            def execute_with_callback(cancel_flag=None):
                 if cb:
                     cb('UpdateRepos', 'running', datetime.now(timezone.utc))
                     cb('UpdateRepos', 'success', datetime.now(timezone.utc))

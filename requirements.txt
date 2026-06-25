@@ -11,6 +11,7 @@ psutil==7.0.0
 zeroconf>=0.148.0
 pywebpush>=2.0
 gunicorn>=23.0.0
+uvicorn[standard]>=0.29
 whitenoise>=6.0
 pip-system-certs
 certifi

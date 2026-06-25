@@ -39,7 +39,14 @@ class RunAutoPkg(Stage):
         )
         self._tmp_plist.close()
 
+        run_id = self.ctx.get('run_id')
         try:
+            from webapp.runner import register_active_proc, unregister_active_proc
+
+            def _on_proc(proc):
+                if run_id:
+                    register_active_proc(str(run_id), proc)
+
             run_cmd([
                 str(self.autopkg_fpath),
                 "run",
@@ -49,9 +56,12 @@ class RunAutoPkg(Stage):
                 "-q",
                 "-k",
                 f"MUNKI_REPO={self.local_mnt}"
-            ], self.logger)
+            ], self.logger, on_proc=_on_proc)
         except subprocess.CalledProcessError as err:
             self.logger.error("Some recipes failed to execute: " + str(err))
+        finally:
+            if run_id:
+                unregister_active_proc(str(run_id))
 
         self._write_recipe_results()
 

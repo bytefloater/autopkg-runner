@@ -64,7 +64,7 @@
 
   <div id="run-list-section"
        hx-get="{% url 'run-list' %}{% if request.GET.page %}?page={{ request.GET.page }}{% endif %}"
-       hx-trigger="every 10s"
+       hx-trigger="every 10s, runListRefresh from:body"
        hx-select="#run-list-section"
        hx-target="#run-list-section"
        hx-swap="outerHTML">
@@ -101,11 +101,12 @@
                 hx-post="{% url 'run-cancel' run.id %}"
                 hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                 hx-swap="none"
+                hx-on::before-request="this.querySelector('button[type=submit]').disabled=true"
                 hx-on::after-request="if(event.detail.successful){ if(window._pwaNavigate) _pwaNavigate('{% url 'run-list' %}', true); else location.reload(); }"
                 @click.stop>
             {% csrf_token %}
             <button type="submit"
-                    class="w-[22px] h-[22px] rounded flex items-center justify-center flex-shrink-0 bg-red-100 dark:bg-red-900/30 text-red-500">
+                    class="w-[22px] h-[22px] rounded flex items-center justify-center flex-shrink-0 bg-red-100 dark:bg-red-900/30 text-red-500 disabled:opacity-40 disabled:cursor-not-allowed">
               {% lucide "x" "w-3.5 h-3.5" %}
             </button>
           </form>
@@ -180,4 +181,25 @@
 </div>{# /x-data #}
 
 <div class="h-4"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  let es = null;
+  function connect() {
+    if (es) es.close();
+    es = new EventSource('{% url "run-list-stream" %}');
+    es.onmessage = function () {
+      document.body.dispatchEvent(new Event('runListRefresh'));
+    };
+    es.onerror = function () {
+      es.close();
+      es = null;
+      setTimeout(connect, 5000);
+    };
+  }
+  connect();
+})();
+</script>
 {% endblock %}

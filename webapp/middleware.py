@@ -1,6 +1,7 @@
 import logging
 import re
 
+from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 from django.db.utils import OperationalError
 from django.http import HttpResponse
 
@@ -98,12 +99,32 @@ class DatabaseWriteGuardMiddleware:
     caught here rather than surfacing as a Django debug traceback.
     """
 
+    async_capable = True
+    sync_capable = True
+
     def __init__(self, get_response):
         self.get_response = get_response
+        if iscoroutinefunction(get_response):
+            markcoroutinefunction(self)
 
     def __call__(self, request):
+        if iscoroutinefunction(self.get_response):
+            return self._async_call(request)
         try:
             return self.get_response(request)
+        except OperationalError as exc:
+            if _is_readonly_db_error(exc):
+                logger.error(
+                    'Database is read-only — returning 503. path=%s exc=%s',
+                    request.path, exc,
+                )
+                return HttpResponse(_DB_READONLY_HTML, status=503,
+                                    content_type='text/html; charset=utf-8')
+            raise
+
+    async def _async_call(self, request):
+        try:
+            return await self.get_response(request)
         except OperationalError as exc:
             if _is_readonly_db_error(exc):
                 logger.error(
@@ -124,43 +145,68 @@ _MOBILE_UA_RE = re.compile(
 
 
 class RemoveServerHeaderMiddleware:
+    async_capable = True
+    sync_capable = True
+
     def __init__(self, get_response):
         self.get_response = get_response
+        if iscoroutinefunction(get_response):
+            markcoroutinefunction(self)
 
     def __call__(self, request):
+        if iscoroutinefunction(self.get_response):
+            return self._async_call(request)
         response = self.get_response(request)
+        response.headers.pop('Server', None)
+        return response
+
+    async def _async_call(self, request):
+        response = await self.get_response(request)
         response.headers.pop('Server', None)
         return response
 
 
 class MobileDetectionMiddleware:
+    async_capable = True
+    sync_capable = True
+
     def __init__(self, get_response):
         self.get_response = get_response
+        if iscoroutinefunction(get_response):
+            markcoroutinefunction(self)
 
-    def __call__(self, request):
+    def _set_request_flag(self, request):
         ua = request.META.get('HTTP_USER_AGENT', '')
         force_desktop = (
             request.COOKIES.get('desktop_mode') == '1'
             or request.GET.get('desktop') == '1'
         )
-
         # iPadOS 13+ sends a macOS-style UA so the regex above misses it.
         # base_desktop.html detects the touch fingerprint in JS and sets this
         # cookie, which we pick up on the next (reloaded) request.
         ipad_detected = request.COOKIES.get('ipad_detected') == '1'
-
         request.is_mobile = (
             bool(_MOBILE_UA_RE.search(ua)) or ipad_detected
         ) and not force_desktop
 
-        response = self.get_response(request)
-
+    def _set_response_cookies(self, request, response):
         if request.GET.get('desktop') == '1':
             response.set_cookie('desktop_mode', '1', max_age=86400 * 365)
             response.delete_cookie('ipad_detected', path='/')
-
         if request.GET.get('mobile') == '1':
             response.set_cookie('ipad_detected', '1', max_age=86400 * 365)
             response.delete_cookie('desktop_mode', path='/')
 
+    def __call__(self, request):
+        if iscoroutinefunction(self.get_response):
+            return self._async_call(request)
+        self._set_request_flag(request)
+        response = self.get_response(request)
+        self._set_response_cookies(request, response)
+        return response
+
+    async def _async_call(self, request):
+        self._set_request_flag(request)
+        response = await self.get_response(request)
+        self._set_response_cookies(request, response)
         return response

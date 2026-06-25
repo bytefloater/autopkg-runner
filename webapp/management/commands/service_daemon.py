@@ -80,12 +80,6 @@ class Command(BaseCommand):
                 'Increasing this will cause duplicate scheduled runs.'
             ),
         )
-        parser.add_argument(
-            '--threads',
-            default='8',
-            metavar='N',
-            help='Number of threads per gunicorn worker (default: 8).',
-        )
 
     # ------------------------------------------------------------------
 
@@ -106,12 +100,10 @@ class Command(BaseCommand):
         bind    = options['bind']
         port    = options['port']
         workers = options['workers']
-        threads = options['threads']
 
         self._validate_user(user)
         self._validate_port(port)
         self._validate_workers(workers)
-        self._validate_threads(threads)
         self._validate_project_location(user)
         self._validate_project_ownership(user)
 
@@ -121,16 +113,16 @@ class Command(BaseCommand):
             # --config python:autopkgrunner.gunicorn_conf) transparently.
             prog_args = [sys.executable, 'serve',
                          '--bind', bind, '--port', port,
-                         '--workers', workers, '--threads', threads]
+                         '--workers', workers]
         else:
             gunicorn_prefix = self._find_gunicorn()
             prog_args = gunicorn_prefix + [
                 '--chdir', str(PROJECT_ROOT),
                 '--config', 'python:autopkgrunner.gunicorn_conf',
-                'autopkgrunner.wsgi:application',
+                '--worker-class', 'uvicorn.workers.UvicornWorker',
+                'autopkgrunner.asgi:application',
                 '--bind', f'{bind}:{port}',
                 '--workers', str(workers),
-                '--threads', str(threads),
                 '--timeout', '120',
             ]
 
@@ -143,7 +135,6 @@ class Command(BaseCommand):
         self.stdout.write(f'  ├─ binary   : {prog_args[0]}')
         self.stdout.write(f'  ├─ bind     : {bind}:{port}')
         self.stdout.write(f'  ├─ workers  : {workers}')
-        self.stdout.write(f'  ├─ threads  : {threads}')
         self.stdout.write(f'  └─ plist    : {PLIST_DEST}')
         self.stdout.write('')
 
@@ -314,7 +305,7 @@ class Command(BaseCommand):
             f"done",
             '',
             "# Force-kill any orphaned gunicorn workers that bootout didn't reach.",
-            "pkill -KILL -f 'autopkgrunner.wsgi:application' 2>/dev/null || true",
+            "pkill -KILL -f 'autopkgrunner.asgi:application' 2>/dev/null || true",
             '',
             f"rm -f '{PLIST_DEST}'",
         ])
@@ -371,11 +362,11 @@ class Command(BaseCommand):
         launchctl bootout only kills processes it is currently tracking.
         Legacy-API installs (launchctl load) left processes untracked, so
         bootout removes the registration without sending any signal.  We
-        target processes by the wsgi app argument, which is unique to the
+        target processes by the asgi app argument, which is unique to the
         server and absent from management command processes.
         """
         result = subprocess.run(
-            ['pkill', '-KILL', '-f', 'autopkgrunner.wsgi:application'],
+            ['pkill', '-KILL', '-f', 'autopkgrunner.asgi:application'],
             capture_output=True,
         )
         if result.returncode == 0:
@@ -442,16 +433,6 @@ class Command(BaseCommand):
                 '  will fire duplicate AutoPkg runs.  Use --workers 1 unless you have\n'
                 '  disabled the built-in scheduler.\n'
             ))
-
-    def _validate_threads(self, threads: str):
-        try:
-            n = int(threads)
-            if n < 1:
-                raise ValueError
-        except ValueError:
-            raise CommandError(
-                f"Invalid --threads value '{threads}'. Must be a positive integer."
-            )
 
     def _validate_project_location(self, user: str):
         """Verify the project root won't be blocked by macOS TCC at runtime.

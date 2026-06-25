@@ -70,7 +70,7 @@
 
   <div id="run-list-section"
        hx-get="{% url 'run-list' %}{% if request.GET.page %}?page={{ request.GET.page }}{% endif %}"
-       hx-trigger="every 10s"
+       hx-trigger="every 10s, runListRefresh from:body"
        hx-select="#run-list-section"
        hx-target="#run-list-section"
        hx-swap="outerHTML"
@@ -147,10 +147,10 @@
                     hx-post="{% url 'run-cancel' run.id %}"
                     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                     hx-swap="none"
-                    hx-on::after-request="if(event.detail.successful){ htmx.trigger('#run-list-section','htmx:refresh') }">
+                    hx-on::before-request="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').textContent='{{ t.APP.STATE_CANCELLING|escapejs }}'">
                 {% csrf_token %}
                 <button type="submit"
-                        class="text-xs text-red-500 dark:text-red-400 hover:underline">{{ t.APP.ACTION_CANCEL }}</button>
+                        class="text-xs text-red-500 dark:text-red-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed">{{ t.APP.ACTION_CANCEL }}</button>
               </form>
               {% endif %}
               <a href="{% url 'run-detail' run.id %}"
@@ -184,4 +184,25 @@
     {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  let es = null;
+  function connect() {
+    if (es) es.close();
+    es = new EventSource('{% url "run-list-stream" %}');
+    es.onmessage = function () {
+      document.body.dispatchEvent(new Event('runListRefresh'));
+    };
+    es.onerror = function () {
+      es.close();
+      es = null;
+      setTimeout(connect, 5000);
+    };
+  }
+  connect();
+})();
+</script>
 {% endblock %}

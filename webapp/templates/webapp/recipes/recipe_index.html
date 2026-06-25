@@ -56,16 +56,27 @@
     </div>
   </div>
 
-  {# Empty state — no query yet and index building #}
-  <div x-show="!loading && !queried" x-cloak
+  {# Empty state — no query yet #}
+  <div x-show="!loading && !queried && !indexBuilding" x-cloak
        class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
               shadow-sm flex flex-col items-center justify-center py-16 gap-3">
     {% lucide "search" "w-8 h-8 text-gray-300 dark:text-slate-600" %}
     <p class="text-sm text-gray-400 dark:text-gray-500">{{ t.RECIPES_VIEW.FIND_EMPTY_QUERY }}</p>
   </div>
 
+  {# Building state — index not ready yet after server start #}
+  <div x-show="indexBuilding" x-cloak
+       class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800
+              shadow-sm flex flex-col items-center justify-center py-16 gap-3">
+    <span class="inline-flex animate-spin text-blue-500 dark:text-blue-400">
+      {% lucide "loader-circle" "w-7 h-7" %}
+    </span>
+    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t.RECIPES_VIEW.FIND_INDEX_BUILDING }}</p>
+    <p class="text-xs text-gray-400 dark:text-gray-500">{{ t.RECIPES_VIEW.FIND_INDEX_BUILDING_SUB }}</p>
+  </div>
+
   {# Results table #}
-  <div x-show="queried && results.length > 0 || (queried && results.length === 0 && !loading)"
+  <div x-show="!indexBuilding && (queried && results.length > 0 || (queried && results.length === 0 && !loading))"
        x-cloak
        class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
 
@@ -363,6 +374,7 @@ function recipeIndex() {
     pageSize: 50,
     loading: false,
     queried: false,
+    indexBuilding: false,
     installedRepos: [],
     refreshing: false,
 
@@ -411,10 +423,13 @@ function recipeIndex() {
         });
         const resp = await fetch(`{% url 'recipes-find-search' %}?${params}`);
         if (resp.status === 202) {
-          // Index still building — poll after a short delay
+          // Index still building — show indicator and poll
+          this.indexBuilding = true;
+          this.loading = false;
           setTimeout(() => this._fetch(page), 2000);
           return;
         }
+        this.indexBuilding = false;
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         this.results = data.results;

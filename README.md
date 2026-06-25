@@ -1,7 +1,7 @@
 # AutoPkg Runner
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge)](LICENSE)<br>
-![Version 3.0.1](https://img.shields.io/badge/version-3.0.1-green?style=for-the-badge)
+![Version 3.0.2](https://img.shields.io/badge/version-3.0.2-green?style=for-the-badge)
 
 A web-based management interface for [AutoPkg](https://github.com/autopkg/autopkg) - the macOS software packaging automation tool. AutoPkg Runner wraps your AutoPkg workflows in a Django web application with real-time run monitoring, a REST API, a mobile PWA, and scheduled execution.
 
@@ -10,7 +10,7 @@ A web-based management interface for [AutoPkg](https://github.com/autopkg/autopk
 ### Web UI
 
 - **Dashboard** - last run summary, 30-day success rate, next scheduled run, and a one-click manual trigger
-- **Run detail** - GitHub Actions-style stage timeline with live log streaming; stage status icons and the log panel update in real time without a page refresh
+- **Run detail** - GitHub Actions-style stage timeline with live log streaming over SSE; stage status icons and the log panel update in real time without a page refresh; multiple concurrent viewers are supported with no additional database load per viewer
 - **Run history** - paginated list of all pipeline executions with status badges and duration
 - **Run cancellation** - cancel an in-progress run from the run detail page
 - **Run sharing** - generate a shareable, unauthenticated link to any completed run report; optional expiry window configurable in notification settings
@@ -166,7 +166,7 @@ Open `http://127.0.0.1:8000` and log in with the credentials shown. All configur
 | Command | Description |
 |-|-|
 | `autopkg-runner setup` | One-shot initialisation: migrate, create defaults, generate admin account |
-| `autopkg-runner serve` | Start the server (`--bind`, `--port`, `--workers`, `--threads`) |
+| `autopkg-runner serve` | Start the production server (`--bind`, `--port`, `--workers`) |
 | `autopkg-runner resetpassword <user>` | Generate and set a new random password for a user account |
 | `autopkg-runner generate_vapid_keys` | Generate VAPID keys for WebPush notifications and store them in the database |
 | `autopkg-runner install_sftp_deps` | Install macFUSE and sshfs via Homebrew (required for SFTP repository connections) |
@@ -268,12 +268,20 @@ This installs macFUSE and sshfs via Homebrew. macFUSE requires a system reboot a
 
 ## Production deployment
 
-The Django development server is single-threaded and will block on SSE connections. For production, use a multi-threaded WSGI server:
+The Django development server (`manage.py serve`) is suitable for local testing but not for production. For production, AutoPkg Runner runs under **gunicorn with uvicorn workers** (ASGI), which provides:
+
+- Async SSE streaming — each client watching a live run is a lightweight coroutine rather than a blocked thread, so the server handles many concurrent viewers without exhausting resources
+- A single DB-polling thread per active run regardless of how many clients are connected (fan-out broadcaster)
 
 ```bash
-pip3 install gunicorn
-gunicorn autopkgrunner.wsgi:application --workers 1 --threads 8 --bind 0.0.0.0:8000
+pip3 install gunicorn "uvicorn[standard]"
+gunicorn autopkgrunner.asgi:application \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --config python:autopkgrunner.gunicorn_conf \
+  --workers 1 --bind 0.0.0.0:8000
 ```
+
+> **Workers and the scheduler** — APScheduler runs inside each gunicorn worker. With more than one worker, only the worker that holds `scheduler.lock` fires scheduled jobs; the rest stand by and take over automatically if that worker exits. Use `--workers 1` unless you specifically need process-level redundancy.
 
 Set `DJANGO_DEBUG=false` and `DJANGO_ALLOWED_HOSTS` to your server's hostname. Restrict permissions on the database file since it contains API tokens and repository credentials:
 
@@ -316,7 +324,6 @@ A macOS authentication dialog will appear to request administrator credentials f
 | `--bind <address>` | `127.0.0.1` | Address the server binds to |
 | `--port <port>` | `8000` | Port the server listens on |
 | `--workers <n>` | `1` | Number of worker processes |
-| `--threads <n>` | `8` | Number of threads per worker |
 
 ### Useful commands
 

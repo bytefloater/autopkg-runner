@@ -209,6 +209,31 @@ class TestRunDeleteView:
         assert Run.objects.filter(id=pending_run.id).exists()
 
 
+def _collect_stream(resp):
+    """Consume a streaming response body — handles both sync and async generators."""
+    from asgiref.sync import async_to_sync
+    sc = resp.streaming_content
+    if hasattr(sc, '__aiter__'):
+        async def _gather():
+            return b''.join([c async for c in sc])
+        return async_to_sync(_gather)()
+    return b''.join(sc)
+
+
+class FakeBroadcaster:
+    """Minimal RunBroadcaster substitute that returns pre-built SSE frames."""
+
+    def __init__(self, frames=(), done=True):
+        self._frames = list(frames)
+        self._done = done
+
+    def events_since(self, cursor):
+        raw = self._frames[cursor + 1:]
+        start = cursor + 1
+        out = [f'id: {start + i}\n'.encode() + f for i, f in enumerate(raw)]
+        return out, self._done
+
+
 @pytest.mark.django_db
 class TestRunStream:
     def _url(self, run_id):
@@ -219,109 +244,97 @@ class TestRunStream:
         assert resp.status_code == 302
 
     def test_returns_event_stream_content_type(self, run_manager_client, run):
-        resp = run_manager_client.get(self._url(run.id))
+        fake = FakeBroadcaster()
+        with patch('webapp.run_broadcaster.broadcaster_manager') as m:
+            m.get.return_value = fake
+            resp = run_manager_client.get(self._url(run.id))
         assert resp.status_code == 200
         assert 'text/event-stream' in resp.get('Content-Type', '')
 
     def test_stream_emits_complete_event_for_finished_run(self, run_manager_client, run):
-        """Consuming the generator for a completed run yields a 'complete' event."""
-        resp = run_manager_client.get(self._url(run.id))
-        chunks = b''.join(resp.streaming_content)
+        """Broadcaster frames containing a complete event are passed through."""
+        complete = f'data: {json.dumps({"type": "complete", "status": run.status})}\n\n'.encode()
+        done_frame = b'event: done\ndata: {}\n\n'
+        fake = FakeBroadcaster(frames=[complete, done_frame])
+        with patch('webapp.run_broadcaster.broadcaster_manager') as m:
+            m.get.return_value = fake
+            resp = run_manager_client.get(self._url(run.id))
+            chunks = _collect_stream(resp)
         assert b'complete' in chunks
         assert run.status.encode() in chunks
 
     def test_stream_emits_log_entries(self, run_manager_client, run):
-        """Log entries are included in the SSE stream."""
-        from datetime import datetime, timezone
-        from webapp.models import LogEntry
-        LogEntry.objects.create(
-            run=run,
-            level='INFO',
-            message='Test log message',
-            stage_name='',
-            timestamp=datetime.now(timezone.utc),
-        )
-        resp = run_manager_client.get(self._url(run.id))
-        chunks = b''.join(resp.streaming_content)
+        """Log frames from the broadcaster are forwarded to the client."""
+        log_frame = f'data: {json.dumps({"type": "log", "level": "INFO", "stage": "", "message": "Test log message", "timestamp": "2024-01-01T00:00:00+00:00"})}\n\n'.encode()
+        complete = b'data: {"type": "complete", "status": "success"}\n\n'
+        done_frame = b'event: done\ndata: {}\n\n'
+        fake = FakeBroadcaster(frames=[log_frame, complete, done_frame])
+        with patch('webapp.run_broadcaster.broadcaster_manager') as m:
+            m.get.return_value = fake
+            resp = run_manager_client.get(self._url(run.id))
+            chunks = _collect_stream(resp)
         assert b'Test log message' in chunks
 
     def test_stream_emits_stage_updates(self, run_manager_client, run):
-        """Stage execution records are included in the SSE stream."""
-        from webapp.models import StageExecution
-        from datetime import datetime, timezone
-        StageExecution.objects.create(
-            run=run,
-            name='UpdateRepos',
-            status='success',
-            order=0,
-            started_at=datetime.now(timezone.utc),
-            completed_at=datetime.now(timezone.utc),
-        )
-        resp = run_manager_client.get(self._url(run.id))
-        chunks = b''.join(resp.streaming_content)
+        """Stage frames from the broadcaster are forwarded to the client."""
+        stage_frame = f'data: {json.dumps({"type": "stage", "name": "UpdateRepos", "status": "success", "order": 0, "started_at": None, "completed_at": None})}\n\n'.encode()
+        complete = b'data: {"type": "complete", "status": "success"}\n\n'
+        done_frame = b'event: done\ndata: {}\n\n'
+        fake = FakeBroadcaster(frames=[stage_frame, complete, done_frame])
+        with patch('webapp.run_broadcaster.broadcaster_manager') as m:
+            m.get.return_value = fake
+            resp = run_manager_client.get(self._url(run.id))
+            chunks = _collect_stream(resp)
         assert b'UpdateRepos' in chunks
 
-    def test_stream_sends_error_for_nonexistent_run(self, run_manager_client):
-        """A nonexistent run_id causes an error event to be emitted."""
-        missing_id = uuid.uuid4()
-        resp = run_manager_client.get(self._url(missing_id))
-        chunks = b''.join(resp.streaming_content)
-        assert b'error' in chunks or b'not found' in chunks
+    def test_stream_returns_404_for_nonexistent_run(self, run_manager_client):
+        """A nonexistent run_id returns 404 before the stream is opened."""
+        resp = run_manager_client.get(self._url(uuid.uuid4()))
+        assert resp.status_code == 404
 
-    def test_stream_respects_from_param(self, run_manager_client, run):
-        """?from=<id> skips log entries with id <= that value."""
-        from datetime import datetime, timezone
-        from webapp.models import LogEntry
-        entry = LogEntry.objects.create(
-            run=run,
-            level='DEBUG',
-            message='older message',
-            stage_name='',
-            timestamp=datetime.now(timezone.utc),
-        )
-        # Request with from=entry.id → should skip the entry above
-        resp = run_manager_client.get(self._url(run.id) + f'?from={entry.id}')
-        chunks = b''.join(resp.streaming_content)
-        assert b'older message' not in chunks
+    def test_stream_respects_last_event_id(self, run_manager_client, run):
+        """Last-Event-ID header sets the cursor so already-seen frames are skipped."""
+        older = b'data: {"type": "log", "message": "older"}\n\n'
+        newer = b'data: {"type": "log", "message": "newer"}\n\n'
+        complete = b'data: {"type": "complete", "status": "success"}\n\n'
+        done_frame = b'event: done\ndata: {}\n\n'
+        # older is at index 0; sending Last-Event-ID: 0 means cursor starts at 0
+        # so events_since(0) returns only [newer, complete, done_frame]
+        fake = FakeBroadcaster(frames=[older, newer, complete, done_frame])
+        with patch('webapp.run_broadcaster.broadcaster_manager') as m:
+            m.get.return_value = fake
+            resp = run_manager_client.get(self._url(run.id), HTTP_LAST_EVENT_ID='0')
+            chunks = _collect_stream(resp)
+        assert b'older' not in chunks
+        assert b'newer' in chunks
 
     def test_stream_no_cache_control_header(self, run_manager_client, run):
-        resp = run_manager_client.get(self._url(run.id))
+        fake = FakeBroadcaster()
+        with patch('webapp.run_broadcaster.broadcaster_manager') as m:
+            m.get.return_value = fake
+            resp = run_manager_client.get(self._url(run.id))
         assert resp.get('Cache-Control') == 'no-cache'
 
-    def test_stream_polls_until_run_completes(self, run_manager_client, db):
-        """Stream loop sleeps once for a running run, then emits complete after status changes."""
-        from webapp.models import Run, LogEntry, StageExecution
-        now = datetime.now(timezone.utc)
+    def test_stream_polls_until_run_completes(self, run_manager_client, run):
+        """Generator keeps polling the broadcaster until done=True."""
+        complete = b'data: {"type": "complete", "status": "success"}\n\n'
+        done_frame = b'event: done\ndata: {}\n\n'
 
-        # Build two fake run objects: first 'running', then 'success'
-        def make_fake_run(status):
-            r = MagicMock()
-            r.status = status
-            r.id = uuid.uuid4()
-            return r
-
-        running_run = make_fake_run('running')
-        success_run = make_fake_run('success')
         call_count = {'n': 0}
+        frames = [complete, done_frame]
 
-        def fake_run_filter(**kwargs):
-            qs = MagicMock()
-            call_count['n'] += 1
-            qs.first.return_value = running_run if call_count['n'] == 1 else success_run
-            return qs
+        class SlowBroadcaster:
+            def events_since(self, cursor):
+                call_count['n'] += 1
+                done = call_count['n'] >= 3
+                raw = frames[cursor + 1:] if done else []
+                start = cursor + 1
+                out = [f'id: {start + i}\n'.encode() + f for i, f in enumerate(raw)]
+                return out, done
 
-        empty_qs = MagicMock()
-        empty_qs.__iter__ = MagicMock(return_value=iter([]))
-        empty_qs.filter.return_value = empty_qs
-        empty_qs.order_by.return_value = iter([])
-
-        with patch('webapp.models.Run.objects') as mock_run_mgr, \
-             patch('webapp.models.LogEntry.objects') as mock_log_mgr, \
-             patch('webapp.models.StageExecution.objects') as mock_stage_mgr, \
-             patch('time.sleep'):
-            mock_run_mgr.filter.side_effect = fake_run_filter
-            mock_log_mgr.filter.return_value.order_by.return_value = iter([])
-            mock_stage_mgr.filter.return_value.__iter__ = MagicMock(return_value=iter([]))
-            resp = run_manager_client.get(self._url(running_run.id))
-            chunks = b''.join(resp.streaming_content)
+        with patch('webapp.run_broadcaster.broadcaster_manager') as m:
+            m.get.return_value = SlowBroadcaster()
+            resp = run_manager_client.get(self._url(run.id))
+            chunks = _collect_stream(resp)
         assert b'complete' in chunks
+        assert call_count['n'] >= 3
