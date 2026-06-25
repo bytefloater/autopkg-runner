@@ -101,10 +101,24 @@ else
     codesign --sign - --deep --force "$APP"
 fi
 
+read APP_NAME VERSION_STR < <(python3 -c "
+import importlib.util, pathlib
+p = pathlib.Path('$REPO_ROOT/__info__.py')
+s = importlib.util.spec_from_file_location('__info__', p)
+m = importlib.util.module_from_spec(s); s.loader.exec_module(m)
+print(m.APP_NAME, m.APP_VERSION_STR)
+")
+ZIP_NAME="${APP_NAME}_${VERSION_STR}.zip"
+ZIP_PATH="dist/$ZIP_NAME"
+echo "==> Creating $ZIP_PATH..."
+(cd dist && zip -r --symlinks "$ZIP_NAME" "AutoPkg Runner.app")
+echo "    Created $ZIP_PATH ($(du -sh "$ZIP_PATH" | cut -f1))"
+
 echo ""
 echo "Build complete."
 echo "  App bundle : $APP"
 echo "  Binary     : $BINARY"
+echo "  Archive    : $ZIP_PATH"
 echo ""
 echo "First-run setup:"
 echo "  1. Grant Full Disk Access to the app in:"
