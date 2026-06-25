@@ -38,8 +38,12 @@ class ManifestView(View):
 
 class ServiceWorkerView(View):
     def get(self, request):
-        import os
-        sw_path = os.path.join(settings.BASE_DIR, 'webapp', 'static', 'sw.js')
+        import os, sys
+        # In a frozen PyInstaller bundle BASE_DIR points to Application Support
+        # (mutable data), not the read-only bundle resources.  Use sys._MEIPASS
+        # when frozen so we find the bundled static file.
+        base = getattr(sys, '_MEIPASS', None) or settings.BASE_DIR
+        sw_path = os.path.join(base, 'webapp', 'static', 'sw.js')
         response = FileResponse(open(sw_path, 'rb'), content_type='application/javascript')
         response['Service-Worker-Allowed'] = '/'
         response['Cache-Control'] = 'no-cache'
