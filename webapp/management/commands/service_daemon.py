@@ -119,7 +119,6 @@ class Command(BaseCommand):
             prog_args = gunicorn_prefix + [
                 '--chdir', str(PROJECT_ROOT),
                 '--config', 'python:autopkgrunner.gunicorn_conf',
-                '--worker-class', 'uvicorn.workers.UvicornWorker',
                 'autopkgrunner.asgi:application',
                 '--bind', f'{bind}:{port}',
                 '--workers', str(workers),

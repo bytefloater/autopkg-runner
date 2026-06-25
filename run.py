@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# On macOS the ObjC runtime reads OBJC_DISABLE_INITIALIZE_FORK_SAFETY once at
+# process startup, before any Python code runs.  Setting it inside Python with
+# os.environ has no effect because ObjC has already cached the value.  When
+# it is absent the gunicorn master→worker fork triggers an ObjC fork-safety
+# SIGSEGV in every worker.  Re-exec immediately (before any non-stdlib imports)
+# so the variable is present from the start of the next invocation.
+import os as _os, sys as _sys
+if _sys.platform == 'darwin' and not _os.environ.get('OBJC_DISABLE_INITIALIZE_FORK_SAFETY'):
+    _os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    _os.execv(_sys.executable, [_sys.executable] + _sys.argv)
+
 """
 Entrypoint for the AutoPkg Runner .app bundle.
 
@@ -220,7 +231,6 @@ def main() -> None:
         sys.argv = [
             sys.argv[0], 'autopkgrunner.asgi:application',
             '--config', 'python:autopkgrunner.gunicorn_conf',
-            '--worker-class', 'uvicorn.workers.UvicornWorker',
             '--bind', f'{opts.bind}:{opts.port}',
             '--workers', opts.workers,
         ]
