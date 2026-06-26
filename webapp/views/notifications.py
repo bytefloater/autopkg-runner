@@ -107,7 +107,12 @@ class NotifierEditView(ConfigEditorRequired, TemplateView):
             ctx['email_templates'] = sorted(p.stem for p in tdir.glob('*.html')) if tdir.exists() else []
 
         if notifier.notifier_type == 'webpush':
-            ctx['webpush_subscriptions'] = WebPushSubscription.objects.filter(notifier=notifier)
+            subs = list(WebPushSubscription.objects.filter(notifier=notifier).order_by('created_at'))
+            ctx['webpush_subscriptions'] = subs
+            ctx['webpush_subs_json'] = json.dumps([
+                {'id': str(s.pk), 'label': s.device_label or '', 'date': s.created_at.strftime('%-d %b %Y') if s.created_at else '', 'endpoint': s.endpoint}
+                for s in subs
+            ])
             ctx['vapid_public_key']       = Setting.get('webpush.vapid_public_key', '')
             ctx['vapid_configured']       = bool(ctx['vapid_public_key'])
 
@@ -201,7 +206,7 @@ class NotifierTestView(ConfigEditorRequired, View):
                 status=400,
             )
 
-        cfg = notifier.decrypted_config
+        cfg = {**notifier.decrypted_config, '_notifier_pk': str(notifier.pk)}
 
         try:
             _send(
@@ -298,7 +303,12 @@ class WebPushSubscribeView(ConfigEditorRequired, View):
                 sub.device_label = label
             sub.save()
 
-        return JsonResponse({'status': 'subscribed', 'id': sub.pk, 'created': created})
+        return JsonResponse({
+            'status': 'subscribed',
+            'id': str(sub.pk),
+            'label': sub.device_label or '',
+            'created': created,
+        })
 
 
 class WebPushUnsubscribeView(ConfigEditorRequired, View):

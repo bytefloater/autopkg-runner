@@ -286,6 +286,7 @@
     "DEFAULT_DEVICE_LABEL": "Unknown Device",
     "TEST_SUCCESS": "Test sent successfully.",
     "TEST_FAILED": "Test failed.",
+    "CONFIRM_REMOVE_DEVICE_TITLE": "Remove this device from subscribed notifications?",
     "CONFIRM_DELETE_DESC": "This notifier will stop sending alerts immediately. This action cannot be undone.",
     "TMPLT_STATUS_VARHINT": "\"succeeded\" or \"failed\"",
     "TMPLT_STATUS_EMOJI_VARHINT": "",

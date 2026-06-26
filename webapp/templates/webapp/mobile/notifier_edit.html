@@ -279,31 +279,29 @@
 
     {% else %}
 
-    <div class="bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+    <div class="bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden">
 
-      {% if webpush_subscriptions %}
-        {% for sub in webpush_subscriptions %}
-        <div class="flex items-center gap-3 px-4 py-3">
-          {% lucide "smartphone" "w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" %}
-          <div class="flex-1 min-w-0">
-            <p class="text-[15px] text-gray-900 dark:text-white truncate">
-              {{ sub.device_label|default:t.NOTIFICATIONS_VIEW.DEFAULT_DEVICE_LABEL }}
-            </p>
-            <p class="text-[12px] text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.DEVICE_ADDED_PREFIX }} {{ sub.created_at|date:"N j, Y" }}</p>
-          </div>
-          <button type="button"
-                  @click="unsubscribe({{ sub.pk }})"
-                  class="flex-shrink-0 text-[13px] text-red-500 dark:text-red-400 active:opacity-60 transition-opacity duration-75">
-            {{ t.NOTIFICATIONS_VIEW.ACTION_REMOVE }}
-          </button>
-        </div>
-        {% endfor %}
-      {% else %}
+      <template x-if="subs.length === 0">
         <div class="flex flex-col items-center justify-center py-8">
           {% lucide "bell-off" "w-8 h-8 text-gray-300 dark:text-gray-700 mb-2" %}
           <p class="text-[14px] text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.EMPTY_NO_DEVICES_MOBILE }}</p>
         </div>
-      {% endif %}
+      </template>
+      <template x-for="(sub, index) in subs" :key="sub.id">
+        <div class="flex items-center gap-3 px-4 py-3"
+             :class="index > 0 ? 'border-t border-gray-200/70 dark:border-[#38383a]' : ''">
+          {% lucide "smartphone" "w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" %}
+          <div class="flex-1 min-w-0">
+            <p class="text-[15px] text-gray-900 dark:text-white truncate" x-text="sub.label || '{{ t.NOTIFICATIONS_VIEW.DEFAULT_DEVICE_LABEL|escapejs }}'"></p>
+            <p class="text-[12px] text-gray-400 dark:text-gray-500">{{ t.NOTIFICATIONS_VIEW.DEVICE_ADDED_PREFIX }} <span x-text="sub.date"></span></p>
+          </div>
+          <button type="button"
+                  @click="promptRemove(sub)"
+                  class="flex-shrink-0 text-[13px] text-red-500 dark:text-red-400 active:opacity-60 transition-opacity duration-75">
+            {{ t.NOTIFICATIONS_VIEW.ACTION_REMOVE }}
+          </button>
+        </div>
+      </template>
 
     </div>
 
@@ -329,6 +327,7 @@
     </div>
 
     {% endif %}
+
   </div>
   {% endif %}
 
@@ -486,8 +485,20 @@ function smtpForm() {
 <script>
 function webPushManager(notifierPk, vapidPublicKey) {
   return {
+    subs: {{ webpush_subs_json|safe }},
     subscribing: false,
     subscribed: false,
+
+    async init() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+        if (existing && this.subs.some(s => s.endpoint === existing.endpoint)) {
+          this.subscribed = true;
+        }
+      } catch (_) {}
+    },
 
     urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -520,6 +531,8 @@ function webPushManager(notifierPk, vapidPublicKey) {
           return;
         }
         const reg = await navigator.serviceWorker.ready;
+        const existingSub = await reg.pushManager.getSubscription();
+        if (existingSub) await existingSub.unsubscribe();
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey),
@@ -540,7 +553,10 @@ function webPushManager(notifierPk, vapidPublicKey) {
         const data = await resp.json();
         if (resp.ok) {
           this.subscribed = true;
-          this.$dispatch('toast', { type: 'success', message: 'This device is now subscribed. Reload to see it in the list.' });
+          const now = new Date();
+          const dateStr = now.getDate() + ' ' + now.toLocaleString('en-GB', { month: 'short' }) + ' ' + now.getFullYear();
+          this.subs.push({ id: data.id, label: label, date: dateStr });
+          this.$dispatch('toast', { type: 'success', message: 'This device is now subscribed.' });
         } else {
           this.$dispatch('toast', { type: 'error', message: data.error || 'Subscription failed.' });
         }
@@ -550,13 +566,25 @@ function webPushManager(notifierPk, vapidPublicKey) {
       this.subscribing = false;
     },
 
-    async unsubscribe(subId) {
-      if (!confirm('Remove this device?')) return;
-      const resp = await fetch(`/config/notifications/${notifierPk}/unsubscribe/${subId}/`, {
+    async promptRemove(sub) {
+      const key = await this.$store.dialog.show({
+        type: 'mobile-modal',
+        body: sub.label || '{{ t.NOTIFICATIONS_VIEW.DEFAULT_DEVICE_LABEL|escapejs }}',
+        title: '{{ t.NOTIFICATIONS_VIEW.CONFIRM_REMOVE_DEVICE_TITLE|escapejs }}',
+        buttons: [
+          { key: 'remove', label: '{{ t.NOTIFICATIONS_VIEW.ACTION_REMOVE|escapejs }}', style: `destructive` },
+          { key: 'cancel', label: '{{ t.APP.ACTION_CANCEL|escapejs }}', style: `cancel` },
+        ],
+      });
+      if (key !== 'remove') return;
+      const resp = await fetch(`/config/notifications/${notifierPk}/unsubscribe/${sub.id}/`, {
         method: 'POST',
         headers: { 'X-CSRFToken': this.getCsrf() },
       });
-      if (resp.ok) { window.location.reload(); }
+      if (resp.ok) {
+        const idx = this.subs.findIndex(s => s.id === sub.id);
+        if (idx !== -1) this.subs.splice(idx, 1);
+      }
     },
 
     getCsrf() {

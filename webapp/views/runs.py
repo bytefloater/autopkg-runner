@@ -354,7 +354,7 @@ async def run_list_stream(request):
     async def event_stream():
         last_seq = run_list_broadcaster._seq
         while True:
-            new_seq = await asyncio.get_event_loop().run_in_executor(
+            new_seq = await asyncio.get_running_loop().run_in_executor(
                 None, run_list_broadcaster.wait_for_change, last_seq, 30.0
             )
             if new_seq > last_seq:
