@@ -16,6 +16,8 @@ module.exports = {
   // Colour classes only referenced inside JS objects or filters (levelClass(), statusColor())
   // aren't scanned. Safelisting ensures the rules are always emitted.
   safelist: [
+    // Dialog system z-index (used in webapp/templates/webapp/includes/)
+    'z-[500]',
     // Log levels
     'text-gray-400', 'text-gray-500', 'dark:text-gray-500',
     'text-blue-600', 'dark:text-blue-400',
