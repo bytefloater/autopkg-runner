@@ -1,0 +1,160 @@
+{# ============================================================================== #}
+{# Centralised dialog system — Mobile                                             #}
+{#                                                                                #}
+{# Included by base_mobile.html. Provides:                                        #}
+{#   • Alpine store registration (must run before Alpine initialises)             #}
+{#   • Renderer for type === 'action-sheet'  (iOS floating cards from bottom)     #}
+{#   • Renderer for type === 'mobile-modal'  (bottom sheet with handle)           #}
+{#                                                                                #}
+{# API (from any Alpine component):                                               #}
+{#   const key = await this.$store.dialog.show({                                  #}
+{#     type:    'action-sheet' | 'mobile-modal',                                  #}
+{#     icon:    `{% lucide "..." "..." %}`,   ← mobile-modal only; SVG only       #}
+{#     iconBg:  'bg-red-100 dark:bg-red-950/50',                                  #}
+{#     title:   '...',                        ← question / heading text           #}
+{#     body:    '...',                        ← subject / detail text             #}
+{#     buttons: [                                                                 #}
+{#       { key: 'remove', label: '...', style: 'destructive' },                   #}
+{#       { key: 'cancel', label: '...', style: 'cancel'      },                   #}
+{#     ],   ← action-sheet: max 3 non-cancel + 1 cancel                           #}
+{#   });                                                                          #}
+{#   // key is the button key pressed, or null if dismissed                       #}
+{# ============================================================================== #}
+
+<script>
+  document.addEventListener('alpine:init', () => {
+    Alpine.store('dialog', {
+      visible: false,
+      config:  {},
+      _resolve: null,
+
+      show(config) {
+        return new Promise(resolve => {
+          this._resolve = resolve;
+          this.config   = config;
+          this.visible  = true;
+        });
+      },
+
+      respond(key) {
+        this.visible = false;
+        const cb = this._resolve;
+        this._resolve = null;
+        if (cb) cb(key ?? null);
+      },
+    });
+  });
+</script>
+
+{# ── iOS Action Sheet renderer ───────────────────────────────────────────── #}
+{# Cancel button renders in a separate card below, matching native iOS style. #}
+<div x-show="$store.dialog.visible && $store.dialog.config.type === 'action-sheet'"
+     x-cloak
+     class="fixed inset-0 z-[500]"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+  <div class="absolute inset-0 bg-black/50" @click="$store.dialog.respond(null)"></div>
+  <div class="absolute bottom-0 left-0 right-0"
+       style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);"
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="translate-y-full"
+       x-transition:enter-end="translate-y-0"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="translate-y-0"
+       x-transition:leave-end="translate-y-full">
+    <div class="mx-4 mb-2 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden">
+      <template x-if="$store.dialog.config.body || $store.dialog.config.title">
+        <div class="px-4 py-3 text-center border-b border-gray-200/70 dark:border-[#38383a]">
+          <p x-show="$store.dialog.config.body"
+             class="text-[13px] font-semibold text-gray-900 dark:text-white"
+             x-text="$store.dialog.config.body"></p>
+          <p x-show="$store.dialog.config.title"
+             class="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5"
+             x-text="$store.dialog.config.title"></p>
+        </div>
+      </template>
+      <template x-for="btn in ($store.dialog.config.buttons || []).filter(b => b.key !== 'cancel')" :key="btn.key">
+        <button type="button"
+                @click="$store.dialog.respond(btn.key)"
+                class="w-full py-[14px] text-[17px] font-semibold text-center
+                       active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75"
+                :class="btn.style === 'destructive'
+                  ? 'text-red-500 dark:text-red-400'
+                  : 'text-blue-600 dark:text-blue-400'"
+                x-text="btn.label">
+        </button>
+      </template>
+    </div>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden">
+      <template x-for="btn in ($store.dialog.config.buttons || []).filter(b => b.key === 'cancel')" :key="btn.key">
+        <button type="button"
+                @click="$store.dialog.respond(btn.key)"
+                class="w-full py-[14px] text-[17px] font-semibold text-blue-600 dark:text-blue-400
+                       active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75 text-center"
+                x-text="btn.label">
+        </button>
+      </template>
+    </div>
+  </div>
+</div>
+
+{# ── Mobile modal renderer (bottom sheet) ────────────────────────────────── #}
+{# icon is server-rendered SVG — never pass user-supplied content here.       #}
+<div x-show="$store.dialog.visible && $store.dialog.config.type === 'mobile-modal'"
+     x-cloak
+     class="fixed inset-0 z-[500]"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+  <div class="absolute inset-0 bg-black/50" @click="$store.dialog.respond(null)"></div>
+  <div class="absolute bottom-0 left-0 right-0 bg-[#f2f2f7] dark:bg-[#1c1c1e] rounded-t-3xl shadow-2xl"
+       style="padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);"
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="translate-y-full"
+       x-transition:enter-end="translate-y-0"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="translate-y-0"
+       x-transition:leave-end="translate-y-full">
+    <div class="flex justify-center pt-3 pb-2">
+      <div class="w-9 h-1 rounded-full bg-gray-300 dark:bg-[#48484a]"></div>
+    </div>
+    <div class="px-4 pt-2 pb-4">
+      <template x-if="$store.dialog.config.icon">
+        <div class="flex justify-center mb-4">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center"
+               :class="$store.dialog.config.iconBg || 'bg-gray-100 dark:bg-slate-800'"
+               x-html="$store.dialog.config.icon">
+          </div>
+        </div>
+      </template>
+      <h3 x-show="$store.dialog.config.title"
+          class="text-[17px] font-semibold text-gray-900 dark:text-white text-center mb-1"
+          x-text="$store.dialog.config.title"></h3>
+      <p x-show="$store.dialog.config.body"
+         class="text-[14px] text-gray-500 dark:text-gray-400 text-center mt-2 mb-6"
+         x-text="$store.dialog.config.body"></p>
+      <div class="flex gap-3">
+        <template x-for="btn in ($store.dialog.config.buttons || [])" :key="btn.key">
+          <button type="button"
+                  @click="$store.dialog.respond(btn.key)"
+                  class="flex-1 py-[14px] rounded-xl text-[16px] font-semibold
+                         active:opacity-70 transition-opacity duration-75"
+                  :class="{
+                    'bg-white dark:bg-[#2c2c2e] text-blue-600 dark:text-blue-400': btn.style === 'cancel',
+                    'bg-red-600 text-white': btn.style === 'destructive',
+                    'bg-blue-600 text-white': !btn.style || btn.style === 'default',
+                  }"
+                  x-text="btn.label">
+          </button>
+        </template>
+      </div>
+    </div>
+  </div>
+</div>

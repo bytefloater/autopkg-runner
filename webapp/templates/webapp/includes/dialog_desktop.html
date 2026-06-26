@@ -1,0 +1,99 @@
+{# ============================================================================== #}
+{# Centralised dialog system — Desktop                                            #}
+{#                                                                                #}
+{# Included by base_desktop.html. Provides:                                       #}
+{#   • Alpine store registration (must run before Alpine initialises)             #}
+{#   • Renderer for type === 'desktop-modal'                                      #}
+{#                                                                                #}
+{# API (from any Alpine component):                                               #}
+{#   const key = await this.$store.dialog.show({                                  #}
+{#     type:    'desktop-modal',                                                  #}
+{#     icon:    `{% lucide "..." "..." %}`,   ← server-rendered SVG only          #}
+{#     iconBg:  'bg-red-100 dark:bg-red-950/50',                                  #}
+{#     title:   '...',                                                            #}
+{#     body:    '...',                                                            #}
+{#     buttons: [                                                                 #}
+{#       { key: 'cancel',  label: '...', style: 'cancel'      },                  #}
+{#       { key: 'confirm', label: '...', style: 'destructive' },                  #}
+{#     ],                                                                         #}
+{#   });                                                                          #}
+{#   // key is the button key pressed, or null if dismissed                       #}
+{# ============================================================================== #}
+
+<script>
+  document.addEventListener('alpine:init', () => {
+    Alpine.store('dialog', {
+      visible: false,
+      config:  {},
+      _resolve: null,
+
+      show(config) {
+        return new Promise(resolve => {
+          this._resolve = resolve;
+          this.config   = config;
+          this.visible  = true;
+        });
+      },
+
+      respond(key) {
+        this.visible = false;
+        const cb = this._resolve;
+        this._resolve = null;
+        if (cb) cb(key ?? null);
+      },
+    });
+  });
+</script>
+
+{# ── Desktop modal renderer ──────────────────────────────────────────────── #}
+{# icon is server-rendered SVG — never pass user-supplied content here.       #}
+<div x-show="$store.dialog.visible && $store.dialog.config.type === 'desktop-modal'"
+     x-cloak
+     class="fixed inset-0 z-[500] flex items-center justify-center p-4"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+  <div class="absolute inset-0 bg-black/60" @click="$store.dialog.respond(null)"></div>
+
+  <div class="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-2xl
+              border border-gray-200 dark:border-slate-700 p-6 text-center"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100">
+
+    <template x-if="$store.dialog.config.icon">
+      <div class="flex justify-center mb-4">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center"
+             :class="$store.dialog.config.iconBg || 'bg-gray-100 dark:bg-slate-800'"
+             x-html="$store.dialog.config.icon">
+        </div>
+      </div>
+    </template>
+
+    <h3 x-show="$store.dialog.config.title"
+        class="text-base font-semibold text-gray-900 dark:text-white mb-1"
+        x-text="$store.dialog.config.title"></h3>
+    <p x-show="$store.dialog.config.body"
+       class="text-sm text-gray-500 dark:text-gray-400 mb-6"
+       x-text="$store.dialog.config.body"></p>
+
+    <div class="flex gap-3">
+      <template x-for="btn in ($store.dialog.config.buttons || [])" :key="btn.key">
+        <button type="button"
+                @click="$store.dialog.respond(btn.key)"
+                class="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                :class="{
+                  'border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800': btn.style === 'cancel',
+                  'bg-red-600 hover:bg-red-700 text-white': btn.style === 'destructive',
+                  'bg-blue-600 hover:bg-blue-700 text-white': !btn.style || btn.style === 'default',
+                }"
+                x-text="btn.label">
+        </button>
+      </template>
+    </div>
+  </div>
+</div>
