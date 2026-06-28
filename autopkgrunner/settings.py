@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from pathlib import Path
@@ -184,13 +185,28 @@ REST_FRAMEWORK = {
 APSCHEDULER_DATETIME_FORMAT = 'N j, Y, f:s a'
 APSCHEDULER_RUN_NOW_TIMEOUT = 25
 
+class _UnifiedFormatter(logging.Formatter):
+    """Custom formatter for unified log output across all handlers.
+
+    Format: [YYYY-MM-DD HH:MM:SS +0000] [PID] [LEVEL] message
+    - Timestamp with UTC offset for consistency with gunicorn logs
+    - PID padded to 5 digits for alignment
+    - Level names shortened: WARNING→WARN, INFO→INFO, etc.
+    """
+    _level_names = {'WARNING': 'WARN', 'DEBUG': 'DEBUG', 'INFO': 'INFO', 'ERROR': 'ERROR'}
+
+    def format(self, record):
+        record.levelname = self._level_names.get(record.levelname, record.levelname)
+        timestamp = self.formatTime(record, '%Y-%m-%d %H:%M:%S')
+        return f'[{timestamp} +0000] [{record.process}] [{record.levelname}] {record.getMessage()}'
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'simple': {
-            'format': '[{levelname}] {name}: {message}',
-            'style': '{',
+        'unified': {
+            '()': _UnifiedFormatter,
         },
     },
     'filters': {
@@ -205,11 +221,11 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'unified',
         },
         'console_no_tb': {
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'unified',
             'filters': ['strip_traceback'],
         },
     },

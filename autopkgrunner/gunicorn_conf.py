@@ -27,12 +27,33 @@ from uvicorn.workers import UvicornWorker
 logger = logging.getLogger('autopkg_runner')
 
 
+# Custom logging format: [YYYY-MM-DD HH:MM:SS +0000] [PID] [LEVEL] message
+# Matches gunicorn's format for consistent output across all logs
+class _GunicornFormatter(logging.Formatter):
+    """Formatter for gunicorn's error logs matching application format."""
+    _level_names = {'WARNING': 'WARN', 'DEBUG': 'DEBUG', 'INFO': 'INFO', 'ERROR': 'ERROR'}
+
+    def format(self, record):
+        record.levelname = self._level_names.get(record.levelname, record.levelname)
+        timestamp = self.formatTime(record, '%Y-%m-%d %H:%M:%S')
+        return f'[{timestamp} +0000] [{record.process}] [{record.levelname}] {record.getMessage()}'
+
+
 class _AsyncioUvicornWorker(UvicornWorker):
     """UvicornWorker pinned to the stdlib asyncio loop (never uvloop)."""
     CONFIG_KWARGS = {**UvicornWorker.CONFIG_KWARGS, "loop": "asyncio"}
 
 
 worker_class = f"{__name__}._AsyncioUvicornWorker"
+
+
+def when_ready(server):
+    """Apply unified formatter to gunicorn loggers after initialization."""
+    formatter = _GunicornFormatter()
+    for logger_name in ['gunicorn.error', 'gunicorn.access']:
+        logger = logging.getLogger(logger_name)
+        for handler in logger.handlers:
+            handler.setFormatter(formatter)
 
 
 def post_fork(server, worker):
