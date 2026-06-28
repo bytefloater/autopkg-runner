@@ -18,7 +18,13 @@ is not fork-safe on macOS, causing an immediate SIGSEGV in every child process
 if the parent imported uvloop before forking.
 """
 
+import logging
+import signal
+import threading
+
 from uvicorn.workers import UvicornWorker
+
+logger = logging.getLogger('autopkg_runner')
 
 
 class _AsyncioUvicornWorker(UvicornWorker):
@@ -31,9 +37,26 @@ worker_class = f"{__name__}._AsyncioUvicornWorker"
 
 def post_fork(server, worker):
     """Called in each worker process immediately after it is forked."""
-    import threading
     from django.apps import apps
+    from webapp.apps import WebappConfig
+
+    def _shutdown_scheduler(signum, frame):
+        """Gracefully shutdown APScheduler on SIGTERM during worker shutdown."""
+        from webapp import scheduler as scheduler_module
+        if scheduler_module._scheduler and scheduler_module._scheduler.running:
+            logger.info('Scheduler shutting down gracefully')
+            try:
+                scheduler_module._scheduler.shutdown(wait=True)
+                logger.info('Scheduler shutdown complete')
+            except Exception as e:
+                logger.warning('Error during scheduler shutdown: %s', e)
+
+    # Register SIGTERM handler so APScheduler shuts down cleanly within
+    # gunicorn's graceful_timeout (default 30s) instead of being SIGKILL'd
+    signal.signal(signal.SIGTERM, _shutdown_scheduler)
+
+    webapp_config: WebappConfig = apps.get_app_config('webapp')  # type: ignore[assignment]
     threading.Thread(
-        target=apps.get_app_config('webapp')._start_services_in_worker,
+        target=webapp_config._start_services_in_worker,
         daemon=True,
     ).start()
