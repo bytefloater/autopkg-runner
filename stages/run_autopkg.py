@@ -40,13 +40,13 @@ class RunAutoPkg(Stage):
         self._tmp_plist.close()
 
         run_id = self.ctx.get('run_id')
+        from webapp.runner import register_active_proc, unregister_active_proc
+
+        def _on_proc(proc):
+            if run_id:
+                register_active_proc(str(run_id), proc)
+
         try:
-            from webapp.runner import register_active_proc, unregister_active_proc
-
-            def _on_proc(proc):
-                if run_id:
-                    register_active_proc(str(run_id), proc)
-
             run_cmd([
                 str(self.autopkg_fpath),
                 "run",

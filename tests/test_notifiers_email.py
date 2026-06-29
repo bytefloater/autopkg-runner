@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import smtplib
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,7 +18,7 @@ def _decode_mime_body(raw: str) -> str:
         if ct in ('text/plain', 'text/html'):
             payload = part.get_payload(decode=True)
             if payload:
-                parts.append(payload.decode(part.get_content_charset() or 'utf-8', errors='replace'))
+                parts.append(cast(bytes, payload).decode(part.get_content_charset() or 'utf-8', errors='replace'))
     return '\n'.join(parts) if parts else raw
 
 

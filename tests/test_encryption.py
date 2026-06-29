@@ -16,6 +16,7 @@ class TestEncrypt:
     def test_plaintext_gets_enc_prefix(self):
         from webapp.encryption import encrypt, ENCRYPTED_PREFIX
         result = encrypt('secret')
+        assert result is not None
         assert result.startswith(ENCRYPTED_PREFIX)
 
     def test_encrypt_then_decrypt_roundtrip(self):

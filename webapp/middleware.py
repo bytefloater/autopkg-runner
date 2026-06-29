@@ -1,9 +1,11 @@
 import logging
 import re
+from typing import Any, Coroutine, Union, cast
 
 from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 from django.db.utils import OperationalError
 from django.http import HttpResponse
+from django.http.request import HttpRequest
 
 logger = logging.getLogger('autopkg_runner')
 
@@ -107,7 +109,7 @@ class DatabaseWriteGuardMiddleware:
         if iscoroutinefunction(get_response):
             markcoroutinefunction(self)
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest) -> Union[HttpResponse, Coroutine[Any, Any, HttpResponse]]:
         if iscoroutinefunction(self.get_response):
             return self._async_call(request)
         try:
@@ -153,7 +155,7 @@ class RemoveServerHeaderMiddleware:
         if iscoroutinefunction(get_response):
             markcoroutinefunction(self)
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest) -> Union[HttpResponse, Coroutine[Any, Any, HttpResponse]]:
         if iscoroutinefunction(self.get_response):
             return self._async_call(request)
         response = self.get_response(request)
@@ -175,7 +177,7 @@ class MobileDetectionMiddleware:
         if iscoroutinefunction(get_response):
             markcoroutinefunction(self)
 
-    def _set_request_flag(self, request):
+    def _set_request_flag(self, request: HttpRequest) -> None:
         ua = request.META.get('HTTP_USER_AGENT', '')
         force_desktop = (
             request.COOKIES.get('desktop_mode') == '1'
@@ -185,11 +187,12 @@ class MobileDetectionMiddleware:
         # base_desktop.html detects the touch fingerprint in JS and sets this
         # cookie, which we pick up on the next (reloaded) request.
         ipad_detected = request.COOKIES.get('ipad_detected') == '1'
-        request.is_mobile = (
+        # Cast to Any to allow setting dynamic attribute on request object
+        cast(Any, request).is_mobile = (
             bool(_MOBILE_UA_RE.search(ua)) or ipad_detected
         ) and not force_desktop
 
-    def _set_response_cookies(self, request, response):
+    def _set_response_cookies(self, request: HttpRequest, response: HttpResponse) -> None:
         if request.GET.get('desktop') == '1':
             response.set_cookie('desktop_mode', '1', max_age=86400 * 365)
             response.delete_cookie('ipad_detected', path='/')
@@ -197,7 +200,7 @@ class MobileDetectionMiddleware:
             response.set_cookie('ipad_detected', '1', max_age=86400 * 365)
             response.delete_cookie('desktop_mode', path='/')
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest) -> Union[HttpResponse, Coroutine[Any, Any, HttpResponse]]:
         if iscoroutinefunction(self.get_response):
             return self._async_call(request)
         self._set_request_flag(request)

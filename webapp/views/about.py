@@ -98,7 +98,7 @@ def _munki_version() -> Optional[str]:
     return None
 
 
-def _parse_version(v: str) -> tuple:
+def _parse_version(v) -> tuple:
     """Parse a dotted version string into a comparable tuple of ints."""
     try:
         return tuple(int(x) for x in v.split('.') if x.isdigit())

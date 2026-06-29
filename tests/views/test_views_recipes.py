@@ -815,7 +815,7 @@ class TestRecipeSearchDirs:
              patch('webapp.views.recipes._overrides_dir') as mock_od:
             ov_path = MagicMock()
             ov_path.resolve.side_effect = OSError('resolve failed')
-            ov_path.__str__ = lambda self: str(tmp_path / 'overrides')
+            ov_path.__str__.return_value = str(tmp_path / 'overrides')
             mock_od.return_value = ov_path
             result = _recipe_search_dirs()
         assert isinstance(result, list)

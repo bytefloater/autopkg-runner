@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 
@@ -27,18 +28,19 @@ def _get_fernet() -> Fernet:
     return Fernet(key)
 
 
-def encrypt(plaintext: str) -> str:
-    """Return ``"enc:<token>"`` for *plaintext*.  Empty strings are returned as-is."""
+def encrypt(plaintext: Optional[str]) -> Optional[str]:
+    """Return ``"enc:<token>"`` for *plaintext*.  Empty strings and None are returned as-is."""
     if not plaintext:
         return plaintext
     token = _get_fernet().encrypt(plaintext.encode()).decode()
     return ENCRYPTED_PREFIX + token
 
 
-def decrypt(value: str) -> str:
+def decrypt(value: Optional[str]) -> Optional[str]:
     """
     Decrypt an ``"enc:<token>"`` string.
 
+    * If *value* is None it is returned unchanged.
     * If *value* has no ``enc:`` prefix it is treated as legacy plain-text and
       returned unchanged.
     * If decryption fails (wrong key, corrupted token) an empty string is
@@ -54,6 +56,6 @@ def decrypt(value: str) -> str:
         return ''
 
 
-def is_encrypted(value: str) -> bool:
+def is_encrypted(value: Optional[str]) -> bool:
     """Return True if *value* is already stored in encrypted form."""
     return bool(value and value.startswith(ENCRYPTED_PREFIX))

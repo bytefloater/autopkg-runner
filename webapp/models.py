@@ -91,7 +91,7 @@ class Setting(models.Model):
             return default if default is not None else cls.DEFAULTS.get(key, '')
         if key in cls.SENSITIVE_KEYS:
             from webapp.encryption import decrypt
-            return decrypt(raw)
+            return decrypt(raw) or ''
         return raw
 
     @classmethod
@@ -99,7 +99,7 @@ class Setting(models.Model):
         if key in cls.SENSITIVE_KEYS and value:
             from webapp.encryption import encrypt, is_encrypted
             if not is_encrypted(value):
-                value = encrypt(value)
+                value = encrypt(value) or value
         cls.objects.update_or_create(key=key, defaults={'value': str(value)})
 
     @classmethod
@@ -122,7 +122,7 @@ class Setting(models.Model):
             result[s.key] = s.value
         for key in cls.SENSITIVE_KEYS:
             if key in result:
-                result[key] = decrypt(result[key])
+                result[key] = decrypt(result[key]) or ''
         return result
 
 
@@ -506,7 +506,7 @@ class APIToken(models.Model):
     @property
     def decrypted_secret(self) -> str:
         from webapp.encryption import decrypt
-        return decrypt(self.token_secret)
+        return decrypt(self.token_secret) or ''
 
     def __str__(self):
         return f'{self.user.username} / {self.name}'

@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
+from typing import Optional
 import time
 
 from django.db import close_old_connections
@@ -32,7 +33,7 @@ class RunBroadcaster:
         self._events: list[bytes] = []   # pre-rendered SSE frames without id: line
         self._lock = threading.Lock()
         self._done = False
-        self._done_at: float | None = None
+        self._done_at: Optional[float] = None
         self._thread = threading.Thread(
             target=self._poll_loop,
             daemon=True,

@@ -1,9 +1,11 @@
 """Tests for webapp.middleware."""
 from __future__ import annotations
 
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
+from django.http import HttpResponse
 
 
 class TestIsReadonlyDbError:
@@ -35,7 +37,7 @@ class TestDatabaseWriteGuardMiddleware:
         request = RequestFactory().get('/')
         get_response = MagicMock(return_value=HttpResponse('ok'))
         mw = self._make_middleware(get_response)
-        resp = mw(request)
+        resp = cast(HttpResponse, mw(request))
         assert resp.status_code == 200
 
     def test_returns_503_on_readonly_db_error(self):
@@ -44,7 +46,7 @@ class TestDatabaseWriteGuardMiddleware:
         request = RequestFactory().get('/')
         get_response = MagicMock(side_effect=OperationalError('attempt to write a readonly database'))
         mw = self._make_middleware(get_response)
-        resp = mw(request)
+        resp = cast(HttpResponse, mw(request))
         assert resp.status_code == 503
         assert b'Database' in resp.content
 
@@ -61,14 +63,13 @@ class TestDatabaseWriteGuardMiddleware:
 class TestRemoveServerHeaderMiddleware:
     def test_removes_server_header(self):
         from django.test import RequestFactory
-        from django.http import HttpResponse
         from webapp.middleware import RemoveServerHeaderMiddleware
         request = RequestFactory().get('/')
         resp = HttpResponse('ok')
         resp['Server'] = 'gunicorn/20'
         mw = RemoveServerHeaderMiddleware(lambda r: resp)
-        result = mw(request)
-        assert 'Server' not in result
+        result = cast(HttpResponse, mw(request))
+        assert 'Server' not in result.headers
 
 
 class TestMobileDetectionMiddleware:
@@ -84,21 +85,21 @@ class TestMobileDetectionMiddleware:
         request = RequestFactory().get('/', HTTP_USER_AGENT='Mozilla/5.0 (Macintosh; Intel Mac OS X)')
         mw = self._make_middleware()
         mw(request)
-        assert request.is_mobile is False
+        assert cast(Any, request).is_mobile is False
 
     def test_iphone_ua_is_mobile(self):
         from django.test import RequestFactory
         request = RequestFactory().get('/', HTTP_USER_AGENT='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0)')
         mw = self._make_middleware()
         mw(request)
-        assert request.is_mobile is True
+        assert cast(Any, request).is_mobile is True
 
     def test_android_ua_is_mobile(self):
         from django.test import RequestFactory
         request = RequestFactory().get('/', HTTP_USER_AGENT='Mozilla/5.0 (Linux; Android 12)')
         mw = self._make_middleware()
         mw(request)
-        assert request.is_mobile is True
+        assert cast(Any, request).is_mobile is True
 
     def test_desktop_cookie_overrides_mobile_ua(self):
         from django.test import RequestFactory
@@ -106,7 +107,7 @@ class TestMobileDetectionMiddleware:
         request.COOKIES = {'desktop_mode': '1'}
         mw = self._make_middleware()
         mw(request)
-        assert request.is_mobile is False
+        assert cast(Any, request).is_mobile is False
 
     def test_ipad_cookie_triggers_mobile(self):
         from django.test import RequestFactory
@@ -114,22 +115,22 @@ class TestMobileDetectionMiddleware:
         request.COOKIES = {'ipad_detected': '1'}
         mw = self._make_middleware()
         mw(request)
-        assert request.is_mobile is True
+        assert cast(Any, request).is_mobile is True
 
     def test_desktop_query_param_sets_cookie(self):
-        from django.test import RequestFactory
         from django.http import HttpResponse
+        from django.test import RequestFactory
         request = RequestFactory().get('/?desktop=1', HTTP_USER_AGENT='Mozilla/5.0 (iPhone)')
         request.COOKIES = {}
         mw = self._make_middleware(lambda r: HttpResponse('ok'))
-        resp = mw(request)
+        resp = cast(HttpResponse, mw(request))
         assert 'desktop_mode' in resp.cookies
 
     def test_mobile_query_param_sets_cookie(self):
-        from django.test import RequestFactory
         from django.http import HttpResponse
+        from django.test import RequestFactory
         request = RequestFactory().get('/?mobile=1', HTTP_USER_AGENT='Mozilla/5.0 (Macintosh)')
         request.COOKIES = {}
         mw = self._make_middleware(lambda r: HttpResponse('ok'))
-        resp = mw(request)
+        resp = cast(HttpResponse, mw(request))
         assert 'ipad_detected' in resp.cookies

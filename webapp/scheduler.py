@@ -25,16 +25,18 @@ def acquire_scheduler_lock() -> bool:
     global _lock_fd
     from django.conf import settings
     lock_path = settings.BASE_DIR / 'scheduler.lock'
+    fd = None
     try:
         fd = open(lock_path, 'w')
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         _lock_fd = fd  # keep open — closing it would release the lock
         return True
     except (IOError, OSError):
-        try:
-            fd.close()
-        except Exception:
-            pass
+        if fd is not None:
+            try:
+                fd.close()
+            except Exception:
+                pass
         return False
 
 

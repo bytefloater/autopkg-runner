@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from typing import Optional
 import urllib.request
 import urllib.error
 import json
@@ -45,7 +46,7 @@ def is_stale() -> bool:
     return (now - _cache['fetched_at']) >= _CACHE_TTL
 
 
-def last_error() -> str | None:
+def last_error() -> Optional[str]:
     return _cache['error']
 
 
@@ -91,7 +92,7 @@ def search(query: str, page: int = 1, page_size: int = 50) -> dict:
     }
 
 
-def get_entry(identifier: str) -> dict | None:
+def get_entry(identifier: str) -> Optional[dict]:
     """Return a single enriched entry by identifier, or None."""
     entry = _cache['identifiers'].get(identifier)
     if entry is None:

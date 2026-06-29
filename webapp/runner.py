@@ -12,7 +12,7 @@ class RunAlreadyRunningError(Exception):
 # ---------------------------------------------------------------------------
 # Cancellation registry
 # ---------------------------------------------------------------------------
-# Maps run_id (str) → (cancel_event, active_subprocess | None).
+# Maps run_id (str) → (Optional[cancel_event, active_subprocess]).
 # Used by cancel_run() to signal the pipeline thread to abort cleanly and
 # to SIGTERM any running child process (e.g. autopkg) immediately.
 
