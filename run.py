@@ -6,9 +6,16 @@
 # SIGSEGV in every worker.  Re-exec immediately (before any non-stdlib imports)
 # so the variable is present from the start of the next invocation.
 import os as _os, sys as _sys
+from pathlib import Path as _Path
 if _sys.platform == 'darwin' and not _os.environ.get('OBJC_DISABLE_INITIALIZE_FORK_SAFETY'):
     _os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    _os.execv(_sys.executable, [_sys.executable] + _sys.argv)
+    if getattr(_sys, 'frozen', False):
+        # Bundled (PyInstaller) mode: argv[0] is the compiled executable
+        _os.execv(_sys.argv[0], _sys.argv)
+    else:
+        # Dev mode: resolve script path and re-exec with Python interpreter
+        _script = _Path(_sys.argv[0]).resolve()
+        _os.execv(_sys.executable, [_sys.executable, str(_script)] + _sys.argv[1:])
 
 """
 Entrypoint for the AutoPkg Runner .app bundle.
