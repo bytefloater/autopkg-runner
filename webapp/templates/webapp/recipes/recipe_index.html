@@ -159,33 +159,34 @@
                   </div>
                 </div>
 
-                {# Add repo button / already-installed placeholder — use x-show to avoid SVG namespace loss in nested x-if #}
-                <div class="relative group/installed" x-show="installedRepos.includes(r.repo)">
-                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-md
-                               text-green-500 dark:text-green-400 cursor-default select-none">
-                    {% lucide "circle-check" "w-4 h-4" %}
-                  </span>
-                  <div class="absolute right-0 top-full mt-1.5 z-20 pointer-events-none
-                              opacity-0 group-hover/installed:opacity-100 transition-opacity duration-150
-                              bg-gray-900 dark:bg-slate-700 text-white text-xs rounded-lg px-3 py-2
-                              whitespace-nowrap shadow-lg">
-                    {{ t.RECIPES_VIEW.FIND_ALREADY_HAVE_REPO }}
-                    <div class="absolute -top-1 right-3 w-2 h-2 bg-gray-900 dark:bg-slate-700 rotate-45"></div>
-                  </div>
-                </div>
-                <div class="relative group/add" x-show="!installedRepos.includes(r.repo)">
+                {# Add repo button — always visible, disabled when already installed #}
+                <div class="relative" :class="installedRepos.includes(r.repo) ? 'group/installed' : 'group/add'">
                   <button type="button"
-                          @click="openAddModal(r)"
+                          @click="!installedRepos.includes(r.repo) && openAddModal(r)"
+                          :disabled="installedRepos.includes(r.repo)"
                           class="inline-flex items-center justify-center w-8 h-8 rounded-md
-                                 border border-transparent bg-blue-600 hover:bg-blue-700
-                                 text-white transition-colors">
-                    {% lucide "plus" "w-4 h-4" %}
+                                 border border-transparent transition-colors"
+                          :class="installedRepos.includes(r.repo)
+                            ? 'bg-gray-50 dark:bg-slate-800 text-green-500 dark:text-green-400 cursor-default select-none opacity-60'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'">
+                    <svg x-show="!installedRepos.includes(r.repo)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <svg x-show="installedRepos.includes(r.repo)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
                   </button>
                   <div class="absolute right-0 top-full mt-1.5 z-20 pointer-events-none
-                              opacity-0 group-hover/add:opacity-100 transition-opacity duration-150
+                              opacity-0 transition-opacity duration-150
                               bg-gray-900 dark:bg-slate-700 text-white text-xs rounded-lg px-3 py-2
-                              whitespace-nowrap shadow-lg">
-                    {{ t.RECIPES_VIEW.FIND_ACTION_ADD_REPO }}
+                              whitespace-nowrap shadow-lg"
+                       :class="installedRepos.includes(r.repo)
+                         ? 'group-hover/installed:opacity-100'
+                         : 'group-hover/add:opacity-100'">
+                    <span x-show="!installedRepos.includes(r.repo)">{{ t.RECIPES_VIEW.FIND_ACTION_ADD_REPO }}</span>
+                    <span x-show="installedRepos.includes(r.repo)">{{ t.RECIPES_VIEW.FIND_ALREADY_HAVE_REPO }}</span>
                     <div class="absolute -top-1 right-3 w-2 h-2 bg-gray-900 dark:bg-slate-700 rotate-45"></div>
                   </div>
                 </div>
