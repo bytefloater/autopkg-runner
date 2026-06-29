@@ -158,10 +158,14 @@ def ensure_fresh(force: bool = False):
 
 def _fetch():
     try:
+        from __info__ import APP_VERSION_STR
         logger.info('Fetching AutoPkg recipe index from %s', _INDEX_URL)
         req = urllib.request.Request(
             _INDEX_URL,
-            headers={'Accept': 'application/json', 'User-Agent': 'autopkg-runner/1.0'},
+            headers={
+                'Accept': 'application/json',
+                'User-Agent': f'autopkg-runner/{APP_VERSION_STR}',
+            },
         )
         with urllib.request.urlopen(req, timeout=_FETCH_TIMEOUT, context=ssl_context()) as resp:
             raw = resp.read()
@@ -174,6 +178,17 @@ def _fetch():
             _cache['fetched_at'] = time.monotonic()
             _cache['error'] = None
         logger.info('Recipe index fetched: %d identifiers', len(identifiers))
+    except urllib.error.HTTPError as exc:
+        error_msg = f'HTTP {exc.code}: {exc.reason}'
+        try:
+            error_body = exc.read().decode('utf-8', errors='replace')[:500]
+            if error_body:
+                error_msg += f' — {error_body}'
+        except Exception:
+            pass
+        with _cache_lock:
+            _cache['error'] = error_msg
+        logger.warning('Failed to fetch recipe index: %s', error_msg)
     except Exception as exc:
         with _cache_lock:
             _cache['error'] = str(exc)
