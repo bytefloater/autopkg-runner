@@ -1,4 +1,5 @@
-const CACHE_NAME = 'autopkg-runner-v4';
+const CACHE_NAME = 'autopkg-runner-1777891200';
+const FETCH_TIMEOUT = 3000; // 3 seconds before showing error page
 
 const STATIC_ASSETS = [
   '/dashboard/',
@@ -8,12 +9,12 @@ const STATIC_ASSETS = [
   '/api-tokens/',
 ];
 
-// Install: pre-cache the manifest
+// Install: pre-cache the manifest, offline error page, and Tailwind CSS
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(['/manifest.json'])
+      cache.addAll(['/manifest.json', '/static/offline-error.html', '/static/css/tailwind.css'])
     )
   );
 });
@@ -28,10 +29,31 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// -- Helpers -------------------------------------------------------------------
+
+function _getErrorPage(errorType, errorCode) {
+  return caches.match('/static/offline-error.html')
+    .then((errorPage) => {
+      if (!errorPage) return new Response('Offline', { status: 503 });
+
+      // Clone and build error URL with query parameters
+      const url = new URL('/static/offline-error.html', self.location.origin);
+      url.searchParams.set('type', errorType);
+      if (errorCode) url.searchParams.set('code', errorCode);
+      url.searchParams.set('timestamp', new Date().toISOString());
+
+      return new Response(errorPage.body, {
+        status: errorPage.status,
+        statusText: errorPage.statusText,
+        headers: errorPage.headers
+      });
+    });
+}
+
 // Fetch strategy:
 // - Static assets (CSS/JS/SVG/PNG from CDN or /static/): cache-first
 // - API calls (/api/): network-only
-// - Pages: network-first, fall back to cache
+// - Pages: network-first with 3s timeout, never cache pages
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
@@ -61,17 +83,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Pages: network-first
+  // Pages: network-first with fast timeout, never cache pages
   event.respondWith(
-    fetch(event.request)
+    Promise.race([
+      fetch(event.request),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), FETCH_TIMEOUT)
+      )
+    ])
       .then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+        // Return all responses without caching pages
+        // (pages can change, only cache static assets)
+        if (response.status >= 500) {
+          // 5xx errors: show error page
+          return _getErrorPage('gateway', response.status);
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch((err) => {
+        // Network error or timeout: show error page
+        const errorType = err.message === 'timeout' ? 'timeout' : 'offline';
+        return _getErrorPage(errorType);
+      })
   );
 });
 

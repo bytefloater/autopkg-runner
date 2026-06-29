@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000" media="(prefers-color-scheme: dark)">
+  <title>Connection Error — AutoPkg Runner</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css">
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { overscroll-behavior: none; }
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
+    a, button { touch-action: manipulation; }
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+  </style>
+  <script>
+    (function(){
+      if(window.matchMedia('(prefers-color-scheme:dark)').matches)
+        document.documentElement.classList.add('dark');
+    })();
+  </script>
+</head>
+<body class="bg-[#f2f2f7] dark:bg-black text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+  <div class="flex-1 overflow-y-auto">
+    <div class="h-4"></div>
+
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">
+      <div class="px-4 py-4 text-center">
+        <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-red-600 flex items-center justify-center text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+          </svg>
+        </div>
+        <h1 id="error-title" class="text-base font-semibold text-gray-900 dark:text-white mb-1">Connection Error</h1>
+        <p id="error-message" class="text-[13px] text-gray-600 dark:text-gray-400 leading-snug">
+          Unable to connect to AutoPkg Runner. Please check your connection and try again.
+        </p>
+      </div>
+    </div>
+
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Details</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+      <div class="px-4 py-3">
+        <pre id="error-details" class="text-[12px] text-gray-600 dark:text-gray-400 font-mono leading-relaxed whitespace-pre-wrap break-words">Connecting...</pre>
+      </div>
+    </div>
+
+    <p class="px-4 pt-5 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</p>
+    <div class="mx-4 bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+      <button onclick="location.reload()" class="w-full flex items-center justify-center px-4 py-[13px] active:bg-black/5 dark:active:bg-white/5 transition-colors duration-75 text-blue-600 dark:text-blue-400 text-[16px] font-medium">
+        Try Again
+      </button>
+    </div>
+
+    <div class="h-8"></div>
+  </div>
+
+  <script>
+    // Parse error info from query params
+    const params = new URLSearchParams(window.location.search);
+    const errorType = params.get('type') || 'network';
+    const errorCode = params.get('code');
+    const timestamp = params.get('timestamp');
+
+    const titles = {
+      'offline': 'No Connection',
+      'gateway': 'Server Unavailable',
+      'timeout': 'Connection Timeout',
+      'network': 'Connection Error',
+    };
+
+    const messages = {
+      'offline': 'No internet connection detected. Please check your connection and try again.',
+      'gateway': 'The server is currently unavailable or unreachable. It may be temporarily down for maintenance.',
+      'timeout': 'The connection took too long to respond. The server may be slow or unresponsive.',
+      'network': 'A network error occurred. Please check your connection and try again.',
+    };
+
+    const detailsEl = document.getElementById('error-details');
+    const titleEl = document.getElementById('error-title');
+    const messageEl = document.getElementById('error-message');
+
+    // Update title and message
+    if (titles[errorType]) {
+      titleEl.textContent = titles[errorType];
+      messageEl.textContent = messages[errorType];
+    }
+
+    // Build error details
+    let detailsText = '';
+    if (errorType) {
+      detailsText += `Type: ${errorType}\n`;
+    }
+    if (errorCode) {
+      detailsText += `HTTP Status: ${errorCode}\n`;
+    }
+    if (timestamp) {
+      try {
+        const date = new Date(timestamp);
+        detailsText += `Time: ${date.toLocaleString()}\n`;
+      } catch (e) {}
+    }
+    detailsText += `URL: ${window.location.origin}`;
+
+    detailsEl.textContent = detailsText;
+  </script>
+</body>
+</html>
