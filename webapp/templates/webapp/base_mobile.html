@@ -9,6 +9,13 @@
   <meta name="apple-mobile-web-app-title" content="AutoPkg">
   <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+  <script>
+    // iOS loses the status-bar colour when the PWA resumes from background.
+    // A reload restores it reliably.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) location.reload();
+    });
+  </script>
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/static/logos/icon-192.png">
 
