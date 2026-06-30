@@ -192,6 +192,48 @@ class TriggerRunView(RunManagerRequired, View):
         return redirect('run-detail', run_id=run_id)
 
 
+class TriggerTargetedRunView(RunManagerRequired, View):
+    def post(self, request):
+        from webapp.runner import trigger_targeted_run, RunAlreadyRunningError
+
+        recipes = request.POST.getlist('recipes[]') or request.POST.getlist('recipes')
+        if not recipes:
+            return JsonResponse({'status': 'error', 'message': 'No recipes specified.'}, status=400)
+
+        log_level       = request.POST.get('log_level', 'INFO')
+        bypass_trust    = request.POST.get('bypass_trust') == 'on'
+        update_repos    = request.POST.get('update_repos') == 'on'
+        append_catalogs = request.POST.get('append_make_catalogs') == 'on'
+
+        if log_level not in ('DEBUG', 'INFO', 'WARNING'):
+            log_level = 'INFO'
+
+        try:
+            task_id = trigger_targeted_run(
+                recipes,
+                triggered_by='manual',
+                log_level=log_level,
+                bypass_trust=bypass_trust,
+                update_repos=update_repos,
+                append_make_catalogs=append_catalogs,
+            )
+        except RunAlreadyRunningError:
+            msg = 'A run is already in progress.'
+            if request.headers.get('HX-Request'):
+                return JsonResponse({'status': 'error', 'message': msg}, status=409)
+            from django.contrib import messages
+            messages.error(request, msg)
+            return redirect('run-list')
+
+        from webapp.models import Task
+        task = Task.objects.get(id=task_id)
+        run_id = task.run_id
+
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'status': 'ok', 'run_id': str(run_id)})
+        return redirect('run-detail', run_id=run_id)
+
+
 class RunDeleteView(RunManagerRequired, View):
     """POST - delete one or more completed runs by UUID.
 

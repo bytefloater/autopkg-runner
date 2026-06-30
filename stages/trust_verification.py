@@ -1,7 +1,7 @@
 from pathlib import Path
 import subprocess
 
-from libs.stage import Stage
+from libs.stage import Stage, StageSkipped
 from libs.run_command import run_cmd
 
 
@@ -15,11 +15,17 @@ class TrustVerification(Stage):
         self.recipe_fpath: Path     = config.autopkg.recipe_list
 
     def run(self) -> list:
-        recipes = []
+        if self.config.bypass_trust_verification:
+            self.logger.info("Trust verification bypassed (targeted run option)")
+            raise StageSkipped
 
-        with open(self.recipe_fpath, 'r', encoding='utf-8') as recipe_file:
-            for recipe in recipe_file:
-                recipes.append(recipe.strip())
+        if self.config.targeted_recipes:
+            recipes = list(self.config.targeted_recipes)
+        else:
+            recipes = []
+            with open(self.recipe_fpath, 'r', encoding='utf-8') as recipe_file:
+                for recipe in recipe_file:
+                    recipes.append(recipe.strip())
         self.logger.info(f"Loaded {len(recipes)} recipe(s)")
 
         self.logger.info("Starting trust information verification...")

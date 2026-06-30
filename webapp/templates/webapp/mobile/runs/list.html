@@ -124,7 +124,7 @@
               {{ run.started_at|timezone:local_tz|date:"d M Y, H:i" }}
             </p>
             <p class="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">
-              {{ run.triggered_by|capfirst }}{% if run.completed_at %} · {{ run.started_at|duration:run.completed_at }}{% endif %}
+              {{ run.triggered_by|capfirst }}{% if run.completed_at %} · {{ run.started_at|duration:run.completed_at }}{% endif %}{% if run.run_type == 'targeted' %} · <span class="text-purple-500 dark:text-purple-400">{{ t.RUNS_VIEW.TYPE_TARGETED }}</span>{% endif %}
             </p>
           </div>
           <span class="text-[13px] flex-shrink-0

@@ -90,6 +90,60 @@ def trigger_manual_run(triggered_by: str = 'manual') -> _uuid.UUID:
     return task.id
 
 
+def trigger_targeted_run(
+    recipes: list[str],
+    *,
+    triggered_by: str = 'manual',
+    log_level: str = 'INFO',
+    bypass_trust: bool = False,
+    update_repos: bool = True,
+    append_make_catalogs: bool = True,
+) -> _uuid.UUID:
+    import dataclasses
+    from webapp.models import Run, Task
+    from libs.config import config_from_settings, pipeline_config_to_dict, LogSettings
+
+    if Run.objects.filter(status__in=('pending', 'running')).exists():
+        raise RunAlreadyRunningError(
+            'A run is already in progress. Please wait for it to complete before starting another.'
+        )
+
+    final_recipes = list(recipes)
+    if append_make_catalogs and 'MakeCatalogs.munki' not in final_recipes:
+        final_recipes.append('MakeCatalogs.munki')
+
+    config = config_from_settings()
+    config = dataclasses.replace(
+        config,
+        targeted_recipes=final_recipes,
+        bypass_trust_verification=bypass_trust,
+        update_repos=update_repos,
+        log_settings=dataclasses.replace(config.log_settings, level=log_level),
+    )
+
+    run = Run.objects.create(
+        status='pending',
+        run_type='targeted',
+        triggered_by=triggered_by,
+        config_snapshot=pipeline_config_to_dict(config),
+        targeted_recipes=final_recipes,
+    )
+    task = Task.objects.create(
+        task_type='pipeline_run',
+        status='pending',
+        run=run,
+    )
+
+    t = threading.Thread(
+        target=_execute_run,
+        args=(run.id, task.id),
+        daemon=True,
+        name=f'pipeline-run-{run.id}',
+    )
+    t.start()
+    return task.id
+
+
 def trigger_db_cleanup() -> _uuid.UUID:
     from webapp.models import Task
 
@@ -160,6 +214,23 @@ def _execute_run(run_id: _uuid.UUID, task_id: _uuid.UUID):
 
         logger = Logger('autopkg_runner')
         config = config_from_settings()
+
+        # For targeted runs, overlay per-run options stored on the Run record.
+        run_obj = Run.objects.filter(id=run_id).first()
+        if run_obj and run_obj.run_type == 'targeted':
+            import dataclasses
+            snapshot = run_obj.config_snapshot or {}
+            config = dataclasses.replace(
+                config,
+                targeted_recipes=run_obj.targeted_recipes or [],
+                bypass_trust_verification=snapshot.get('bypass_trust_verification', False),
+                update_repos=snapshot.get('update_repos', config.update_repos),
+                log_settings=dataclasses.replace(
+                    config.log_settings,
+                    level=(snapshot.get('log_settings') or {}).get('level', config.log_settings.level),
+                ),
+            )
+
         ctx = {'run_id': run_id}
 
         orchestrator = Orchestrator(

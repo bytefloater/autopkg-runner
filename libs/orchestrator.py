@@ -3,7 +3,7 @@ from typing import Callable, Optional
 
 from logbook import Logger
 
-from libs.stage import Stage
+from libs.stage import Stage, StageSkipped
 from libs.config import PipelineConfig
 from stages import (
     EnvironmentCheck, TrustVerification, MountRepository, RunAutoPkg,
@@ -78,8 +78,11 @@ class Orchestrator:
                     break
                 current_stage = stage
                 self._notify(stage.name, 'running')
-                stage()
-                self._notify(stage.name, 'success')
+                try:
+                    stage()
+                    self._notify(stage.name, 'success')
+                except StageSkipped:
+                    self._notify(stage.name, 'skipped')
                 completed.append(stage)
         except Exception:
             success = False

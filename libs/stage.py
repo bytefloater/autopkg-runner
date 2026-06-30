@@ -5,6 +5,10 @@ from typing import Optional, Any
 from logbook import Logger
 from libs.config import PipelineConfig
 
+class StageSkipped(Exception):
+    """Raised by a stage that intentionally does nothing (e.g. update_repos=False)."""
+
+
 class Stage(ABC):
     """Base class for one step in the pipeline."""
     name = "unnamed‑stage"

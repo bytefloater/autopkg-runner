@@ -41,6 +41,19 @@
 <div x-data="runDetail('{{ run.id }}', '{{ run.status }}', {{ last_log_id }})"
      class="select-none [&_a]:[-webkit-touch-callout:none]">
 
+  {# -- Targeted recipes list (targeted runs only) -- #}
+  {% if run.run_type == 'targeted' and run.targeted_recipes %}
+  <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_TARGETED_RECIPES }}</p>
+  <div class="mx-4 mb-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden px-4 py-3">
+    <div class="flex flex-wrap gap-2">
+      {% for recipe in run.targeted_recipes %}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-mono
+                   bg-gray-100 dark:bg-[#2c2c2e] text-gray-700 dark:text-gray-300">{{ recipe }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   {# -- Stages ---------------------------------------------------------------- #}
   <p class="px-4 pb-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{{ t.RUN_DETAIL_VIEW.SECTION_STAGES }}</p>
   <div id="stages-list" class="mx-4 bg-white dark:bg-[#1c1c1e] inset-group rounded-xl overflow-hidden divide-y divide-gray-200/70 dark:divide-[#38383a]">

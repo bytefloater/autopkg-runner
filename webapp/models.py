@@ -241,12 +241,21 @@ class Run(models.Model):
         (CANCELLED, 'Cancelled'),
     ]
 
-    id              = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING, db_index=True)
-    triggered_by    = models.CharField(max_length=50, default='manual')
-    started_at      = models.DateTimeField(auto_now_add=True, db_index=True)
-    completed_at    = models.DateTimeField(null=True, blank=True)
-    config_snapshot = models.JSONField(default=dict)
+    FULL     = 'full'
+    TARGETED = 'targeted'
+    RUN_TYPE_CHOICES = [
+        (FULL,     'Full'),
+        (TARGETED, 'Targeted'),
+    ]
+
+    id                 = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    status             = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING, db_index=True)
+    run_type           = models.CharField(max_length=20, choices=RUN_TYPE_CHOICES, default=FULL)
+    triggered_by       = models.CharField(max_length=50, default='manual')
+    started_at         = models.DateTimeField(auto_now_add=True, db_index=True)
+    completed_at       = models.DateTimeField(null=True, blank=True)
+    config_snapshot    = models.JSONField(default=dict)
+    targeted_recipes   = models.JSONField(default=list, blank=True)
 
     # Reverse relations - declared for type checkers (django-stubs does not
     # synthesise related managers from related_name automatically).

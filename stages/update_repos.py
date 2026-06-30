@@ -4,7 +4,7 @@ import re
 import subprocess
 from typing import Optional
 
-from libs.stage import Stage
+from libs.stage import Stage, StageSkipped
 from libs.run_command import run_cmd
 from libs.intercept_logger import InterceptLogger
 
@@ -22,7 +22,7 @@ class UpdateRepos(Stage):
     def run(self) -> Optional[list]:
         if not self.update_before_each_run:
             self.logger.info("'update_before_each_run' flag set to False. Skipping...")
-            return
+            raise StageSkipped
 
         cmd_out = InterceptLogger()
         repo_urls = []

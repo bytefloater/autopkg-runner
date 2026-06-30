@@ -47,6 +47,8 @@ class PipelineConfig:
     update_repos: bool
     notifiers: list        # list of webapp.models.Notifier instances (or dicts)
     flags: list[str]
+    targeted_recipes: list[str] = ()         # type: ignore[assignment]  # empty = use recipe list file
+    bypass_trust_verification: bool = False
 
 
 def config_from_settings() -> 'PipelineConfig':
@@ -120,6 +122,8 @@ def pipeline_config_to_dict(config: 'PipelineConfig') -> dict:
         },
         'update_repos': config.update_repos,
         'flags': config.flags,
+        'targeted_recipes': list(config.targeted_recipes),
+        'bypass_trust_verification': config.bypass_trust_verification,
     }
 
 

@@ -25,10 +25,13 @@ class RunAutoPkg(Stage):
         self._tmp_plist = None
 
     def run(self) -> Optional[Any]:
-        recipes = []
-        with open(self.recipe_fpath, 'r', encoding='utf-8') as recipe_file:
-            for recipe in recipe_file:
-                recipes.append(recipe.strip())
+        if self.config.targeted_recipes:
+            recipes = list(self.config.targeted_recipes)
+        else:
+            recipes = []
+            with open(self.recipe_fpath, 'r', encoding='utf-8') as recipe_file:
+                for recipe in recipe_file:
+                    recipes.append(recipe.strip())
         if not recipes:
             raise RuntimeError("Unable to load recipe(s)")
 
@@ -46,6 +49,7 @@ class RunAutoPkg(Stage):
             if run_id:
                 register_active_proc(str(run_id), proc)
 
+        verbosity_flag = "-v" if self.config.log_settings.level == "DEBUG" else "-q"
         try:
             run_cmd([
                 str(self.autopkg_fpath),
@@ -53,7 +57,7 @@ class RunAutoPkg(Stage):
                 *recipes,
                 "--report-plist",
                 self._tmp_plist.name,
-                "-q",
+                verbosity_flag,
                 "-k",
                 f"MUNKI_REPO={self.local_mnt}"
             ], self.logger, on_proc=_on_proc)

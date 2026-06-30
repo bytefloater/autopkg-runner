@@ -84,7 +84,8 @@
             <div class="flex items-center justify-center" style="width:18px;height:18px;margin:0 auto">
               <button x-show="managing" x-cloak
                       type="button" @click="toggleAll()"
-                      class="w-[18px] h-[18px] rounded flex items-center justify-center flex-shrink-0 border transition-colors cursor-pointer"
+                      class="w-[18px] h-[18px] rounded flex items-center justify-center flex-shrink-0 border transition-colors cursor-pointer
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:focus:ring-offset-gray-900"
                       :class="allSelected
                         ? 'bg-blue-600 border-blue-600 text-white'
                         : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'">
@@ -93,6 +94,7 @@
             </div>
           </th>
           <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_STATUS }}</th>
+          <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_TYPE }}</th>
           <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_STARTED }}</th>
           <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_DURATION }}</th>
           <th class="px-4 py-3 text-left">{{ t.RUNS_VIEW.COL_TRIGGERED_BY }}</th>
@@ -117,7 +119,8 @@
               {% if run.status != 'pending' and run.status != 'running' %}
               <button type="button"
                       @click.stop="const idx = selected.indexOf('{{ run.id }}'); if (idx === -1) selected.push('{{ run.id }}'); else selected.splice(idx, 1);"
-                      class="w-[18px] h-[18px] rounded flex items-center justify-center flex-shrink-0 border transition-colors cursor-pointer"
+                      class="w-[18px] h-[18px] rounded flex items-center justify-center flex-shrink-0 border transition-colors cursor-pointer
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:focus:ring-offset-gray-900"
                       :class="selected.includes('{{ run.id }}')
                         ? 'bg-blue-600 border-blue-600 text-white'
                         : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'">
@@ -134,6 +137,20 @@
               <span class="w-1.5 h-1.5 rounded-full {{ run.status|status_dot }}"></span>
               {% if run.status == 'success' %}{{ t.APP.STATE_SUCCESS }}{% elif run.status == 'running' %}{{ t.APP.STATE_RUNNING }}{% elif run.status == 'failed' %}{{ t.APP.STATE_FAILED }}{% elif run.status == 'cancelled' %}{{ t.APP.STATE_CANCELLED }}{% elif run.status == 'pending' %}{{ t.APP.STATE_PENDING }}{% else %}{{ run.get_status_display }}{% endif %}
             </span>
+          </td>
+          <td class="px-4 py-3">
+            {% if run.run_type == 'targeted' %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+                         bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+              {{ t.RUNS_VIEW.TYPE_TARGETED }}
+              <span class="opacity-60">({{ run.targeted_recipes|length }})</span>
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                         bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-200">
+              {{ t.RUNS_VIEW.TYPE_FULL }}
+            </span>
+            {% endif %}
           </td>
           <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ run.started_at|timezone:local_tz|date:"d M Y, H:i:s" }}</td>
           <td class="px-4 py-3 text-gray-500 dark:text-gray-400 tabular-nums">

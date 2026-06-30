@@ -19,6 +19,8 @@ urlpatterns = [
          runs.RunListView.as_view(), name='run-list'),
     path('runs/trigger/',
          runs.TriggerRunView.as_view(), name='trigger-run'),
+    path('runs/trigger-targeted/',
+         runs.TriggerTargetedRunView.as_view(), name='trigger-targeted-run'),
     path('runs/delete/',
          runs.RunDeleteView.as_view(), name='run-delete'),
     path('runs/munki-icon/',
