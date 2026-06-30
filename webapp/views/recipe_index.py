@@ -78,6 +78,11 @@ class RecipeIndexSearchView(ConfigEditorRequired, View):
                     installed_slugs.add(slug)
                     break
 
+        # For each result, check if all parent dependencies are installed
+        for recipe in result['results']:
+            repos_needed = idx.resolve_repo_requirements(recipe['identifier'])
+            recipe['all_deps_installed'] = all(repo in installed_slugs for repo in repos_needed)
+
         result['installed_repos'] = list(installed_slugs)
         result['error'] = idx.last_error()
         return JsonResponse(result)

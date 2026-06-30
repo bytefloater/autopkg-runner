@@ -122,11 +122,17 @@
               {# Repo + installed pill #}
               <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
                 <span class="font-mono text-xs text-gray-400 dark:text-gray-500" x-text="r.repo"></span>
-                <span x-show="installedRepos.includes(r.repo)"
+                <span x-show="installedRepos.includes(r.repo) && r.all_deps_installed"
                       class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium
                              bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                   {% lucide "check" "w-3 h-3" %}
                   {{ t.RECIPES_VIEW.FIND_BADGE_INSTALLED }}
+                </span>
+                <span x-show="installedRepos.includes(r.repo) && !r.all_deps_installed"
+                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium
+                             bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                  {% lucide "triangle-alert" "w-3 h-3" %}
+                  {{ t.RECIPES_VIEW.FIND_BADGE_MISSING_PARENT }}
                 </span>
                 <span x-show="!installedRepos.includes(r.repo)"
                       class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium
@@ -159,21 +165,21 @@
                   </div>
                 </div>
 
-                {# Add repo button — always visible, disabled when already installed #}
-                <div class="relative" :class="installedRepos.includes(r.repo) ? 'group/installed' : 'group/add'">
+                {# Add repo button — clickable if dependencies missing, disabled only when fully installed #}
+                <div class="relative" :class="r.all_deps_installed ? 'group/installed' : 'group/add'">
                   <button type="button"
-                          @click="!installedRepos.includes(r.repo) && openAddModal(r)"
-                          :disabled="installedRepos.includes(r.repo)"
+                          @click="!r.all_deps_installed && openAddModal(r)"
+                          :disabled="r.all_deps_installed"
                           class="inline-flex items-center justify-center w-8 h-8 rounded-md
                                  border border-transparent transition-colors"
-                          :class="installedRepos.includes(r.repo)
+                          :class="r.all_deps_installed
                             ? 'bg-gray-50 dark:bg-slate-800 text-green-500 dark:text-green-400 cursor-default select-none opacity-60'
                             : 'bg-blue-600 hover:bg-blue-700 text-white'">
-                    <svg x-show="!installedRepos.includes(r.repo)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+                    <svg x-show="!r.all_deps_installed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
                       <line x1="12" y1="5" x2="12" y2="19"></line>
                       <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    <svg x-show="installedRepos.includes(r.repo)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+                    <svg x-show="r.all_deps_installed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                       <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
@@ -297,8 +303,8 @@
         </template>
       </div>
 
-      {# "All repos already installed" notice #}
-      <div x-show="showModal && !loadingReqs && !addError && modalRepos.length > 0 && missingRepos.length === 0 && !addSuccess" x-cloak
+      {# "All repos already installed" notice — only show when truly all deps are met #}
+      <div x-show="showModal && !loadingReqs && !addError && modalRepos.length > 0 && missingRepos.length === 0 && !addSuccess && modalRecipe?.all_deps_installed" x-cloak
            class="mb-5 flex items-center gap-2 px-3 py-2.5 rounded-lg
                   bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800
                   text-green-700 dark:text-green-400 text-sm">
