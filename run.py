@@ -119,6 +119,14 @@ def _gui_dialog(msg: str) -> None:
     )
 
 
+def _run_migrations() -> None:
+    """Apply any pending database migrations before the server starts."""
+    import django
+    django.setup()
+    from django.core.management import call_command
+    call_command('migrate', verbosity=1)
+
+
 def _check_setup_or_exit() -> None:
     """Verify the app has been initialised. Must be called before gunicorn forks
     workers — if the check runs inside wsgi.py it fires in every worker and
@@ -208,6 +216,7 @@ def main() -> None:
         # Check setup before starting gunicorn. If the check runs inside wsgi.py
         # instead, it fires in each worker process — gunicorn then sees the worker
         # exit and spawns a replacement, creating an infinite restart loop.
+        _run_migrations()
         _check_setup_or_exit()
 
         import argparse
