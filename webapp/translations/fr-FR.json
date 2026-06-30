@@ -1,406 +1,631 @@
 {
-    "NAME": "Français (France)",
-    "APP": {
-        "NAME": "AutoPkg Runner",
-
-        "STATE_SUCCESS": "Succès",
-        "STATE_RUNNING": "Exécution",
-        "STATE_FAILURE": "Échec",
-        "STATE_FAILED": "",
-        "STATE_LIVE": "En direct",
-        "STATE_PENDING": "",
-        "STATE_CANCELLED": "",
-        "STATE_IN_PROGRESS": "",
-        "STATE_SKIPPED": "",
-        "STATE_DONE": "",
-        "STATE_DISCONNECTED": "",
-
-        "DARKMODE_STATE_LIGHT": "Clair",
-        "DARKMODE_STATE_DARK": "Sombre",
-        "DARKMODE_STATE_SYSTEM": "Système",
-
-        "ACTION_TRIGGER_RUN": "",
-        "ACTION_VIEW_LOGS": "Voir les journaux",
-        "ACTION_CHANGE_PWD": "Modifier le mot de passe",
-        "ACTION_RESET_PWD": "Réinitaliser le mot de passe",
-        "ACTION_LOGIN": "Se connecter",
-        "ACTION_LOGOUT": "Se déconnecter",
-        "ACTION_EDIT": "Modifier",
-        "ACTION_SAVE": "Enregister",
-        "ACTION_BACK": "Retour",
-        "ACTION_CANCEL": "Désélectionner",
-        "ACTION_DELETE": "",
-        "ACTION_SHOW": "",
-        "ACTION_HIDE": "",
-        "ACTION_MANAGE": "Manager",
-        "ACTION_DONE": "Finir",
-
-        "VIEWS_DASHBOARD": "Tableau de bord",
-        "VIEWS_RUNS": "Exécutions",
-        "VIEWS_SCHEDULES": "Planifier",
-        "VIEWS_CONFIG": "Configuration",
-        "VIEWS_TOKENS": "Jetons",
-        "VIEWS_USERS": "Utilisateurs",
-
-        "FIELDNAME_USERNAME": "Nom d'utilisateur",
-        "FIELDNANE_PASSWORD": "Mot de passe",
-
-        "ROLE_SUPERUSER": "Administrateur",
-
-        "ACCOUNT_APPEARANCE": "",
-
-        "CHANGE_PWD_CURRENT": "",
-        "CHANGE_PWD_NEW": "",
-        "CHANGE_PWD_CONFIRM": "",
-        "CHANGE_PWD_HINT": ""
-    },
-    "LOGIN_VIEW": {
-        "TAGLINE": "",
-        "ERROR_INVALID_CREDENTIALS": ""
-    },
-    "DASHBOARD_VIEW": {
-        "HEADER_RUN_COUNT_30D": "",
-        "HEADER_SUCCESS_RATE": "",
-        "HEADER_SUCCESS_RATE_30D": "",
-        "HEADER_NEXT_RUN": "",
-        "HEADER_NEXT_RUN_SHORT": "",
-
-        "SECTION_LAST_RUN": "",
-        "SECTION_RECENT_RUNS": "",
-
-        "META_TRIGGERED_BY": "",
-
-        "STATE_NO_RUN_SCHEDULED": "",
-        "STATE_STARTING": "",
-
-        "ACTION_VIEW_ALL": "Afficher tout",
-        "ACTION_RUN_NOW": "",
-
-        "EMPTY_NO_RUNS": "",
-        "EMPTY_NO_RUNS_MOBILE": ""
-    },
-    "RUNS_VIEW": {
-        "NAV_ALL_RUNS": "",
-
-        "ACTION_MANAGE": "@:APP.ACTION_MANAGE",
-        "ACTION_DONE": "@:APP.ACTION_DONE",
-        "ACTION_DELETE": "@:APP.ACTION_DELETE",
-        "ACTION_VIEW": "",
-
-        "COL_STATUS": "",
-        "COL_STARTED": "",
-        "COL_DURATION": "",
-        "COL_TRIGGERED_BY": "",
-
-        "PAGINATION_PAGE": "",
-        "PAGINATION_OF": "",
-        "PAGINATION_PREV": "",
-        "PAGINATION_NEXT": "",
-        "PAGINATION_PREV_LONG": "",
-        "PAGINATION_NEXT_LONG": "",
-
-        "RUN_COUNT_SINGULAR": "",
-        "RUN_COUNT_PLURAL": "",
-
-        "EMPTY_NO_RUNS": "",
-        "EMPTY_NO_RUNS_SHORT": ""
-    },
-    "RUN_DETAIL_VIEW": {
-        "META_TRIGGERED_BY": "@:DASHBOARD_VIEW.META_TRIGGERED_BY",
-        "META_STARTED": "",
-        "META_DURATION": "",
-        "META_RUN_ID": "",
-
-        "SECTION_DETAILS": "",
-        "SECTION_STAGES": "",
-        "SECTION_GENERAL_LOGS": "",
-        "SECTION_LIVE_OUTPUT": "",
-
-        "LABEL_OUTPUT": "",
-
-        "LOG_EMPTY_STAGE": "",
-        "LOG_EMPTY_STAGE_MOBILE": "",
-        "LOG_WAITING": "",
-
-        "STATE_WAITING_PIPELINE": "",
-        "STATE_CONNECTING": "",
-        "STATE_NO_STAGES": "",
-
-        "STATUS_IN_PROGRESS": "@:APP.STATE_IN_PROGRESS",
-        "STATUS_SUCCESS": "@:APP.STATE_SUCCESS",
-        "STATUS_FAILURE": "@:APP.STATE_FAILURE",
-        "STATUS_PENDING": "@:APP.STATE_PENDING",
-        "STATUS_CANCELLED": "@:APP.STATE_CANCELLED",
-        "STATUS_SKIPPED": "@:APP.STATE_SKIPPED",
-
-        "RESULTS_NO_DATA": ""
-    },
-    "SCHEDULE_VIEW": {
-        "DESC_SCHEDULER": "",
-
-        "ENABLE_SCHEDULER_TOGGLE_HEADER": "",
-        "ENABLE_SCHEDULER_TOGGLE_DESC": "",
-
-        "SECTION_CRON_EXPRESSION": "",
-
-        "CRON_FORMAT_HINT": "",
-        "CRON_FORMAT_EXAMPLE": "",
-        "CRON_TZ_INTERPRETED_IN": "",
-        "CRON_TZ_CURRENTLY": "",
-        "CRON_TZ_PREFIX": "",
-
-        "LABEL_NEXT_RUN": "",
-        "ACTION_SAVE": ""
-    },
-    "TOKENS_VIEW": {
-        "SECTION_API_TOKENS": "",
-        "SECTION_API_REFERENCE": "",
-        "SECTION_NEW_TOKEN_CREATED": "",
-        "SECTION_ENDPOINTS": "",
-
-        "FIELD_TOKEN_NAME": "",
-        "FIELD_TOKEN_NAME_HINT": "",
-
-        "ACTION_NEW_TOKEN": "",
-        "ACTION_ADD_TOKEN": "",
-        "ACTION_COPY": "",
-        "ACTION_COPY_CLIPBOARD": "",
-        "ACTION_REVOKE": "",
-        "ACTION_CREATE_TOKEN": "",
-        "ACTION_CREATE": "",
-        "ACTION_CREATE_FIRST": "",
-
-        "HINT_COPY_NOW": "",
-
-        "BANNER_TOKEN_CREATED_PREFIX": "",
-        "BANNER_TOKEN_CREATED_SUFFIX": "",
-
-        "MODAL_TITLE": "",
-
-        "EMPTY_NO_TOKENS": "",
-
-        "CONFIRM_REVOKE_DESC": ""
-    },
-    "USER_VIEW": {
-        "SECTION_ACCOUNT": "",
-        "SECTION_ROLE_STATUS": "",
-        "SECTION_ACTIONS": "",
-
-        "TABLE_CAT_USERNAME": "Nom d'utilisateur",
-        "TABLE_CAT_EMAIL": "Courriel",
-        "TABLE_CAT_ACTIVE": "Actif",
-        "TABLE_CAT_ROLE": "Rôle",
-
-        "LABEL_YOU": "(vous)",
-        "LABEL_EMAIL_OPTIONAL": "Courreil",
-
-        "ROLE_USER": "Utilisateur",
-        "ROLE_ADMIN_DESC": "",
-        "ROLE_ADMIN_DESC_SHORT": "",
-
-        "STATUS_INACTIVE": "",
-
-        "ACTION_ADD_USER": "Ajouter un utilisateur",
-        "ACTION_ADD": "Ajouter",
-        "ACTION_CREATE_USER": "Créer un utilisateur",
-        "ACTION_CREATE": "",
-        "ACTION_SAVE_CHANGES": "",
-        "ACTION_DELETE_USER": "",
-        "ACTION_RESET_PW_SHORT": "Réinit. MDP",
-
-        "EMPTY_NO_USERS": "",
-
-        "CREDS_BANNER_CREATED": "",
-        "CREDS_BANNER_RESET": "",
-        "CREDS_BANNER_DISCLAIMER": "",
-        "CREDS_BANNER_DISCLAIMER_SHORT": "",
-
-        "HINT_PASSWORD_GENERATED": "",
-        "HINT_PASSWORD_GENERATED_SHORT": "",
-
-        "SELF_EDIT_NOTICE": "",
-        "SELF_EDIT_NOTICE_LONG": "",
-
-        "CONFIRM_DELETE_DESC": "",
-
-        "FIELD_ACTIVE_DESC": "",
-        "RESET_PWD_DESC": "",
-        "RESET_PWD_HINT": ""
-    },
-    "NOTIFICATIONS_VIEW": {
-        "SECTION_SETTINGS": "",
-        "SECTION_SHARING": "",
-        "SECTION_GENERAL": "",
-        "SECTION_NOTIFIER": "",
-        "SECTION_SUBSCRIBED_DEVICES": "",
-        "SECTION_MESSAGE_TEMPLATE": "",
-
-        "OPT_APP_URL": "URL de base",
-        "OPT_APP_URL_DESC": "",
-        "OPT_APP_URL_DESC_SHORT": "",
-        "OPT_SHARE_LINK_EXPIRY": "",
-        "OPT_SHARE_LINK_EXPIRY_DESC": "",
-        "OPT_SHARE_LINK_EXPIRY_DESC_SHORT": "",
-        "UNIT_DAYS": "",
-
-        "FIELD_NAME": "",
-        "FIELD_ENABLED": "",
-        "FIELD_TYPE": "",
-        "FIELD_TITLE": "",
-        "FIELD_MESSAGE": "",
-
-        "LABEL_AVAILABLE_VARS": "",
-        "DEVICE_ADDED_PREFIX": "",
-
-        "ACTION_ADD": "",
-        "ACTION_ADD_NOTIFIER": "",
-        "ACTION_ADD_FIRST": "",
-        "ACTION_NEXT": "",
-        "ACTION_REMOVE": "",
-        "ACTION_DELETE": "@:APP.ACTION_DELETE",
-        "ACTION_DELETE_NOTIFIER": "",
-        "ACTION_SAVE_NOTIFIER": "",
-        "ACTION_SAVE_SETTINGS": "",
-        "ACTION_SEND_TEST": "",
-        "ACTION_SEND_TEST_NOTIFICATION": "",
-        "ACTION_SUBSCRIBE_BROWSER": "",
-        "ACTION_SUBSCRIBE_DEVICE": "",
-        "ACTION_ENABLE": "",
-        "ACTION_DISABLE": "",
-
-        "STATE_SENDING": "",
-        "STATE_SUBSCRIBED": "",
-        "STATE_SUBSCRIBED_DEVICE": "",
-        "STATE_SUBSCRIBING": "",
-
-        "EMPTY_NO_NOTIFIERS": "",
-        "EMPTY_NO_DEVICES": "",
-        "EMPTY_NO_DEVICES_MOBILE": "",
-
-        "MODAL_NEW_NOTIFIER_TITLE": "",
-
-        "WARN_VAPID_NOT_CONFIGURED": "",
-        "DEFAULT_DEVICE_LABEL": "",
-
-        "TEST_SUCCESS": "",
-        "TEST_FAILED": "",
-
-        "CONFIRM_DELETE_DESC": ""
-    },
-    "ABOUT_VIEW": {
-        "TITLE": "À propos",
-        "SUBTITLE": "",
-
-        "SECTION_APPLICATION": "Application",
-        "SECTION_EXTERNAL_TOOLS": "Outils externes",
-
-        "STATE_NOT_INSTALLED": "Non installée",
-        "STATE_UPDATE_CHECK_FAILED": "",
-
-        "UPDATE_AVAILABLE_PREFIX": "",
-        "UPDATE_AVAILABLE_SUFFIX": "",
-        "UP_TO_DATE_PREFIX": "",
-        "UP_TO_DATE_SUFFIX": "",
-
-        "ACTION_VIEW_RELEASE": "",
-        "ACTION_VIEW_RELEASE_GITHUB": ""
-    },
-    "SHARE_VIEW": {
-        "LABEL_RUN_REPORT": "",
-
-        "META_STARTED": "",
-        "META_DURATION": "",
-        "META_TRIGGERED_BY": "",
-
-        "SECTION_STAGES": "",
-        "SECTION_AUTOPKG_OUTPUT": "",
-
-        "RESULT_IMPORTED": "",
-        "RESULT_FAILURES": "",
-        "RESULT_DOWNLOADED": "",
-        "RESULT_COPIED": "",
-        "RESULT_TRUST_UPDATED": "",
-        "RESULT_DEPRECATION": "",
-
-        "EMPTY_NO_DATA": "",
-        "EMPTY_NO_RUN_DATA": "",
-        "FOOTER": ""
-    },
-    "CONFIG_VIEW": {
-        "HEADER_CONFIG": "@:APP.VIEWS_CONFIG",
-
-        "SECTION_PIPELINE": "",
-        "SECTION_SYSTEM": "",
-        "SECTION_ADMINISTRATION": "",
-        "SECTION_LOCAL_REPO": "",
-        "SECTION_CREDENTIALS": "",
-        "SECTION_SMB_SERVER": "",
-        "SECTION_REPOCLEAN": "",
-        "SECTION_LOG_FILE": "",
-
-        "SUBTITLE_AUTOPKG": "",
-        "SUBTITLE_WORKFLOW": "",
-        "SUBTITLE_REPO": "",
-        "SUBTITLE_GC": "",
-        "SUBTITLE_NOTIFICATIONS": "Pushover, Discord et autres outils de notification",
-        "SUBTITLE_LOGGING": "",
-
-        "REPOTYPE_LOCAL": "Local",
-        "REPOTYPE_REMOTE": "Hôte distance",
-
-        "CONNECTION_TYPE_SSH": "SSH",
-        "CONNECTION_TYPE_SMB": "SMB",
-
-        "TAB_AUTOPKG": "AutoPkg",
-        "TAB_REPO": "Référentiel",
-        "TAB_WORKFLOW": "Flux de travail",
-        "TAB_GARBAGE_COLLECTOR": "Collecteur d'ordures",
-        "TAB_NOTIFICATIONS": "Notifications",
-        "TAB_LOGGING": "Journalisation",
-        "TAB_WEBINTERFACE": "Interface Utilisateur",
-
-        "ACTION_SAVE_CONFIG": "",
-        "ACTION_SAVE_CONFIG_INFO": "",
-
-        "OPT_AUTOPKG_BINARY": "Binaire d'AutoPkg",
-        "OPT_AUTOPKG_BINARY_DESC": "Chemin d'accès au binaire d'AutoPkg",
-        "OPT_AUTOPKG_CACHE_PATH": "Chemin du cache",
-        "OPT_AUTOPKG_CACHE_PATH_DESC": "Chemin d'accès au répertoire du cache d'AutoPkg",
-        "OPT_AUTOPKG_RECIPE_LIST": "Liste des recettes d'AutoPkg",
-        "OPT_AUTOPKG_RECIPE_LIST_DESC": "Chemin d'accès au fichier contenant la liste des recettes d'AutoPkg à exécuter",
-
-        "OPT_UPDATE_REPOS": "Mettre à jour les dépôts",
-        "OPT_UPDATE_REPOS_DESC": "Met à jour les dépôts Git distants avant chaque exécution",
-
-        "OPT_REPO_TYPE": "",
-        "OPT_CONNECTION_TYPE": "",
-        "OPT_SERVER_HOST": "",
-        "OPT_SERVER_LOCAL_MNT_PATH": "",
-        "OPT_SERVER_PUBLIC_URL": "",
-
-        "OPT_SMB_SERVER_SHARE": "",
-
-        "OPT_LOG_LEVEL": "",
-        "OPT_LOG_PATH": "",
-
-        "OPT_LOGGING_TO_FILE": "",
-        "OPT_LOGGING_TO_FILE_DESC": "",
-
-        "OPT_GC_KEEP_VERSIONS": "",
-        "OPT_GC_KEEP_VERSIONS_DESC": "",
-        "OPT_GC_CLEAR_TEMP": "",
-        "OPT_GC_CLEAR_TEMP_DESC": "",
-        "OPT_GC_CLEAN_REPO": "",
-        "OPT_GC_CLEAN_REPO_DESC": "",
-        "OPT_GC_REPOCLEAN_BIN": "",
-
-        "OPT_LOCAL_REPO_PATH": "",
-
-        "OPT_LANG_SELECT": "Langue d'affichage",
-
-        "LOG_LEVEL_HINT": "",
-
-        "WARN_SFTP_DEPS_MISSING": "",
-        "WARN_SFTP_DEPS_INSTRUCTION": ""
-    }
+  "NAME": "Français (France)",
+  "APP": {
+    "NAME": "AutoPkg Runner",
+    "VIEWS_DASHBOARD": "Tableau",
+    "VIEWS_RUNS": "Exécutions",
+    "VIEWS_SCHEDULES": "Planifier",
+    "VIEWS_RECIPES": "Recettes",
+    "VIEWS_CONFIG": "Configuration",
+    "VIEWS_TOKENS": "Jetons",
+    "VIEWS_USERS": "Utilisateurs",
+    "FIELDNAME_USERNAME": "Nom d'utilisateur",
+    "FIELDNANE_PASSWORD": "Mot de passe",
+    "ROLE_SUPERUSER": "Administrateur",
+    "ACCOUNT_APPEARANCE": "Apparence",
+    "CHANGE_PWD_CURRENT": "",
+    "CHANGE_PWD_NEW": "",
+    "CHANGE_PWD_CONFIRM": "",
+    "CHANGE_PWD_HINT": "",
+
+    "STATE_SUCCESS": "Succès",
+    "STATE_RUNNING": "Exécution",
+    "STATE_FAILURE": "Échec",
+    "STATE_FAILED": "Échec",
+    "STATE_LIVE": "En direct",
+    "STATE_PENDING": "En attente",
+    "STATE_CANCELLED": "Annulé",
+    "STATE_CANCELLING": "Annulation…",
+    "STATE_IN_PROGRESS": "En cours",
+    "STATE_SKIPPED": "Ignoré",
+    "STATE_DONE": "Terminé",
+    "STATE_DISCONNECTED": "Déconnecté",
+
+    "DARKMODE_STATE_LIGHT": "Clair",
+    "DARKMODE_STATE_DARK": "Sombre",
+    "DARKMODE_STATE_SYSTEM": "Système",
+
+    "ACTION_TRIGGER_RUN": "",
+    "ACTION_VIEW_LOGS": "Voir les journaux",
+    "ACTION_CHANGE_PWD": "Modifier le mot de passe",
+    "ACTION_RESET_PWD": "Réinitaliser le mot de passe",
+    "ACTION_LOGIN": "Se connecter",
+    "ACTION_LOGOUT": "Se déconnecter",
+    "ACTION_EDIT": "Modifier",
+    "ACTION_SAVE": "Enregister",
+    "ACTION_ADD": "Ajouter",
+    "ACTION_BACK": "Retour",
+    "ACTION_CANCEL": "Désélectionner",
+    "ACTION_DELETE": "Supprimer",
+    "ACTION_SHOW": "Afficher",
+    "ACTION_HIDE": "Masquer",
+    "ACTION_MANAGE": "Manager",
+    "ACTION_DONE": "Finir"
+  },
+  "LOGIN_VIEW": {
+    "TAGLINE": "",
+    "ERROR_INVALID_CREDENTIALS": ""
+  },
+  "DASHBOARD_VIEW": {
+    "HEADER_RUN_COUNT_30D": "Nombre d'exécutions (30d)",
+    "HEADER_SUCCESS_RATE": "Taux de réussite",
+    "HEADER_SUCCESS_RATE_30D": "Taux de réussite (30d)",
+    "HEADER_NEXT_RUN": "Prochaine exécution",
+    "HEADER_NEXT_RUN_SHORT": "Suivante",
+
+    "SECTION_LAST_RUN": "",
+    "SECTION_RECENT_RUNS": "Exécutions récentes",
+
+    "META_TRIGGERED_BY": "Déclenché par",
+
+    "STATE_NO_RUN_SCHEDULED": "",
+    "STATE_STARTING": "",
+
+    "ACTION_VIEW_ALL": "Afficher tout",
+    "ACTION_RUN_NOW": "Exécuter maintenant",
+
+    "EMPTY_NO_RUNS": "",
+    "EMPTY_NO_RUNS_MOBILE": ""
+  },
+  "RUNS_VIEW": {
+    "NAV_ALL_RUNS": "",
+
+    "COL_STATUS": "",
+    "COL_TYPE": "",
+    "COL_STARTED": "",
+    "COL_DURATION": "",
+    "COL_TRIGGERED_BY": "",
+
+    "PAGINATION_PAGE": "",
+    "PAGINATION_OF": "",
+    "PAGINATION_PREV": "",
+    "PAGINATION_NEXT": "",
+    "PAGINATION_PREV_LONG": "",
+    "PAGINATION_NEXT_LONG": "",
+
+    "RUN_COUNT_SINGULAR": "Exécution",
+    "RUN_COUNT_PLURAL": "Exécutions",
+
+    "ACTION_MANAGE": "@:APP.ACTION_MANAGE",
+    "ACTION_DONE": "@:APP.ACTION_DONE",
+    "ACTION_DELETE": "@:APP.ACTION_DELETE",
+    "ACTION_VIEW": "",
+
+    "TYPE_FULL": "",
+    "TYPE_TARGETED": "",
+
+    "EMPTY_NO_RUNS": "",
+    "EMPTY_NO_RUNS_SHORT": ""
+  },
+  "RUN_DETAIL_VIEW": {
+    "META_TRIGGERED_BY": "@:DASHBOARD_VIEW.META_TRIGGERED_BY",
+    "META_STARTED": "Démarré",
+    "META_DURATION": "Durée",
+    "META_RUN_ID": "ID d'exécution",
+
+    "SECTION_DETAILS": "",
+    "SECTION_STAGES": "Étapes",
+    "SECTION_AUTOPKG_OUTPUT": "Sortie AutoPkg",
+    "SECTION_GENERAL_LOGS": "",
+    "SECTION_LIVE_OUTPUT": "",
+
+    "LABEL_OUTPUT": "",
+
+    "LOG_EMPTY_STAGE": "",
+    "LOG_EMPTY_STAGE_MOBILE": "",
+    "LOG_WAITING": "",
+
+    "STATE_WAITING_PIPELINE": "",
+    "STATE_CONNECTING": "",
+    "STATE_NO_STAGES": "",
+
+    "STATUS_IN_PROGRESS": "@:APP.STATE_IN_PROGRESS",
+    "STATUS_SUCCESS": "@:APP.STATE_SUCCESS",
+    "STATUS_FAILURE": "@:APP.STATE_FAILURE",
+    "STATUS_PENDING": "@:APP.STATE_PENDING",
+    "STATUS_CANCELLED": "@:APP.STATE_CANCELLED",
+    "STATUS_SKIPPED": "@:APP.STATE_SKIPPED",
+
+    "RESULTS_NO_DATA": "",
+
+    "RESULT_FIELD_MESSAGE": "",
+    "RESULT_FIELD_RECIPE": "",
+    "RESULT_FIELD_RECIPE_ID": "",
+    "RESULT_FIELD_TRACEBACK": "",
+    "RESULT_FIELD_PKG_PATH": "",
+    "RESULT_FIELD_PKG_REPO_PATH": "",
+    "RESULT_FIELD_DOWNLOAD_PATH": "",
+    "RESULT_FIELD_WARNING": "",
+    "RESULT_FIELD_DEPRECATION_NAME": "",
+    "RESULT_FIELD_NAME": "",
+    "RESULT_FIELD_CATALOGS": "",
+    "RESULT_FIELD_ICON_REPO_PATH": "",
+    "RESULT_FIELD_PKGINFO_PATH": "",
+    "RESULT_FIELD_VERSION": "",
+
+    "RESULT_TYPE_FAILURE": "",
+    "RESULT_TYPE_PKG_COPIED": "",
+    "RESULT_TYPE_URL_DOWNLOADED": "",
+    "RESULT_TYPE_DEPRECATION": "",
+    "RESULT_TYPE_MUNKI_IMPORT": "",
+    "RESULT_TYPE_TRUST_UPDATED": "",
+
+    "CARD_SHOW_PATHS": "",
+    "CARD_HIDE_PATHS": "",
+    "ACTION_VIEW_DETAILS": "",
+
+    "SECTION_TARGETED_RECIPES": ""
+  },
+  "SCHEDULE_VIEW": {
+    "DESC_SCHEDULER": "",
+    "ENABLE_SCHEDULER_TOGGLE_HEADER": "",
+    "ENABLE_SCHEDULER_TOGGLE_DESC": "",
+
+    "SECTION_CRON_EXPRESSION": "",
+
+    "CRON_FORMAT_HINT": "",
+    "CRON_FORMAT_EXAMPLE": "",
+    "CRON_TZ_INTERPRETED_IN": "",
+    "CRON_TZ_CURRENTLY": "",
+    "CRON_TZ_PREFIX": "",
+
+    "LABEL_NEXT_RUN": "",
+
+    "ACTION_SAVE": ""
+  },
+  "TOKENS_VIEW": {
+    "TITLE": "Jetons d'API",
+    "SUBTITLE": "",
+
+    "SECTION_API_TOKENS": "",
+    "SECTION_API_REFERENCE": "",
+    "SECTION_NEW_TOKEN_CREATED": "",
+    "SECTION_ENDPOINTS": "",
+
+    "FIELD_TOKEN_NAME": "",
+    "FIELD_TOKEN_NAME_HINT": "",
+
+    "ACTION_ADD": "@:APP.ACTION_ADD",
+    "ACTION_NEW_TOKEN": "",
+    "ACTION_ADD_TOKEN": "",
+    "ACTION_COPY": "",
+    "ACTION_COPY_CLIPBOARD": "",
+    "ACTION_REVOKE": "",
+    "ACTION_CREATE_TOKEN": "",
+    "ACTION_CREATE": "",
+    "ACTION_CREATE_FIRST": "",
+
+    "HINT_COPY_NOW": "",
+
+    "BANNER_TOKEN_CREATED_PREFIX": "",
+    "BANNER_TOKEN_CREATED_SUFFIX": "",
+
+    "MODAL_TITLE": "",
+
+    "EMPTY_NO_TOKENS": "",
+
+    "CONFIRM_REVOKE_DESC": ""
+  },
+  "USER_VIEW": {
+    "SECTION_ACCOUNT": "Compte",
+    "SECTION_ROLE_STATUS": "Rôle/État",
+    "SECTION_PERMISSIONS": "",
+    "SECTION_ACTIONS": "Actions",
+
+    "TABLE_CAT_USERNAME": "Nom d'utilisateur",
+    "TABLE_CAT_EMAIL": "Courriel",
+    "TABLE_CAT_ACTIVE": "Actif",
+    "TABLE_CAT_ROLE": "Rôle",
+
+    "LABEL_YOU": "(vous)",
+    "LABEL_EMAIL_OPTIONAL": "Courriel (facultatif)",
+
+    "ROLE_USER": "Utilisateur",
+    "ROLE_ADMIN_DESC": "Accès complet à tous les paramètres et utilisateurs",
+    "ROLE_ADMIN_DESC_SHORT": "Accès complet à tous les paramètres",
+
+    "STATUS_INACTIVE": "Inactif",
+
+    "FIELD_ACTIVE_DESC": "",
+
+    "ACTION_ADD_USER": "Ajouter un utilisateur",
+    "ACTION_ADD": "@:APP.ACTION_ADD",
+    "ACTION_CREATE_USER": "Créer un utilisateur",
+    "ACTION_CREATE": "",
+    "ACTION_SAVE_CHANGES": "",
+    "ACTION_DELETE_USER": "Supprimer l'utilisateur",
+    "ACTION_RESET_PW_SHORT": "Réinit. MDP",
+
+    "CREDS_BANNER_CREATED": "",
+    "CREDS_BANNER_RESET": "",
+    "CREDS_BANNER_DISCLAIMER": "",
+    "CREDS_BANNER_DISCLAIMER_SHORT": "",
+
+    "HINT_PASSWORD_GENERATED": "",
+    "HINT_PASSWORD_GENERATED_SHORT": "",
+
+    "SELF_EDIT_NOTICE": "",
+    "SELF_EDIT_NOTICE_LONG": "",
+
+    "RESET_PWD_DESC": "",
+    "RESET_PWD_HINT": "",
+
+    "CONFIRM_DELETE_DESC": "",
+
+    "EMPTY_NO_USERS": "",
+
+    "PERM_MANAGE_USERS": "",
+    "PERM_MANAGE_USERS_DESC": "",
+    "PERM_TRIGGER_RUNS": "",
+    "PERM_TRIGGER_RUNS_DESC": "",
+    "PERM_EDIT_CONFIG": "",
+    "PERM_EDIT_CONFIG_DESC": "",
+    "PERM_VIEW_RUNS": "",
+    "PERM_VIEW_RUNS_DESC": ""
+  },
+  "NOTIFICATIONS_VIEW": {
+    "SECTION_SETTINGS": "",
+    "SECTION_SHARING": "",
+    "SECTION_GENERAL": "",
+    "SECTION_NOTIFIER": "",
+    "SECTION_SUBSCRIBED_DEVICES": "Appareils abonnés",
+    "SECTION_MESSAGE_TEMPLATE": "Modèle de message",
+    "SECTION_SMTP_CREDENTIALS": "Identifiants",
+
+    "OPT_APP_URL": "URL de base",
+    "OPT_APP_URL_DESC": "",
+    "OPT_APP_URL_DESC_SHORT": "",
+    "OPT_SHARE_LINK_EXPIRY": "",
+    "OPT_SHARE_LINK_EXPIRY_DESC": "",
+    "OPT_SHARE_LINK_EXPIRY_DESC_SHORT": "",
+
+    "OPT_APP_TOKEN": "Jeton de l'application",
+    "OPT_USER_TOKEN": "Jeton de l'utilisateur",
+    "OPT_WEBHOOK_ID": "",
+    "OPT_WEBHOOK_TOKEN": "",
+    "OPT_WEBHOOK_URL": "",
+
+    "OPT_SUPPORTS_HTML": "Prend en charge HTML",
+
+    "OPT_FROM_ADDRESS": "",
+    "OPT_RECIPIENTS": "",
+    "OPT_SMTP_SERVER": "",
+    "OPT_SMTP_PORT": "",
+    "OPT_USE_SSL": "",
+    "OPT_SMTP_ENCRYPTION": "Chiffrement",
+    "OPT_USE_AUTH": "",
+    "OPT_USERNAME": "",
+    "OPT_SMTP_PASSWORD": "",
+
+    "OPT_EMAIL_TEMPLATE": "Modèle d'e-mail",
+    "OPT_EMAIL_TEMPLATE_NONE": "Aucun (texte brut)",
+
+    "UNIT_DAYS": "",
+
+    "FIELD_NAME": "Nom",
+    "FIELD_ENABLED": "Activé",
+    "FIELD_TYPE": "Type",
+    "FIELD_TITLE": "Titre",
+    "FIELD_MESSAGE": "Message",
+
+    "LABEL_AVAILABLE_VARS": "Variables disponibles",
+
+    "DEVICE_ADDED_PREFIX": "",
+
+    "ACTION_ADD": "@:APP.ACTION_ADD",
+    "ACTION_ADD_NOTIFIER": "",
+    "ACTION_ADD_FIRST": "",
+    "ACTION_NEXT": "",
+    "ACTION_REMOVE": "",
+    "ACTION_DELETE": "@:APP.ACTION_DELETE",
+    "ACTION_DELETE_NOTIFIER": "@:APP.ACTION_DELETE",
+    "ACTION_SAVE_NOTIFIER": "",
+    "ACTION_SAVE_SETTINGS": "",
+    "ACTION_SEND_TEST": "Envoyer un test",
+    "ACTION_SEND_TEST_NOTIFICATION": "Envoyer une notification test",
+    "ACTION_SUBSCRIBE_BROWSER": "Enregistrer le navigateur",
+    "ACTION_SUBSCRIBE_DEVICE": "Enregistrer l'appareil",
+    "ACTION_ENABLE": "",
+    "ACTION_DISABLE": "",
+
+    "STATE_SENDING": "",
+    "STATE_SUBSCRIBED": "",
+    "STATE_SUBSCRIBED_DEVICE": "",
+    "STATE_SUBSCRIBING": "",
+
+    "EMPTY_NO_NOTIFIERS": "",
+    "EMPTY_NO_DEVICES": "",
+    "EMPTY_NO_DEVICES_MOBILE": "",
+
+    "MODAL_NEW_NOTIFIER_TITLE": "",
+
+    "WARN_VAPID_NOT_CONFIGURED": "",
+
+    "DEFAULT_DEVICE_LABEL": "",
+
+    "TEST_SUCCESS": "",
+    "TEST_FAILED": "",
+
+    "CONFIRM_REMOVE_DEVICE_TITLE": "Retirer cet appareil des notifications abonnées ?",
+    "CONFIRM_DELETE_DESC": "Ce notificateur cessera immédiatement d'envoyer des alertes. Cette action est irréversible.",
+
+    "TMPLT_STATUS_VARHINT": "\"réussi\" ou \"échoué\"",
+    "TMPLT_STATUS_EMOJI_VARHINT": "Émoji représentant l'état de l'exécution",
+    "TMPLT_IMPORTS_VARHINT": "Nombre d'importations Munki",
+    "TMPLT_FAILURES_VARHINT": "Nombre d'échecs de recette",
+    "TMPLT_DOWNLOADS_VARHINT": "Nombre de paquets téléchargés",
+    "TMPLT_DURATION_VARHINT": "Durée de l'exécution (ex. « 2 min 34 s »)",
+    "TMPLT_SHARE_URL_VARHINT": "URL de partage brute (texte brut)",
+    "TMPLT_SHARE_LINK_VARHINT": "Lien HTML cliquable — notificateurs HTML uniquement",
+    "TMPLT_RUN_ID_VARHINT": "UUID de l'exécution",
+    "TMPLT_TRIGGERED_BY_VARHINT": "Méthode utilisée pour déclencher l'exécution (« manuel | planificateur | api »)",
+    "TMPLT_DATE_VARHINT": "Date de l'exécution",
+    "TMPLT_TIME_VARHINT": "Heure de l'exécution"
+  },
+  "ABOUT_VIEW": {
+    "TITLE": "À propos",
+    "SUBTITLE": "",
+
+    "SECTION_APPLICATION": "Application",
+    "SECTION_EXTERNAL_TOOLS": "Outils externes",
+
+    "LABEL_PYTHON": "Python",
+    "LABEL_RUNTIME": "Environnement",
+
+    "STATE_NOT_INSTALLED": "Non installée",
+    "STATE_UPDATE_CHECK_FAILED": "",
+    "STATE_PYTHON_EMBEDDED": "Intégré",
+    "STATE_RUNTIME_BUNDLED": "Application groupée",
+    "STATE_RUNTIME_STANDARD": "Standard",
+
+    "UPDATE_AVAILABLE_PREFIX": "",
+    "UPDATE_AVAILABLE_SUFFIX": "",
+    "UP_TO_DATE_PREFIX": "",
+    "UP_TO_DATE_SUFFIX": "",
+
+    "ACTION_VIEW_RELEASE": "",
+    "ACTION_VIEW_RELEASE_GITHUB": ""
+  },
+  "SHARE_VIEW": {
+    "LABEL_RUN_REPORT": "",
+
+    "META_STARTED": "",
+    "META_DURATION": "",
+    "META_TRIGGERED_BY": "",
+
+    "SECTION_STAGES": "",
+    "SECTION_AUTOPKG_OUTPUT": "",
+
+    "RESULT_IMPORTED": "",
+    "RESULT_FAILURES": "",
+    "RESULT_DOWNLOADED": "",
+    "RESULT_COPIED": "",
+    "RESULT_TRUST_UPDATED": "",
+    "RESULT_DEPRECATION": "",
+
+    "EMPTY_NO_DATA": "",
+    "EMPTY_NO_RUN_DATA": "",
+
+    "FOOTER": "",
+    "LABEL_LANGUAGE": "Langue"
+  },
+  "CONFIG_VIEW": {
+    "HEADER_CONFIG": "@:APP.VIEWS_CONFIG",
+
+    "SECTION_PIPELINE": "",
+    "SECTION_SYSTEM": "",
+    "SECTION_ADMINISTRATION": "",
+    "SECTION_LOCAL_REPO": "",
+    "SECTION_CREDENTIALS": "",
+    "SECTION_SMB_SERVER": "",
+    "SECTION_REPOCLEAN": "",
+    "SECTION_LOG_FILE": "",
+
+    "TAB_SCHEDULE": "",
+    "TAB_AUTOPKG": "AutoPkg",
+    "TAB_REPO": "Référentiel",
+    "TAB_WORKFLOW": "Flux de travail",
+    "TAB_GARBAGE_COLLECTOR": "Collecteur d'ordures",
+    "TAB_NOTIFICATIONS": "Notifications",
+    "TAB_LOGGING": "Journalisation",
+    "TAB_WEBINTERFACE": "Interface Utilisateur",
+
+    "SUBTITLE_SCHEDULE": "",
+    "SUBTITLE_AUTOPKG": "",
+    "SUBTITLE_WORKFLOW": "",
+    "SUBTITLE_REPO": "",
+    "SUBTITLE_GC": "",
+    "SUBTITLE_NOTIFICATIONS": "Pushover, Discord et autres outils de notification",
+    "SUBTITLE_LOGGING": "",
+
+    "REPOTYPE_LOCAL": "Local",
+    "REPOTYPE_REMOTE": "Hôte distance",
+
+    "CONNECTION_TYPE_SSH": "SSH",
+    "CONNECTION_TYPE_SMB": "SMB",
+
+    "ACTION_SAVE_CONFIG": "",
+    "ACTION_SAVE_CONFIG_INFO": "",
+    "ACTION_BROWSE": "Parcourir",
+
+    "FILE_BROWSER_TITLE": "Sélectionner un dossier",
+    "FILE_BROWSER_SELECT": "Sélectionner ce dossier",
+    "FILE_BROWSER_NEW_FOLDER": "Nouveau dossier",
+    "FILE_BROWSER_CREATE": "Créer",
+    "FILE_BROWSER_CANCEL": "Annuler",
+    "FILE_BROWSER_LOADING": "Chargement…",
+    "FILE_BROWSER_FOLDER_NAME": "Nom du dossier",
+    "FILE_BROWSER_CREATE_HERE": "Créer un dossier ici",
+
+    "OPT_AUTOPKG_BINARY": "Binaire d'AutoPkg",
+    "OPT_AUTOPKG_BINARY_DESC": "Chemin d'accès au binaire d'AutoPkg",
+    "OPT_AUTOPKG_CACHE_PATH": "Chemin du cache",
+    "OPT_AUTOPKG_CACHE_PATH_DESC": "Chemin d'accès au répertoire du cache d'AutoPkg",
+    "OPT_AUTOPKG_RECIPE_LIST": "Liste des recettes d'AutoPkg",
+    "OPT_AUTOPKG_RECIPE_LIST_DESC": "Chemin d'accès au fichier contenant la liste des recettes d'AutoPkg à exécuter",
+    "OPT_AUTOPKG_OVERRIDES_DIR": "Dossier des substitutions de recettes",
+    "OPT_AUTOPKG_OVERRIDES_DIR_DESC": "Où AutoPkg stocke les fichiers de substitution de recettes",
+    "OPT_AUTOPKG_REPOS_DIR": "Dossier des dépôts de recettes",
+    "OPT_AUTOPKG_REPOS_DIR_DESC": "Où autopkg repo-add installe les dépôts de recettes",
+
+    "OPT_UPDATE_REPOS": "Mettre à jour les dépôts",
+    "OPT_UPDATE_REPOS_DESC": "Met à jour les dépôts Git distants avant chaque exécution",
+
+    "OPT_REPO_TYPE": "",
+    "OPT_CONNECTION_TYPE": "",
+    "OPT_SERVER_HOST": "",
+    "OPT_SERVER_LOCAL_MNT_PATH": "",
+    "OPT_SERVER_PUBLIC_URL": "",
+    "OPT_SERVER_PUBLIC_URL_AUTH": "",
+    "OPT_SERVER_PUBLIC_URL_AUTH_HINT": "",
+
+    "PLACEHOLDER_USERNAME": "",
+    "PLACEHOLDER_PASSWORD": "",
+
+    "OPT_SMB_SERVER_SHARE": "",
+
+    "OPT_LOG_LEVEL": "Niveau",
+    "OPT_LOG_PATH": "Chemin du journal",
+    "OPT_LOGGING_TO_FILE": "Journaliser dans un fichier",
+    "OPT_LOGGING_TO_FILE_DESC": "",
+
+    "LOG_LEVEL_HINT": "",
+
+    "OPT_GC_KEEP_VERSIONS": "",
+    "OPT_GC_KEEP_VERSIONS_DESC": "",
+    "OPT_GC_CLEAR_TEMP": "",
+    "OPT_GC_CLEAR_TEMP_DESC": "",
+    "OPT_GC_CLEAN_REPO": "",
+    "OPT_GC_CLEAN_REPO_DESC": "",
+    "OPT_GC_REPOCLEAN_BIN": "",
+
+    "OPT_LOCAL_REPO_PATH": "",
+    "OPT_LANG_SELECT": "Langue d'affichage",
+
+    "WARN_SFTP_DEPS_MISSING": "",
+    "WARN_SFTP_DEPS_INSTRUCTION": ""
+  },
+  "RECIPES_VIEW": {
+    "TITLE": "",
+
+    "SUBTAB_REPOS": "",
+    "SUBTAB_RECIPES": "",
+    "SUBTAB_LIST": "",
+    "SUBTAB_OVERRIDES": "",
+    "SUBTAB_FIND": "",
+
+    "COL_NAME": "",
+    "COL_IDENTIFIER": "",
+    "COL_TYPE": "",
+    "COL_ACTIONS": "",
+
+    "BADGE_OVERRIDE": "",
+    "BADGE_PARENT": "",
+    "BADGE_ACTIVE": "",
+
+    "LABEL_SELECTED": "",
+
+    "SEARCH_PLACEHOLDER": "",
+
+    "ACTION_UPDATE": "",
+    "ACTION_UPDATE_ALL": "",
+    "ACTION_ADD_REPO": "",
+    "ACTION_REMOVE": "",
+    "ACTION_CREATE_OVERRIDE": "",
+    "ACTION_EDIT_OVERRIDE": "",
+    "ACTION_DELETE_OVERRIDE": "",
+    "ACTION_EDIT": "",
+    "ACTION_SAVE_LIST": "",
+    "ACTION_CHECKED_FIRST": "",
+    "ACTION_RUN_JUST_THIS": "",
+    "ACTION_RUN_SELECTED": "",
+
+    "RUN_TARGETED_MODAL_TITLE": "",
+    "RUN_TARGETED_MODAL_DESC": "",
+    "RUN_OPT_MAKE_CATALOGS": "",
+    "RUN_OPT_VERBOSE": "",
+    "RUN_OPT_BYPASS_TRUST": "",
+    "RUN_OPT_UPDATE_REPOS": "",
+    "RUN_CONFIRM_BUTTON": "",
+
+    "REPOS_EMPTY": "",
+
+    "DELETE_REPO_TITLE": "",
+    "DELETE_REPO_DESC": "",
+
+    "REPO_STATUS_UPTODATE": "",
+    "REPO_STATUS_BEHIND": "",
+    "REPO_STATUS_UNKNOWN": "",
+
+    "EDITOR_TITLE": "",
+    "EDITOR_SAVE": "",
+
+    "OVERRIDES_EMPTY": "",
+
+    "LIST_LOADING": "",
+    "LIST_EMPTY": "",
+    "LIST_NO_RESULTS": "",
+    "LIST_AVAILABLE": "",
+    "LIST_LOAD_ERROR": "",
+
+    "OVERRIDE_CREATE_IDENTIFIER_PLACEHOLDER": "",
+    "REPO_URL_PLACEHOLDER": "",
+
+    "WARNING_ORPHANED_LABEL": "",
+    "WARNING_ORPHANED_TITLE": "",
+    "WARNING_MISSING_PARENT_LABEL": "",
+    "WARNING_MISSING_PARENT_TITLE": "",
+    "WARNING_MISSING_PARENT_ROW": "",
+
+    "FIND_TITLE": "",
+    "FIND_SUBTITLE": "",
+    "FIND_SEARCH_PLACEHOLDER": "",
+
+    "FIND_COL_NAME": "",
+    "FIND_COL_IDENTIFIER": "",
+    "FIND_COL_REPO": "",
+    "FIND_COL_ACTIONS": "",
+
+    "FIND_BADGE_INSTALLED": "",
+    "FIND_BADGE_MISSING_PARENT": "",
+    "FIND_BADGE_MISSING_REPO": "",
+
+    "FIND_PARENT_LABEL": "",
+
+    "FIND_ACTION_VIEW_REPO": "",
+    "FIND_ACTION_VIEW_RECIPE": "",
+    "FIND_ACTION_ADD_REPO": "",
+
+    "FIND_LOADING": "",
+    "FIND_EMPTY": "",
+    "FIND_EMPTY_QUERY": "",
+
+    "FIND_INDEX_BUILDING": "",
+    "FIND_INDEX_BUILDING_SUB": "",
+
+    "FIND_ERROR": "",
+    "FIND_REFRESH_SUCCESS": "",
+    "FIND_TOTAL": "",
+
+    "FIND_MODAL_TITLE": "",
+    "FIND_MODAL_DESC": "",
+    "FIND_MODAL_REPO_INSTALLED": "",
+    "FIND_MODAL_REPO_MISSING": "",
+    "FIND_MODAL_CONFIRM": "",
+    "FIND_MODAL_ADDING": "",
+    "FIND_MODAL_SUCCESS": "",
+    "FIND_MODAL_PARTIAL": "",
+
+    "FIND_ALREADY_HAVE_REPO": ""
+  }
 }
